@@ -10,6 +10,10 @@ Sources: the Participant Guide PDF and the "Climate Hacktion Library" background
 - **Closing ceremony / winners:** 3–4pm AEDT Mon 12 Oct (Webex)
 - Afterwards: Pre-COP in Fiji & Tuvalu 5–8 Oct, COP31 in Antalya, Türkiye 9–20 Nov
 
+## Project files
+- `docs/`: the source documents (Participant Guide, Library) and **`docs/ideas.md`**, the scored idea brainstorm. The current top pick is BillShift.
+- `.claude/skills/hackathon-idea-evaluator/`: the skill for scoring ideas, adjusted to this hackathon's judging weights.
+
 ## The challenge: "Build for 2035"
 Turn **at least one** COP31 priority into a practical solution that people, communities or institutions can test and use. The aim is a convincing path from ambition to implementation, not a finished product. The ideal is something that makes climate action easier to **adopt, finance, implement or measure**.
 A working prototype is preferred. A Figma-style clickable mockup is accepted.
