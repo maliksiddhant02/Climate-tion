@@ -746,11 +746,12 @@ function Timeline({ paddocks, onEdit }: { paddocks: Paddock[]; onEdit: () => voi
   const crush = paddocks.some((p) => p.crop === "cane")
   return (
     <div className="mt-6">
-      <div className="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-3">
+      <div className="grid grid-cols-[7.5rem_1fr] items-center gap-x-4 gap-y-3 sm:grid-cols-[10rem_1fr]">
         <span />
         <div className="relative h-5 text-sm text-muted-foreground">
           {months.map((m, i) =>
-            i === 0 || m.getMonth() === 0 ? (
+            // Skip a year label that would sit on top of "Now".
+            i === 0 || (m.getMonth() === 0 && i >= 5) ? (
               <span key={i} className="absolute whitespace-nowrap" style={{ left: `${(100 * i) / MONTHS}%` }}>
                 {i === 0 ? "Now" : m.getFullYear()}
               </span>
@@ -761,22 +762,20 @@ function Timeline({ paddocks, onEdit }: { paddocks: Paddock[]; onEdit: () => voi
           const a = clamp(at(planted!))
           const b = clamp(at(ready!))
           return [
-            <span key={`${p.id}l`} className="flex items-center gap-2 text-sm">
-              <i className="inline-block size-3 shrink-0 rounded-full" style={{ background: CROPS[p.crop].color }} />
-              {CROPS[p.crop].label}
+            <span key={`${p.id}l`} className="flex items-start gap-2 text-sm">
+              <i className="mt-1 inline-block size-3 shrink-0 rounded-full" style={{ background: CROPS[p.crop].color }} />
+              <span>
+                {CROPS[p.crop].label}
+                <span className="block text-muted-foreground">Ready {ready!.toLocaleDateString("en-AU", { month: "short", year: "numeric" })}</span>
+              </span>
             </span>,
-            <div key={`${p.id}b`} className="relative h-8 rounded-full bg-paper-2">
+            <div key={`${p.id}b`} className="relative h-8 overflow-hidden rounded-full bg-paper-2">
               {crush &&
                 p.crop === "cane" &&
                 months.map((m, i) =>
                   m.getMonth() >= 5 ? <span key={i} className="absolute inset-y-0 bg-cane/15" style={{ left: `${(100 * i) / MONTHS}%`, width: `${100 / MONTHS}%` }} /> : null,
                 )}
               <span className="absolute inset-y-1.5 rounded-full" style={{ left: `${100 * a}%`, width: `${100 * Math.max(0.01, b - a)}%`, background: CROPS[p.crop].color }} />
-              {at(ready!) <= 1 && (
-                <span className="absolute top-1/2 -translate-y-1/2 pl-2 text-sm whitespace-nowrap" style={{ left: `${100 * b}%`, transform: b > 0.75 ? "translate(-100%, -50%)" : undefined, paddingRight: b > 0.75 ? "0.5rem" : undefined }}>
-                  Ready {ready!.toLocaleDateString("en-AU", { month: "short", year: "numeric" })}
-                </span>
-              )}
             </div>,
           ]
         })}
