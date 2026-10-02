@@ -124,7 +124,7 @@ function StatusPill({ level }: { level: Level }) {
   )
 }
 
-function smsText({ a, peak, w, river }: Run, replay: boolean, demo: boolean) {
+export function smsText({ a, peak, w, river }: Run, replay: boolean, demo: boolean) {
   const from = river && river.stage > 0 ? river.day : w.hourly.time[peak.start]
   const odds = !replay && river?.odds ? ` (${Math.round((100 * river.odds.flood) / river.odds.n)}% chance)` : ""
   const head = {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { ArrowRight } from "lucide-react"
-import { fjd, LivePage, useFarm, type Farm } from "@/Live"
+import { fjd, LivePage, smsText, useFarm, type Farm } from "@/Live"
 import { DECADES, HeavyRainChart } from "@/components/weather"
 import { KNOBS } from "@/lib/flood"
 import { cn } from "@/lib/utils"
@@ -33,9 +33,8 @@ function Logo() {
   return (
     <a href="#/" className="flex items-center gap-2.5">
       <svg viewBox="0 0 32 32" className="size-7" aria-hidden>
-        <path d="M16 2 4 7v8c0 7.5 5 12.6 12 15 7-2.4 12-7.5 12-15V7L16 2Z" fill="none" stroke="currentColor" strokeWidth={1.8} />
-        <path d="M8 14c3-2.2 5.5-2.2 8 0s5 2.2 8 0" fill="none" stroke="#d4a72c" strokeWidth={1.8} strokeLinecap="round" />
-        <path d="M9 19c2.5-1.8 4.6-1.8 7 0s4.5 1.8 7 0" fill="none" stroke="#5a8fd8" strokeWidth={1.8} strokeLinecap="round" />
+        <path d="M4 12c4-3 8-3 12 0s8 3 12 0" fill="none" stroke="#d4a72c" strokeWidth={2.4} strokeLinecap="round" />
+        <path d="M4 20c4-3 8-3 12 0s8 3 12 0" fill="none" stroke="#3c6fae" strokeWidth={2.4} strokeLinecap="round" />
       </svg>
       <span className="font-display text-2xl">Draki</span>
     </a>
@@ -102,7 +101,7 @@ export default function App() {
         ) : page === "proof" ? (
           <Proof farm={farm} />
         ) : (
-          <Home />
+          <Home farm={farm} />
         )}
       </main>
 
@@ -116,72 +115,70 @@ export default function App() {
   )
 }
 
-function Home() {
+function Home({ farm }: { farm: Farm }) {
+  const r = farm.replayRun
+  const m = farm.meta
   return (
     <>
-      <section className="px-4 pt-4 md:px-6">
-        <div className="relative isolate mx-auto flex min-h-[min(78svh,760px)] max-w-7xl items-end overflow-hidden rounded-3xl">
-          <img src="/photos/storm-field.jpg" alt="Storm clouds over a green field" className="absolute inset-0 -z-10 h-full w-full object-cover object-[center_65%]" />
-          <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink/90 via-ink/40 to-ink/10" />
-          <div className="max-w-3xl p-8 text-white md:p-14">
-            <p className="text-sm text-white/70">Climate Hack-tion 2026 · Road to COP31</p>
-            <h1 className="mt-4 font-display text-5xl leading-[1.05] lg:text-6xl">
-              Know which part of your farm will <em className="text-cane">flood.</em>
-            </h1>
-            <p className="mt-5 text-white/75">Field-level flood alerts by SMS for cane growers in Fiji.</p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a href="#/live" className={cn(btn, "bg-white text-ink hover:bg-paper")}>
-                Open live demo <ArrowRight className="size-4" aria-hidden />
-              </a>
-              <a href="#/how" className={cn(btn, "border border-white/30 text-white hover:bg-white/10")}>
-                How it works
-              </a>
-            </div>
+      <section className="relative isolate flex min-h-[min(80svh,760px)] items-end overflow-hidden">
+        <img src="/photos/storm-field.jpg" alt="Storm clouds over a green field" className="absolute inset-0 -z-10 h-full w-full object-cover object-[center_65%]" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink/90 via-ink/40 to-ink/10" />
+        <div className="mx-auto w-full max-w-7xl px-6 pt-24 pb-14 text-white md:pb-20">
+          <h1 className="max-w-3xl font-display text-5xl leading-[1.05] lg:text-6xl">
+            Know which part of your farm will <em className="text-cane">flood.</em>
+          </h1>
+          <p className="mt-5 max-w-xl text-white/75">Field-level flood alerts by SMS for cane growers on the Ba River, Fiji.</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a href="#/live" className={cn(btn, "bg-white text-ink hover:bg-paper")}>
+              Open live demo <ArrowRight className="size-4" aria-hidden />
+            </a>
+            <a href="#/how" className={cn(btn, "border border-white/30 text-white hover:bg-white/10")}>
+              How it works
+            </a>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-24">
-        <h2 className="max-w-3xl font-display text-5xl leading-tight">Flood warnings cover districts. Floods hit paddocks.</h2>
-        <div className="mt-14 grid gap-10 md:grid-cols-3">
-          {[
-            ["Your field", "Satellite elevation shows where water settles."],
-            ["A text, not an app", "Three actions, sent to any phone."],
-            ["The why", "Every alert links the storm to the climate trend."],
-          ].map(([h, p]) => (
-            <div key={h} className="border-t border-ink pt-5">
-              <h3 className="text-2xl">{h}</h3>
-              <p className="mt-2 text-muted-foreground">{p}</p>
-            </div>
-          ))}
+      <section className="mx-auto grid max-w-7xl items-center gap-12 px-6 py-24 lg:grid-cols-2">
+        <div>
+          <h2 className="font-display text-5xl leading-tight">Flood warnings cover districts. Floods hit paddocks.</h2>
+          <p className="mt-6 max-w-xl text-muted-foreground">
+            A warning for the whole Western Division can't tell a grower that the bottom of their block goes under first. Draki works it out for one
+            field: how high each 30 m of ground sits above the Ba River, how high the river is forecast to rise, and what to move before it does.
+          </p>
         </div>
+        <figure>
+          <div className="mx-auto max-w-sm rounded-[2rem] bg-ink p-3">
+            <p className="rounded-[1.5rem] bg-white/10 p-4 text-sm leading-relaxed whitespace-pre-line text-white/90">{r ? smsText(r, true, true) : "…"}</p>
+          </div>
+          <figcaption className="mx-auto mt-3 max-w-sm text-sm text-muted-foreground">
+            The text Draki writes for the demo block from Cyclone Cody's recorded rain and river flow.
+          </figcaption>
+        </figure>
       </section>
 
       <section className="bg-ink text-white">
-        <div className="mx-auto grid max-w-7xl gap-10 px-6 py-20 md:grid-cols-3">
-          {[
-            [DECADES.now.toFixed(1), `heavy-rain days a year in Ba, up from ${DECADES.then.toFixed(1)}`],
-            ["450+ mm", "in 72 hours during Cyclone Cody, 2022"],
-            ["2035", "COP31 target: climate action education for all"],
-          ].map(([v, l]) => (
-            <div key={v}>
-              <p className="text-5xl font-semibold">{v}</p>
-              <p className="mt-3 text-white/60">{l}</p>
-            </div>
-          ))}
+        <div className="mx-auto max-w-7xl px-6 py-20">
+          <p className="max-w-4xl font-display text-3xl leading-snug md:text-4xl">
+            In January 2022 Cyclone Cody dropped {r ? `${r.peak.total.toFixed(0)} mm` : "450 mm"} of rain on Ba in three days, and the Ba River reached{" "}
+            {m ? `${m.river.codyPeak.toLocaleString("en-AU")} m³/s` : "1,090 m³/s"}, its highest flow since records began in 1997.
+          </p>
+          <a href="#/live?replay" className="mt-8 inline-flex items-center gap-2 text-white/70 hover:text-white">
+            Replay it on the map <ArrowRight className="size-4" aria-hidden />
+          </a>
         </div>
       </section>
 
       <section className="mx-auto grid max-w-7xl items-center gap-12 px-6 py-24 md:grid-cols-2">
         <div>
-          <h2 className="font-display text-5xl leading-tight">Built for COP31.</h2>
+          <h2 className="font-display text-5xl leading-tight">Climate Awareness & Education</h2>
           <dl className="mt-10 space-y-6">
             {[
-              ["Track", "Climate Awareness & Education"],
-              ["Target", "Climate action education for all by 2035"],
-              ["Region", "Pacific-led, starting in Ba, Fiji"],
+              ["COP31 target", "Climate action education for all by 2035"],
+              ["How", "Each alert ends with one line on why Ba's storms are getting heavier, tied to rain the grower can see"],
+              ["Where", "Ba, Fiji. Built for the Pacific growers COP31 is putting first"],
             ].map(([k, v]) => (
-              <div key={k} className="grid grid-cols-[6rem_1fr] border-t border-rule pt-4">
+              <div key={k} className="grid grid-cols-[7rem_1fr] border-t border-rule pt-4">
                 <dt className="text-sm text-muted-foreground">{k}</dt>
                 <dd>{v}</dd>
               </div>
@@ -189,15 +186,6 @@ function Home() {
           </dl>
         </div>
         <img src="/photos/flooded-field.jpg" alt="Farm fields partly under floodwater" className="aspect-[4/3] w-full rounded-3xl object-cover" loading="lazy" />
-      </section>
-
-      <section className="px-4 pb-16 md:px-6">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6 rounded-3xl bg-leaf px-8 py-12 text-white md:px-14">
-          <h2 className="font-display text-5xl">See it on a real field.</h2>
-          <a href="#/live" className={cn(btn, "bg-white text-ink hover:bg-paper")}>
-            Open live demo <ArrowRight className="size-4" aria-hidden />
-          </a>
-        </div>
       </section>
     </>
   )
@@ -260,33 +248,29 @@ function Proof({ farm }: { farm: Farm }) {
   return (
     <section className="mx-auto max-w-5xl px-6 py-16">
       <h1 className="font-display text-5xl leading-tight">Does it work?</h1>
-      <p className="mt-4 max-w-2xl text-muted-foreground">
-        We can't wait for the next flood, so we replayed the record. Every major Ba River flood on file shows up in the river data, and the
-        model would have said "Act today" for each one.
+      <p className="mt-6 max-w-3xl text-2xl leading-snug">
+        {m ? (
+          <>
+            All {major.length} major Ba River floods on record would have triggered <strong className="font-semibold">Act today</strong>. Counting
+            smaller floods, {caught} of {m.record.length} would have triggered a warning.
+          </>
+        ) : (
+          "Loading the flood record…"
+        )}
       </p>
-
-      <div className="mt-12 grid gap-4 md:grid-cols-3">
-        <div className="rounded-3xl bg-ink p-6 text-white">
-          <p className="text-sm text-white/60">Major recorded floods caught</p>
-          <p className="mt-4 text-5xl font-semibold">{m ? `${major.filter((e) => e.level === "act").length} of ${major.length}` : "–"}</p>
-          <p className="mt-2 text-sm text-white/60">{m ? `${caught} of ${m.record.length} recorded floods at Act or Watch` : ""}</p>
-        </div>
-        <div className="rounded-3xl border border-rule bg-card p-6">
-          <p className="text-sm text-muted-foreground">Cyclone Cody, demo block</p>
-          <p className="mt-4 text-5xl font-semibold">{r ? `${r.a.floodedHa.toFixed(1)} ha` : "–"}</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            of {r?.a.areaHa.toFixed(1) ?? "–"} ha under water{r?.river ? `, river ${r.river.stage.toFixed(1)} m above normal` : ""}
-          </p>
-          <a href="#/live?replay" className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-leaf hover:underline">
-            See it on the map <ArrowRight className="size-4" aria-hidden />
-          </a>
-        </div>
-        <div className="rounded-3xl border border-rule bg-card p-6">
-          <p className="text-sm text-muted-foreground">Sentinel-1 satellite, {m ? new Date(m.sentinel1.after).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "11 Jan"}</p>
-          <p className="mt-4 text-5xl font-semibold">{m ? `${m.sentinel1.newWaterHa} ha` : "–"}</p>
-          <p className="mt-2 text-sm text-muted-foreground">of open floodwater left, 2.5 days after Cody's peak. Ba's floods drain before a satellite returns. A forecast has to warn first.</p>
-        </div>
-      </div>
+      <p className="mt-4 max-w-3xl text-muted-foreground">
+        We can't wait for the next flood, so we checked the river record against every Ba flood we could find a source for.
+        {r && (
+          <>
+            {" "}
+            In the Cyclone Cody replay, {r.a.floodedHa.toFixed(1)} of the demo block's {r.a.areaHa.toFixed(1)} ha go under.{" "}
+            <a href="#/live?replay" className="font-medium text-leaf hover:underline">
+              See it on the map
+            </a>
+            .
+          </>
+        )}
+      </p>
 
       <h2 className="mt-20 text-2xl">Every recorded Ba flood we could source</h2>
       <div className="mt-6 overflow-x-auto">
@@ -323,6 +307,13 @@ function Proof({ farm }: { farm: Farm }) {
           {m.unmatchedAlarms.map(monthYear).join(", ")}). Some of those may be floods that never made the news; we haven't checked yet.
         </p>
       )}
+
+      <h2 className="mt-20 text-2xl">Why not use satellite flood maps?</h2>
+      <p className="mt-4 max-w-3xl text-muted-foreground">
+        We tried. Sentinel-1 radar passed over Ba on {m ? new Date(m.sentinel1.after).toLocaleDateString("en-AU", { day: "numeric", month: "long" }) : "11 January"},
+        2.5 days after Cody's peak, and found {m?.sentinel1.newWaterHa ?? 0} ha of open floodwater left. Ba's floods drain before the satellite
+        comes back twelve days later. A warning has to come from a forecast.
+      </p>
 
       <h2 className="mt-20 text-2xl">How the model works</h2>
       <p className="mt-4 max-w-3xl text-muted-foreground">
