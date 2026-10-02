@@ -282,6 +282,12 @@ A sticky paper bar with a hairline bottom border and blur holds the logo, 4 page
 - **Bubble:** a `white/10` message bubble, 14px text.
 - **Content:** shows the exact text the farmer receives: headline, numbered actions, and a "Why:" climate line.
 
+### Flood valley hero (signature)
+The Home hero is the real Ba floodplain, drawn on a canvas from the 30 m elevation grid: a night-time hillshade, with land coloured by WorldCover class. The page pins the hero while the visitor scrolls through 280svh, and the Ba River rises from normal flow to Cyclone Cody's peak. Water fills every cell lower than the river level, shallow `#8fbcf0` deepening to `#1d4f94`. A readout panel (ink/70, blurred, on the map) tracks the flow, the status pill, the river level and the hectares under water. The headline fades as the river starts rising, and a closing line arrives at the peak. The hero fills the space under the nav (`--nav`). If the data fails to load, the storm photo stays.
+
+### Cody film (signature)
+On the live demo's Cyclone Cody tab, "Play the cyclone" replays 6–12 January 2022 hour by hour, at 70 ms per hour. The field map, risk card, SMS and river-chart playhead all follow the same hour. A flood-red tick on the scrubber marks Draki's first "Act today", stated with how many hours it came before the peak.
+
 ## Do's and Don'ts
 
 ### Do:

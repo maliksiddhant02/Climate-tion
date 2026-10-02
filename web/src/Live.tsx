@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { AlertTriangle, ArrowRight, Check, Eye, PenLine, RotateCcw } from "lucide-react"
+import { AlertTriangle, ArrowRight, Check, Eye, Pause, PenLine, Play, RotateCcw } from "lucide-react"
 import { FieldMap } from "@/components/FieldMap"
 import { DECADES, RainBars, RiverChart, wx } from "@/components/weather"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -16,6 +16,7 @@ const MIN_CELLS = 4
 
 export const fjd = (v: number) => `F$${(Math.round(v / 100) * 100).toLocaleString("en-AU")}`
 const dateLabel = (iso: string) => new Date(iso).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })
+const hourLabel = (iso: string) => new Date(iso).toLocaleString("en-AU", { weekday: "short", day: "numeric", month: "short", hour: "numeric" })
 const weekday = (iso: string) => new Date(iso).toLocaleDateString("en-AU", { weekday: "short" })
 
 type Elev = { points: LatLng[]; stepM: number; e: number[]; hand?: number[]; land?: number[] }
@@ -24,21 +25,35 @@ const flowLabel = (q: number) => `${q < 10 ? q.toFixed(1) : Math.round(q).toLoca
 
 const peakQ = (q: (number | null)[]) => Math.max(0, ...q.map((v) => v ?? 0))
 
-/** Rain pooling everywhere; plus the Ba River rising over the field when we have its height above the river. */
-function run(w: Weather | undefined, elev: Elev | undefined, flow?: Flow, cal?: River) {
+/** River flow at hour h of a daily record: each day's value sits at midday, linear in between. */
+function qAt(flow: Flow, h: number) {
+  const d = h / 24 - 0.5
+  const i = Math.max(0, Math.min(flow.q.length - 1, Math.floor(d)))
+  const j = Math.min(flow.q.length - 1, i + 1)
+  const a = flow.q[i] ?? 0
+  return d <= 0 ? a : a + ((flow.q[j] ?? 0) - a) * Math.min(1, d - i)
+}
+
+/**
+ * Rain pooling everywhere; plus the Ba River rising over the field when we have its height above the river.
+ * With `hour`, the field as it stood at that hour of the replay (rain of the previous 72 h, river flow then).
+ */
+function run(w: Weather | undefined, elev: Elev | undefined, flow?: Flow, cal?: River, hour?: number) {
   if (!w || !elev) return undefined
-  const peak = maxRolling(w.hourly.rain)
+  const atHour = hour !== undefined
+  const from = atHour ? Math.max(0, hour - 71) : 0
+  const peak = atHour ? { total: w.hourly.rain.slice(from, hour + 1).reduce((s, v) => s + (v || 0), 0), start: from } : maxRolling(w.hourly.rain)
   const rain = floodDepths(elev.e, elev.stepM ** 2, peak.total)
   let depths = rain
   let river: { q: number; day: string; stage: number; cal: River; flow: Flow; odds?: { flood: number; act: number; n: number } } | undefined
   if (flow && cal && elev.hand) {
     const hand = elev.hand
     const withRiver = (q: number) => riverDepths(hand, riverStage(q, cal)).map((d, i) => Math.max(d, rain[i]))
-    const q = peakQ(flow.q)
+    const q = atHour ? qAt(flow, hour) : peakQ(flow.q)
     depths = withRiver(q)
-    river = { q, day: flow.time[flow.q.indexOf(q)] ?? flow.time[0], stage: riverStage(q, cal), cal, flow }
+    river = { q, day: atHour ? w.hourly.time[hour] : (flow.time[flow.q.indexOf(q)] ?? flow.time[0]), stage: riverStage(q, cal), cal, flow }
     // Forecast confidence: run the field once per GloFAS ensemble member.
-    if (flow.members?.length) {
+    if (!atHour && flow.members?.length) {
       const levels = flow.members.map((m) => levelFor(withRiver(peakQ(m))))
       river.odds = { flood: levels.filter((l) => l !== "clear").length, act: levels.filter((l) => l === "act").length, n: levels.length }
     }
@@ -153,7 +168,43 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
   const [draft, setDraft] = useState<LatLng[]>()
   const [draftError, setDraftError] = useState<string>()
   const [lang, setLang] = useState("en")
-  const r = mode === "live" ? liveRun : replayRun
+  // ---- The Cyclone Cody film: replay the week hour by hour ----
+  const [hour, setHour] = useState<number>()
+  const [playing, setPlaying] = useState(false)
+  const film = mode === "replay" && replayRun?.river && elev?.hand ? replayRun : undefined
+  const hours = film?.w.hourly.time.length ?? 0
+  const frameAt = (h: number) => (film?.river ? run(film.w, elev, film.river.flow, film.river.cal, h) : undefined)
+  // When would Draki have sent its first "Act today", and when did the river peak?
+  const moments = useMemo(() => {
+    if (!film?.river) return undefined
+    let alert: number | undefined
+    let peakHour = 0
+    for (let h = 0; h < hours; h++) {
+      if (alert === undefined && run(film.w, elev, film.river.flow, film.river.cal, h)?.a.level === "act") alert = h
+      if (qAt(film.river.flow, h) > qAt(film.river.flow, peakHour)) peakHour = h
+    }
+    return { alert, peakHour }
+  }, [film, elev, hours])
+  useEffect(() => {
+    if (!playing) return
+    const id = setInterval(() => setHour((h) => Math.min(hours - 1, (h ?? -1) + 1)), 70)
+    return () => clearInterval(id)
+  }, [playing, hours])
+  useEffect(() => {
+    if (playing && hour === hours - 1) setPlaying(false)
+  }, [playing, hour, hours])
+  useEffect(() => {
+    if (mode !== "replay") {
+      setPlaying(false)
+      setHour(undefined)
+    }
+  }, [mode])
+  const frame = useMemo(() => (film && hour !== undefined ? frameAt(hour) : undefined), [film, hour]) // frameAt only reads film + elev
+  const r = frame ?? (mode === "live" ? liveRun : replayRun)
+  const togglePlay = () => {
+    if (!playing && (hour === undefined || hour >= hours - 1)) setHour(0)
+    setPlaying(!playing)
+  }
 
   const startDraft = () => {
     setDraftError(undefined)
@@ -208,6 +259,50 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
                 </button>
               )}
             </div>
+          </div>
+        )}
+
+        {film && moments && (
+          <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-4 md:p-5">
+            <div className="flex flex-wrap items-center gap-4">
+              <button onClick={togglePlay} className="press inline-flex items-center gap-2 rounded-full bg-cane px-5 py-3 text-sm font-medium text-ink hover:bg-[#e2b84a]">
+                {playing ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}
+                {playing ? "Pause" : hour === undefined || hour >= hours - 1 ? "Play the cyclone" : "Resume"}
+              </button>
+              <div className="relative min-w-[12rem] flex-1">
+                <input
+                  type="range"
+                  min={0}
+                  max={hours - 1}
+                  value={hour ?? hours - 1}
+                  onChange={(e) => {
+                    setPlaying(false)
+                    setHour(+e.target.value)
+                  }}
+                  aria-label="Replay time"
+                  className="w-full accent-cane"
+                />
+                {moments.alert !== undefined && (
+                  <span
+                    className="pointer-events-none absolute -top-2 h-3 w-0.5 bg-flood"
+                    style={{ left: `${(moments.alert / (hours - 1)) * 100}%` }}
+                    title="Draki's first Act today alert"
+                  />
+                )}
+              </div>
+              <p className="w-full text-sm tabular-nums text-white/80 sm:w-auto sm:min-w-[15rem] sm:text-right">
+                {hour !== undefined && r?.river
+                  ? `${hourLabel(film.w.hourly.time[hour])} · river ${Math.round(r.river.q).toLocaleString("en-AU")} m³/s`
+                  : "Showing the peak of the cyclone"}
+              </p>
+            </div>
+            {moments.alert !== undefined && (
+              <p className="mt-3 text-sm text-white/70">
+                <span className="font-medium text-white">Draki's alert: {hourLabel(film.w.hourly.time[moments.alert])}</span>
+                {moments.peakHour > moments.alert && `, about ${moments.peakHour - moments.alert} hours before the river peaked`}. Replayed with the recorded rain and
+                river flow, not the forecast made at the time.
+              </p>
+            )}
           </div>
         )}
 
@@ -270,7 +365,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
             )}
           </div>
 
-          <RiskCard key={mode} r={r} live={mode === "live"} onReplay={mode === "live" ? () => setMode("replay") : undefined} />
+          <RiskCard key={mode} r={r} now={hour !== undefined} live={mode === "live"} onReplay={mode === "live" ? () => setMode("replay") : undefined} />
 
           <div className={cn(card, "lg:col-span-5")}>
             <div className="flex items-baseline justify-between">
@@ -310,7 +405,13 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
             </div>
             <div className="mx-auto mt-5 max-w-sm rounded-[2rem] border border-white/15 bg-[#0d1712] p-3">
               <p className="rounded-[1.5rem] bg-white/10 p-4 text-sm leading-relaxed whitespace-pre-line text-white/90">
-                {lang !== "en" ? "Native-speaker translation coming." : r ? smsText(r, mode === "replay", isDemo) : "…"}
+                {lang !== "en"
+                  ? "Native-speaker translation coming."
+                  : frame && frame.a.level === "clear"
+                    ? "No alert yet. Draki is watching the river."
+                    : r
+                      ? smsText(r, mode === "replay", isDemo)
+                      : "…"}
               </p>
             </div>
           </div>
@@ -340,7 +441,14 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
                 <p className="text-sm text-white/60">GloFAS · Copernicus</p>
               </div>
               <div className="mt-4">
-                <RiverChart time={r.river.flow.time} q={r.river.flow.q} members={mode === "live" ? r.river.flow.members : undefined} q2={r.river.cal.q2} q5={r.river.cal.q5} />
+                <RiverChart
+                  time={r.river.flow.time}
+                  q={r.river.flow.q}
+                  members={mode === "live" ? r.river.flow.members : undefined}
+                  q2={r.river.cal.q2}
+                  q5={r.river.cal.q5}
+                  cursor={hour !== undefined ? hour / 24 : undefined}
+                />
               </div>
             </div>
           )}
@@ -352,7 +460,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
   )
 }
 
-function RiskCard({ r, live, onReplay }: { r?: Run; live: boolean; onReplay?: () => void }) {
+function RiskCard({ r, live, now, onReplay }: { r?: Run; live: boolean; now?: boolean; onReplay?: () => void }) {
   const a: Assessment | undefined = r?.a
   const river = r?.river
   return (
@@ -367,8 +475,8 @@ function RiskCard({ r, live, onReplay }: { r?: Run; live: boolean; onReplay?: ()
       {river && (
         <p className="mt-3 text-sm text-muted-foreground">
           {river.stage > 0
-            ? `Ba River peaks at ${flowLabel(river.q)}, ~${river.stage.toFixed(1)} m above normal.`
-            : `Ba River stays in its banks (peak ${flowLabel(river.q)}).`}
+            ? `Ba River ${now ? "now at" : "peaks at"} ${flowLabel(river.q)}, ~${river.stage.toFixed(1)} m above normal.`
+            : `Ba River ${now ? "in its banks" : "stays in its banks"} (${now ? "now" : "peak"} ${flowLabel(river.q)}).`}
           {live && river.odds && ` ${river.odds.flood} of ${river.odds.n} forecast runs flood this field.`}
         </p>
       )}

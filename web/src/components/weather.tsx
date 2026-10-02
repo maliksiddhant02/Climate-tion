@@ -136,7 +136,7 @@ const linePath = (xs: number[], ys: number[]) => xs.map((x, i) => `${i ? "L" : "
  * Ba River flow (GloFAS), daily, against the two lines that matter: in its banks below the 2-year flood,
  * "Act today" above the 5-year flood. Ensemble members, when there are any, are the thin lines. Dark surface.
  */
-export function RiverChart({ time, q, members, q2, q5 }: { time: string[]; q: (number | null)[]; members?: number[][]; q2: number; q5: number }) {
+export function RiverChart({ time, q, members, q2, q5, cursor }: { time: string[]; q: (number | null)[]; members?: number[][]; q2: number; q5: number; cursor?: number }) {
   const W = 480, H = 170, padL = 40, padB = 22, padT = 10
   const all = [q, ...(members ?? [])].flat().map((v) => v ?? 0)
   const max = Math.max(q5 * 1.25, ...all) * 1.05
@@ -160,6 +160,10 @@ export function RiverChart({ time, q, members, q2, q5 }: { time: string[]; q: (n
         <path key={k} d={linePath(xs, m.map((v) => y(v ?? 0)))} fill="none" stroke="#9db8da" strokeOpacity={0.18} strokeWidth={1} />
       ))}
       <path d={linePath(xs, q.map((v) => y(v ?? 0)))} fill="none" stroke="#5a8fd8" strokeWidth={2.5} strokeLinejoin="round" />
+      {cursor !== undefined && (
+        // Daily values are plotted at the start of each day; the playhead runs in the same day units.
+        <line x1={x(Math.min(time.length - 1, cursor))} x2={x(Math.min(time.length - 1, cursor))} y1={padT} y2={H - padB} stroke="#d4a72c" strokeWidth={2} />
+      )}
       {time.map((t, i) => (
         <text key={t} x={xs[i]} y={H - 6} textAnchor="middle" className="fill-white/60 text-[10px]">{day(t)}</text>
       ))}

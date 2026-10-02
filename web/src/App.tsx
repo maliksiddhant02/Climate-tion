@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { ArrowRight } from "lucide-react"
 import { fjd, LivePage, smsText, useFarm, type Farm } from "@/Live"
 import { DECADES, FlowHistory, HeavyRainChart } from "@/components/weather"
+import { FloodValley } from "@/components/FloodValley"
 import { getFlowHistory } from "@/lib/api"
 import { KNOBS } from "@/lib/flood"
 import { cn } from "@/lib/utils"
@@ -49,6 +50,17 @@ export default function App() {
   const route = useRoute()
   const page = route.split(/[/?]/)[0]
   const farm = useFarm()
+  // Publish the nav's height as --nav so the pinned hero can fill exactly the space under it.
+  const nav = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const el = nav.current
+    if (!el) return
+    const set = () => document.documentElement.style.setProperty("--nav", `${el.offsetHeight}px`)
+    set()
+    const ro = new ResizeObserver(set)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
   const [mode, setMode] = useState<"live" | "replay">(route.includes("replay") ? "replay" : "live")
   // Once someone picks a tab we stop auto-switching for them.
   const modeChosen = useRef(route.includes("replay"))
@@ -66,7 +78,7 @@ export default function App() {
 
   return (
     <div className="flex min-h-svh flex-col bg-paper text-ink">
-      <nav className="sticky top-0 z-[2000] border-b border-rule bg-paper/85 backdrop-blur">
+      <nav ref={nav} className="sticky top-0 z-[2000] border-b border-rule bg-paper/85 backdrop-blur">
         <div className={cn(WRAP, "flex items-center justify-between py-4")}>
           <Logo />
           <div className="hidden gap-1 md:flex">
@@ -122,16 +134,16 @@ function Home({ farm }: { farm: Farm }) {
   const m = farm.meta
   return (
     <>
-      <section className="relative isolate flex min-h-[calc(100svh-4.5rem)] items-end overflow-hidden">
-        <img src="/photos/storm-field.jpg" alt="Storm clouds over a green field" className="absolute inset-0 -z-10 h-full w-full object-cover object-[center_65%]" />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/45 to-ink/5" />
-        <div className={cn(WRAP, "stagger pt-24 pb-10 text-white md:pb-14")}>
-          <h1 className="font-display text-[clamp(2.5rem,7.4vw,8.75rem)] leading-[0.92] uppercase">
+      <FloodValley>
+        <div className={cn(WRAP, "stagger absolute inset-x-0 bottom-0 pb-6 text-white md:pb-14")}>
+          <h1 className="font-display text-[clamp(2.1rem,7vw,8rem)] leading-[0.92] uppercase">
             Know which part of your farm will <em className="text-cane">flood.</em>
           </h1>
-          <div className="mt-10 grid gap-8 border-t border-white/25 pt-6 md:grid-cols-12 md:items-end">
-            <p className="text-lg text-white/80 md:col-span-5">Field-level flood alerts by SMS for cane growers on the Ba River, Fiji.</p>
-            <div className="flex flex-wrap gap-3 md:col-span-7 md:justify-end">
+          <div className="mt-5 grid gap-4 border-t border-white/25 pt-4 md:mt-8 md:grid-cols-12 md:items-end md:gap-6 md:pt-5">
+            <p className="text-white/80 md:col-span-6 md:text-lg">
+              This is the real Ba floodplain in Fiji, 30 m at a time. Scroll, and the Ba River rises to Cyclone Cody's peak.
+            </p>
+            <div className="flex flex-wrap gap-3 md:col-span-6 md:justify-end">
               <a href="#/live" className={cn(btn, "bg-white text-ink hover:bg-paper")}>
                 Open live demo <ArrowRight className="size-4" aria-hidden />
               </a>
@@ -141,7 +153,7 @@ function Home({ farm }: { farm: Farm }) {
             </div>
           </div>
         </div>
-      </section>
+      </FloodValley>
 
       <section className={cn(WRAP, "py-24 md:py-32")}>
         <h2 className="font-display text-[clamp(2.25rem,5.6vw,6rem)] leading-[0.95]">
