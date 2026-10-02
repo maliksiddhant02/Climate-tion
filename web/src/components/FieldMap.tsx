@@ -1,9 +1,16 @@
-import { useEffect, type ComponentType } from "react"
+import { lazy, Suspense, useEffect, useState, type ComponentType } from "react"
 import { flushSync } from "react-dom"
 import { createRoot } from "react-dom/client"
 import L from "leaflet"
 import { CircleMarker, ImageOverlay, MapContainer, Marker, ZoomControl, Polygon, Polyline, Rectangle, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet"
 import { KNOBS, type Cell, type LatLng } from "@/lib/flood"
+import { loadRelief, RELIEF_STOPS, type Relief } from "@/lib/relief"
+import { cn } from "@/lib/utils"
+
+// MapLibre (~280 kB gzipped) only downloads when someone presses 3D.
+const Terrain3D = lazy(() => import("./Terrain3D"))
+const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services"
+const MAX_RELIEF = RELIEF_STOPS[RELIEF_STOPS.length - 1][0]
 
 const M_PER_DEG = 111_320
 
@@ -86,21 +93,43 @@ export function FieldMap(props: {
   const half = stepM / 2 / M_PER_DEG
   const maxDepth = Math.max(0, ...cells.map((c) => c.depth))
   const cos = Math.cos((poly[0][0] * Math.PI) / 180)
+  // Ground height is the default: it shows where the land dips, which is where water goes first.
+  const [base, setBase] = useState<"ground" | "satellite">("ground")
+  const [tilt, setTilt] = useState(false)
+  const [relief, setRelief] = useState<Relief>()
+  useEffect(() => {
+    loadRelief().then(setRelief)
+  }, [])
+  const ground = base === "ground"
+  // No 3D while the farmer is tapping corners or placing things: taps need the flat map.
+  const canTilt = !onMapClick
+  const seg = (on: boolean) => cn("press px-3 py-1.5 text-sm", on ? "bg-white text-ink" : "text-white/80 hover:text-white")
   return (
+    <div className="relative h-full w-full">
+      {tilt && canTilt ? (
+        <Suspense fallback={<div className="grid h-full place-items-center bg-ink text-sm text-white/70">Loading 3D…</div>}>
+          <Terrain3D poly={poly} shapes={shapes} cells={cells} stepM={stepM} pins={pins} base={base} relief={relief} />
+        </Suspense>
+      ) : (
     // One-finger drag on a phone should scroll the page, not get stuck panning the map. Pinch still zooms.
     <MapContainer center={poly[0]} zoom={15} scrollWheelZoom={false} dragging={drag || !L.Browser.mobile} zoomControl={false} className="h-full w-full">
       <ZoomControl position="topright" />
-      <TileLayer
-        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-        attribution="Imagery © Esri, Maxar, Earthstar Geographics · Elevation: Copernicus DEM · Land: ESA WorldCover · River: GloFAS"
-        maxZoom={18}
-      />
+      {ground ? (
+        <>
+          <TileLayer url={`${ESRI}/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}`} attribution="Hillshade © Esri" maxZoom={18} maxNativeZoom={16} />
+          {relief && <ImageOverlay url={relief.url} bounds={relief.bounds} opacity={0.95} />}
+          <TileLayer url={`${ESRI}/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}`} maxZoom={18} opacity={0.6} />
+        </>
+      ) : (
+        <TileLayer url={`${ESRI}/World_Imagery/MapServer/tile/{z}/{y}/{x}`} attribution="Imagery © Esri, Maxar, Earthstar Geographics" maxZoom={18} />
+      )}
+      <TileLayer url={`${ESRI}/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}`} maxZoom={18} attribution="Ground height: Copernicus DEM · Land: ESA WorldCover · River: GloFAS" />
       {overlay && <ImageOverlay url={overlay.url} bounds={overlay.bounds} opacity={0.85} />}
       <Fit poly={poly} />
       <Fly to={flyTo} zoom={flyZoom} />
       <Clicks onClick={onMapClick} />
       {shapes?.map((s) => (
-        <Polygon key={s.id} positions={s.poly} pathOptions={{ color: s.color, weight: 2, fillColor: s.color, fillOpacity: 0.4 }}>
+        <Polygon key={s.id} positions={s.poly} pathOptions={{ color: s.color, weight: ground ? 3 : 2, fillColor: s.color, fillOpacity: ground ? 0.1 : 0.4 }}>
           <Tooltip permanent direction="center" className="farm-label" pane="shadowPane">
             {s.label}
           </Tooltip>
@@ -132,5 +161,33 @@ export function FieldMap(props: {
         <CircleMarker key={i} center={p} radius={5} pathOptions={{ color: "#13211a", weight: 2, fillColor: "#d4a72c", fillOpacity: 1 }} />
       ))}
     </MapContainer>
+      )}
+
+      <div className="absolute right-3 bottom-7 z-[1000] flex flex-col items-end gap-2">
+        {ground && (
+          <div className="rounded-xl bg-ink/85 px-3 py-2 text-xs text-white">
+            <p>Ground height{tilt && canTilt ? " (heights ×6)" : ""}</p>
+            <div className="mt-1 h-2 w-36 rounded-full" style={{ background: `linear-gradient(to right, ${RELIEF_STOPS.map(([h, c]) => `${c} ${(100 * h) / MAX_RELIEF}%`).join(", ")})` }} />
+            <p className="mt-0.5 flex justify-between text-white/70">
+              <span>0 m · floods first</span>
+              <span>{MAX_RELIEF} m+</span>
+            </p>
+          </div>
+        )}
+        <div className="flex overflow-hidden rounded-full bg-ink/85" role="group" aria-label="Map view">
+          <button onClick={() => setBase("ground")} aria-pressed={ground} className={seg(ground)}>
+            Ground height
+          </button>
+          <button onClick={() => setBase("satellite")} aria-pressed={!ground} className={seg(!ground)}>
+            Satellite
+          </button>
+          {canTilt && (
+            <button onClick={() => setTilt(!tilt)} aria-pressed={tilt} className={cn(seg(tilt), "border-l border-white/20")}>
+              3D
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
