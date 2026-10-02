@@ -26,33 +26,13 @@ const LAND: Record<number, number[]> = {
 const SHALLOW = rgb("#8fbcf0")
 const DEEP = rgb("#1d4f94")
 
-// The data is a 30 m grid. Drawn square by square it looks blocky, so for display only we soften it (a 3x3 blur takes the
-// speckle out of the surface model and the land-cover mosaic), draw it at twice the resolution with bilinear interpolation,
-// and feather the shoreline. The hectare count still comes from the raw, unsmoothed cells.
-const UP = 2
-const FEATHER_M = 0.3 // the water's edge fades in over this much height
+// The data is a 30 m grid. Drawn square by square it looks blocky; blurred it looks soft. So we only enlarge it smoothly
+// (bilinear), at 3x on high-density screens and 2x elsewhere, and feather the shoreline a little. No blur, so the terrain
+// stays crisp. The hectare count still comes from the raw cells.
+const UP = typeof devicePixelRatio !== "undefined" && devicePixelRatio > 1.5 ? 3 : 2
+const FEATHER_M = 0.15 // the water's edge fades in over this much height
 
 type Prepared = { region: Region; w: number; h: number; base: Uint8ClampedArray; hand: Float32Array; sortedHand: Float32Array; cellHa: number }
-
-/** 3x3 box blur of one channel. */
-function blur(src: Float32Array, w: number, h: number) {
-  const out = new Float32Array(src.length)
-  for (let y = 0; y < h; y++)
-    for (let x = 0; x < w; x++) {
-      let sum = 0
-      let n = 0
-      for (let dy = -1; dy <= 1; dy++)
-        for (let dx = -1; dx <= 1; dx++) {
-          const xx = x + dx
-          const yy = y + dy
-          if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue
-          sum += src[yy * w + xx]
-          n++
-        }
-      out[y * w + x] = sum / n
-    }
-  return out
-}
 
 /** Bilinear upsample of one channel by UP. */
 function upsample(src: Float32Array, w: number, h: number) {
@@ -106,7 +86,7 @@ function prepare(region: Region): Prepared {
     }
   const W = w * UP
   const H = h * UP
-  const [R, G, B, Hd] = [r, g, bl, hand].map((ch) => upsample(blur(ch, w, h), w, h))
+  const [R, G, B, Hd] = [r, g, bl, hand].map((ch) => upsample(ch, w, h))
   const base = new Uint8ClampedArray(W * H * 4)
   for (let i = 0; i < W * H; i++) {
     base[i * 4] = R[i]
