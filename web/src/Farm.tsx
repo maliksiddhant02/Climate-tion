@@ -160,7 +160,8 @@ export function FarmPage({ farm }: { farm: Farm }) {
       <div className="mt-10 flex flex-wrap items-end gap-6 rounded-3xl border border-rule bg-paper-2 p-5">
         <div>
           <p className="text-sm text-muted-foreground">Field</p>
-          <p className="text-lg">{r ? `${r.a.areaHa.toFixed(1)} ha on the lower Richmond` : "Loading…"}</p>
+          <p className="text-lg">{r ? `${r.a.areaHa.toFixed(1)} hectares on the lower Richmond` : "Loading…"}</p>
+          <p className="text-sm text-muted-foreground">1 hectare = 100 m × 100 m</p>
           <a href="#/live" className="text-sm text-leaf hover:underline">
             Change the field on the map
           </a>
@@ -195,7 +196,7 @@ export function FarmPage({ farm }: { farm: Farm }) {
               <p className="text-sm text-muted-foreground">Expected harvest</p>
               <p className="mt-1 text-3xl font-semibold">{r ? t(tonnes) : "–"}</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {caneHa.toFixed(1)} ha of cane × {CROP[crop].yield} t/ha
+                {caneHa.toFixed(1)} hectares of cane × {CROP[crop].yield} t per hectare
               </p>
             </div>
             <div>
@@ -286,11 +287,11 @@ export function FarmPage({ farm }: { farm: Farm }) {
           <dl className="mt-6 space-y-4">
             <div>
               <dt className="text-sm text-muted-foreground">This week</dt>
-              <dd className="text-lg">{now ? (now.a.level === "clear" ? "No flooding expected" : `${now.a.floodedHa.toFixed(1)} ha could go under`) : "–"}</dd>
+              <dd className="text-lg">{now ? (now.a.level === "clear" ? "No flooding expected" : `${now.a.floodedHa.toFixed(1)} hectares could go under`) : "–"}</dd>
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">In a flood like February 2022</dt>
-              <dd className="text-lg">{r ? `${r.a.floodedHa.toFixed(1)} of ${r.a.areaHa.toFixed(1)} ha under water, ${aud(r.a.valueAtRisk)} of cane` : "–"}</dd>
+              <dd className="text-lg">{r ? `${r.a.floodedHa.toFixed(1)} of ${r.a.areaHa.toFixed(1)} hectares under water, ${aud(r.a.valueAtRisk)} of cane` : "–"}</dd>
             </div>
           </dl>
           <a href="#/live?replay" className="mt-6 inline-flex items-center gap-2 font-medium text-leaf hover:underline">

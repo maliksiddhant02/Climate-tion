@@ -26,19 +26,70 @@ const LAND: Record<number, number[]> = {
 const SHALLOW = rgb("#8fbcf0")
 const DEEP = rgb("#1d4f94")
 
-type Prepared = { region: Region; base: Uint8ClampedArray; hand: Float32Array; sortedHand: Float32Array; cellHa: number; stageMax: number }
+// The data is a 30 m grid. Drawn square by square it looks blocky, so for display only we soften it (a 3x3 blur takes the
+// speckle out of the surface model and the land-cover mosaic), draw it at twice the resolution with bilinear interpolation,
+// and feather the shoreline. The hectare count still comes from the raw, unsmoothed cells.
+const UP = 2
+const FEATHER_M = 0.3 // the water's edge fades in over this much height
+
+type Prepared = { region: Region; w: number; h: number; base: Uint8ClampedArray; hand: Float32Array; sortedHand: Float32Array; cellHa: number }
+
+/** 3x3 box blur of one channel. */
+function blur(src: Float32Array, w: number, h: number) {
+  const out = new Float32Array(src.length)
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      let sum = 0
+      let n = 0
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) {
+          const xx = x + dx
+          const yy = y + dy
+          if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue
+          sum += src[yy * w + xx]
+          n++
+        }
+      out[y * w + x] = sum / n
+    }
+  return out
+}
+
+/** Bilinear upsample of one channel by UP. */
+function upsample(src: Float32Array, w: number, h: number) {
+  const W = w * UP
+  const H = h * UP
+  const out = new Float32Array(W * H)
+  for (let Y = 0; Y < H; Y++) {
+    const fy = Math.min(h - 1, Math.max(0, (Y + 0.5) / UP - 0.5))
+    const y0 = Math.floor(fy)
+    const y1 = Math.min(h - 1, y0 + 1)
+    const ty = fy - y0
+    for (let X = 0; X < W; X++) {
+      const fx = Math.min(w - 1, Math.max(0, (X + 0.5) / UP - 0.5))
+      const x0 = Math.floor(fx)
+      const x1 = Math.min(w - 1, x0 + 1)
+      const tx = fx - x0
+      const top = src[y0 * w + x0] * (1 - tx) + src[y0 * w + x1] * tx
+      const bot = src[y1 * w + x0] * (1 - tx) + src[y1 * w + x1] * tx
+      out[Y * W + X] = top * (1 - ty) + bot * ty
+    }
+  }
+  return out
+}
 
 function prepare(region: Region): Prepared {
   const { width: w, height: h, res } = region.meta
   const dx = res * 111_320 * Math.cos(((region.meta.bbox[1] + region.meta.bbox[3]) / 2) * (Math.PI / 180))
   const dy = res * 111_320
-  const base = new Uint8ClampedArray(w * h * 4)
+  const r = new Float32Array(w * h)
+  const g = new Float32Array(w * h)
+  const bl = new Float32Array(w * h)
   const hand = new Float32Array(w * h)
   const land: number[] = []
+  const z = (xx: number, yy: number) => region.dem[Math.min(h - 1, Math.max(0, yy)) * w + Math.min(w - 1, Math.max(0, xx))] / 10
   for (let y = 0; y < h; y++)
     for (let x = 0; x < w; x++) {
       const i = y * w + x
-      const z = (xx: number, yy: number) => region.dem[Math.min(h - 1, Math.max(0, yy)) * w + Math.min(w - 1, Math.max(0, xx))] / 10
       // Hillshade, sun from the north-west, terrain exaggerated 3x so the floodplain's low relief reads.
       const gx = ((z(x + 1, y) - z(x - 1, y)) / (2 * dx)) * 3
       const gy = ((z(x, y + 1) - z(x, y - 1)) / (2 * dy)) * 3
@@ -46,16 +97,28 @@ function prepare(region: Region): Prepared {
       const cls = region.land[i]
       const c = LAND[cls] ?? LAND[30]
       const lit = cls === 80 ? 1 : shade
-      base[i * 4] = c[0] * lit
-      base[i * 4 + 1] = c[1] * lit
-      base[i * 4 + 2] = c[2] * lit
-      base[i * 4 + 3] = 255
-      hand[i] = cls === 80 ? Infinity : region.hand[i] / 10
+      r[i] = c[0] * lit
+      g[i] = c[1] * lit
+      bl[i] = c[2] * lit
+      // Permanent water is drawn by its land colour; give it height 0 so the blur doesn't drag banks underwater.
+      hand[i] = cls === 80 ? 0 : region.hand[i] / 10
       if (cls !== 80) land.push(hand[i])
     }
-  const cellHa = (dx * dy) / 10_000
-  return { region, base, hand, sortedHand: Float32Array.from(land).sort(), cellHa, stageMax: riverStage(region.meta.river.eventPeak, region.meta.river) }
+  const W = w * UP
+  const H = h * UP
+  const [R, G, B, Hd] = [r, g, bl, hand].map((ch) => upsample(blur(ch, w, h), w, h))
+  const base = new Uint8ClampedArray(W * H * 4)
+  for (let i = 0; i < W * H; i++) {
+    base[i * 4] = R[i]
+    base[i * 4 + 1] = G[i]
+    base[i * 4 + 2] = B[i]
+    base[i * 4 + 3] = 255
+  }
+  return { region, w: W, h: H, base, hand: Hd, sortedHand: Float32Array.from(land).sort(), cellHa: (dx * dy) / 10_000 }
 }
+
+// Valley-wide areas read better in km² (100 hectares) than in hectares.
+const km2 = (ha: number) => (ha < 1000 ? (ha / 100).toFixed(1) : Math.round(ha / 100).toLocaleString("en-AU"))
 
 /** How many land cells sit below the water: binary search over the sorted heights. */
 const below = (sorted: Float32Array, stage: number) => {
@@ -75,9 +138,10 @@ function paint(ctx: CanvasRenderingContext2D, img: ImageData, p: Prepared, stage
   if (stage > 0)
     for (let i = 0; i < p.hand.length; i++) {
       const d = stage - p.hand[i]
-      if (d <= 0) continue
-      const t = Math.min(1, d / 4) // deeper water reads darker
-      const a = 0.9
+      if (d <= -FEATHER_M) continue
+      const e = Math.min(1, (d + FEATHER_M) / (2 * FEATHER_M)) // 0 → 1 across the shoreline
+      const a = 0.9 * e * e * (3 - 2 * e) // smoothstep, so the edge has no hard step
+      const t = Math.min(1, Math.max(0, d) / 4) // deeper water reads darker
       const o = i * 4
       out[o] = out[o] * (1 - a) + (SHALLOW[0] + (DEEP[0] - SHALLOW[0]) * t) * a
       out[o + 1] = out[o + 1] * (1 - a) + (SHALLOW[1] + (DEEP[1] - SHALLOW[1]) * t) * a
@@ -145,7 +209,7 @@ export function FloodValley({ children }: { children: ReactNode }) {
     if (!prep || !c) return
     const ctx = c.getContext("2d")
     if (!ctx) return
-    const img = ctx.createImageData(prep.region.meta.width, prep.region.meta.height)
+    const img = ctx.createImageData(prep.w, prep.h)
     paint(ctx, img, prep, stage)
   }, [prep, stage])
 
@@ -166,8 +230,8 @@ export function FloodValley({ children }: { children: ReactNode }) {
         <img src="/photos/storm-field.jpg" alt="" className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${prep ? "opacity-0" : "opacity-100"}`} />
         <canvas
           ref={canvas}
-          width={prep?.region.meta.width ?? 1}
-          height={prep?.region.meta.height ?? 1}
+          width={prep?.w ?? 1}
+          height={prep?.h ?? 1}
           role="img"
           aria-label="Map of the lower Richmond River floodplain in NSW. As you scroll, the river rises to its February 2022 peak and floods the low ground."
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${prep ? "opacity-100" : "opacity-0"}`}
@@ -197,7 +261,7 @@ export function FloodValley({ children }: { children: ReactNode }) {
               </div>
               <div>
                 <dt className="text-white/60">Under water</dt>
-                <dd className="tabular-nums">{Math.round(ha).toLocaleString("en-AU")} ha</dd>
+                <dd className="tabular-nums">{km2(ha)} km²</dd>
               </div>
             </dl>
             {progress < 0.04 && <p className="mt-3 inline-flex items-center gap-1.5 text-sm text-white/60">Scroll to raise the river <ArrowDown className="size-4" aria-hidden /></p>}
@@ -217,7 +281,7 @@ export function FloodValley({ children }: { children: ReactNode }) {
           >
             <div className="mx-auto max-w-[1600px]">
               <p className="max-w-4xl font-display text-[clamp(2rem,4.6vw,4.75rem)] leading-[0.95]">
-                {Math.round(ha / 100) * 100 > 0 ? `${(Math.round(ha / 100) * 100).toLocaleString("en-AU")} ha` : ""} under water. <span className="text-cane">Which part is yours?</span>
+                {ha > 0 ? `${km2(ha)} km²` : ""} under water. <span className="text-cane">Which part is yours?</span>
               </p>
               <a href="#/live?replay" className="press mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-ink hover:bg-paper">
                 See it field by field <ArrowRight className="size-4" aria-hidden />

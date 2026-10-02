@@ -289,7 +289,7 @@ function Proof({ farm }: { farm: Farm }) {
       <p className="mt-6 max-w-4xl text-2xl leading-snug">
         {s1 && m ? (
           <>
-            Two days after the February 2022 peak, a satellite mapped <strong className="font-semibold">{s1.observedHa.toLocaleString("en-AU")} ha</strong> under
+            Two days after the February 2022 peak, a satellite mapped <strong className="font-semibold">{Math.round(s1.observedHa / 100)} km²</strong> under
             water on the lower Richmond. Draki's map of the same flood overlaps it by <strong className="font-semibold">{Math.round(s1.csi * 100)}%</strong>, square by
             square. And all {caught} recorded floods since 2009 would have triggered <strong className="font-semibold">Act today</strong>.
           </>
@@ -304,7 +304,7 @@ function Proof({ farm }: { farm: Farm }) {
             <img src={`${BASE}/agreement.png`} alt="Map of the lower Richmond floodplain: green where Draki and the satellite agree it flooded, blue where only the satellite saw water, amber where only Draki predicted it" className="w-full rounded-3xl" />
             <figcaption className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
               {[
-                ["#5daa6e", `Both agree: flooded (${(Math.round((s1.hits * cellHa) / 100) * 100).toLocaleString("en-AU")} ha)`],
+                ["#5daa6e", `Both agree: flooded (${Math.round((s1.hits * cellHa) / 100)} km²)`],
                 ["#5a8fd8", "Satellite saw water, Draki didn't"],
                 ["#d4a72c", "Draki flooded it, satellite saw none"],
               ].map(([c, l]) => (
@@ -402,7 +402,7 @@ function Proof({ farm }: { farm: Farm }) {
           ["River level above normal", m ? `${m.river.h0} m + ${m.river.k} × (√flow − √${m.river.q2})` : "–"],
           ["Tuned on", "Sentinel-1 flood map, 2 March 2022"],
           ["Counts as flooded", `${KNOBS.floodedDepth} m deep`],
-          ["Cane value", `${aud(KNOBS.caneValuePerHa)}/ha (125 t × A$55, two-year crop)`],
+          ["Cane value", `${aud(KNOBS.caneValuePerHa)} per hectare (125 t × A$55, two-year crop)`],
           ["Elevation", "Copernicus GLO-30, 30 m"],
           ["Land cover", "ESA WorldCover, 10 m"],
           ["River flow", "GloFAS v4"],

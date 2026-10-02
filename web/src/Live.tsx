@@ -154,7 +154,7 @@ export function smsText({ a, peak, w, river }: Run, replay: boolean, demo: boole
   const body =
     a.level === "clear"
       ? `Up to ${peak.total.toFixed(0)} mm of rain in 3 days. Your field should drain fine.`
-      : `${riverLine}${peak.total.toFixed(0)} mm of rain in 72 h. Your low ground could sit under ${depthLabel(a.maxDepth)} of water. About ${a.floodedHa.toFixed(0)} ha of cane, ${aud(a.valueAtRisk)}.`
+      : `${riverLine}${peak.total.toFixed(0)} mm of rain in 72 h. Your low ground could sit under ${depthLabel(a.maxDepth)} of water. About ${a.floodedHa.toFixed(0)} hectares of cane, ${aud(a.valueAtRisk)}.`
   return [
     `Draki · ${demo ? "demo block" : "your field"}${replay ? " (replay)" : ""}`,
     head,
@@ -221,7 +221,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
   const finishDraft = () => {
     if (!draft || draft.length < 3) return
     if (gridInPolygon(draft).points.length < MIN_CELLS) {
-      setDraftError("Too small to read. Mark a block at least 1 ha across.")
+      setDraftError("Too small to read. Mark a block at least 100 m across.")
       return
     }
     setDraftError(undefined)
@@ -236,7 +236,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <h1 className="font-display text-5xl uppercase md:text-6xl">Live field</h1>
-            <p className="mt-3 text-white/60">{isDemo ? "A 40 ha cane block near Broadwater, lower Richmond River, NSW." : r ? `Your ${r.a.areaHa.toFixed(1)} ha field.` : "Your field."}</p>
+            <p className="mt-3 text-white/60">{isDemo ? "A 40-hectare cane block near Broadwater, lower Richmond River, NSW. (1 hectare = 100 m × 100 m.)" : r ? `Your ${r.a.areaHa.toFixed(1)}-hectare field. (1 hectare = 100 m × 100 m.)` : "Your field."}</p>
           </div>
           <Tabs value={mode} onValueChange={(v) => setMode(v as "live" | "replay")}>
             <TabsList className="h-11 rounded-full bg-white/[0.07] p-1">
@@ -467,7 +467,12 @@ function RiskCard({ r, live, now, onReplay }: { r?: Run; live: boolean; now?: bo
         {a && <StatusPill level={a.level} />}
       </div>
       <p className={cn("mt-6 text-5xl tracking-tight", a?.level === "clear" ? "font-display" : "font-semibold")}>
-        {!a ? "–" : a.level === "clear" ? "Nothing goes under." : `${a.floodedHa.toFixed(1)} ha`}
+        {!a ? "–" : a.level === "clear" ? "Nothing goes under." : (
+          <>
+            {a.floodedHa.toFixed(1)}
+            <span className="ml-2 text-2xl font-normal">hectares</span>
+          </>
+        )}
       </p>
       {river && (
         <p className="mt-3 text-sm text-muted-foreground">
