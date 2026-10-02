@@ -2,7 +2,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
-@import "@fontsource-variable/geist-mono";
 @import "@fontsource-variable/fraunces";
 @import "@fontsource-variable/fraunces/wght-italic.css";
 @import "leaflet/dist/leaflet.css";
@@ -13,7 +12,6 @@
     --font-heading: 'Fraunces Variable', Georgia, serif;
     --font-display: 'Fraunces Variable', Georgia, serif;
     --font-sans: 'Geist Variable', ui-sans-serif, sans-serif;
-    --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
     --color-paper: #f3eee3;
     --color-paper-2: #e9e2d2;
     --color-ink: #13211a;

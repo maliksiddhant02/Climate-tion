@@ -39,7 +39,7 @@ export function RainBars({ time, rain, start }: { time: string[]; rain: number[]
       {[0, max / 2, max].map((v) => (
         <g key={v}>
           <line x1={padL} x2={W} y1={y(v)} y2={y(v)} stroke="white" strokeOpacity={0.08} />
-          <text x={padL - 6} y={y(v) + 3} textAnchor="end" className="fill-white/45 font-mono text-[9px] tabular-nums">{v}</text>
+          <text x={padL - 6} y={y(v) + 3} textAnchor="end" className="fill-white/45 text-[10px] tabular-nums">{v}</text>
         </g>
       ))}
       {buckets.map((b, i) => {
@@ -51,13 +51,13 @@ export function RainBars({ time, rain, start }: { time: string[]; rain: number[]
             </rect>
             {b.mm > 0 && <path d={bar(x, y(b.mm), bw, H - padB - y(b.mm))} fill="#5a8fd8" pointerEvents="none" />}
             {b.t.endsWith("T00:00") && (
-              <text x={x + bw / 2} y={H - 6} textAnchor="middle" className="fill-white/55 font-mono text-[9px]">{day(b.t)}</text>
+              <text x={x + bw / 2} y={H - 6} textAnchor="middle" className="fill-white/55 text-[10px]">{day(b.t)}</text>
             )}
           </g>
         )
       })}
       {buckets[peak]?.mm > 0 && (
-        <text x={padL + peak * slot + slot / 2} y={y(buckets[peak].mm) - 6} textAnchor="middle" className="fill-white font-mono text-[10px]">
+        <text x={padL + peak * slot + slot / 2} y={y(buckets[peak].mm) - 6} textAnchor="middle" className="fill-white text-[10px]">
           {buckets[peak].mm.toFixed(0)} mm
         </text>
       )}
@@ -84,7 +84,7 @@ export function HeavyRainChart() {
   const decade = (from: number, to: number, m: number, label: string) => (
     <g>
       <line x1={x(idx(from))} x2={x(idx(to)) + bw} y1={y(m)} y2={y(m)} stroke="#13211a" strokeWidth={1.5} />
-      <text x={x(idx(from))} y={y(m) - 6} stroke="#fbf8f1" strokeWidth={4} paintOrder="stroke" className="fill-ink font-mono text-[10px]">{label}</text>
+      <text x={x(idx(from))} y={y(m) - 6} stroke="#fbf8f1" strokeWidth={4} paintOrder="stroke" className="fill-ink text-[10px]">{label}</text>
     </g>
   )
   return (
@@ -93,7 +93,7 @@ export function HeavyRainChart() {
         {[0, 5, 10, 15, 20].map((v) => (
           <g key={v}>
             <line x1={padL} x2={W} y1={y(v)} y2={y(v)} stroke="#d9d0bd" />
-            <text x={padL - 6} y={y(v) + 3} textAnchor="end" className="fill-[#5d6a61] font-mono text-[9px] tabular-nums">{v}</text>
+            <text x={padL - 6} y={y(v) + 3} textAnchor="end" className="fill-[#5d6a61] text-[10px] tabular-nums">{v}</text>
           </g>
         ))}
         {HEAVY_RAIN_DAYS.map(([yr, d], i) => {
@@ -105,7 +105,7 @@ export function HeavyRainChart() {
                 <title>{`${yr}: ${d} days with 50 mm+`}</title>
               </rect>
               {[1991, 2000, 2015, 2024].includes(yr) && (
-                <text x={x(i) + bw / 2} y={H - 6} textAnchor="middle" className="fill-[#5d6a61] font-mono text-[9px]">{yr}</text>
+                <text x={x(i) + bw / 2} y={H - 6} textAnchor={yr === 2024 ? "end" : "middle"} className="fill-[#5d6a61] text-[10px]">{yr}</text>
               )}
             </g>
           )
@@ -113,9 +113,9 @@ export function HeavyRainChart() {
         {decade(1991, 2000, DECADES.then, `1990s avg ${DECADES.then.toFixed(1)}`)}
         {decade(2015, 2024, DECADES.now, `2015–24 avg ${DECADES.now.toFixed(1)}`)}
       </svg>
-      <details className="mt-3 text-xs text-muted-foreground">
-        <summary className="cursor-pointer font-mono uppercase tracking-wider">Show the numbers</summary>
-        <table className="mt-2 w-full max-w-sm font-mono tabular-nums">
+      <details className="mt-3 text-sm text-muted-foreground">
+        <summary className="cursor-pointer">Show the numbers</summary>
+        <table className="mt-2 w-full max-w-sm tabular-nums">
           <tbody className="grid grid-cols-3 gap-x-6">
             {HEAVY_RAIN_DAYS.map(([yr, d]) => (
               <tr key={yr} className="flex justify-between border-b border-rule py-0.5">
