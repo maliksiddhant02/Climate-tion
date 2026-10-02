@@ -27,6 +27,36 @@ These ideas were scored with [hackathon-idea-evaluator](../.claude/skills/hackat
 
 **Abandon:** #14, #15 and #16. They score under 40, already exist (Recycle Mate, OzHarvest), or need data we can't get in time.
 
+## Team ideas (round 2)
+
+| # | Idea (track) | N | F | S | I | D | Fit | /60 | Weighted |
+|---|---|---|---|---|---|---|---|---|---|
+| 17 | **FarmShield**: hyper-local farm weather plus elevation data gives field-level flood and frost risk and today's actions (Awareness: climate-resilient farming) | 6 | 7 | 7 | 7 | 8 | 9 | 44 | **7.6** |
+| 18 | **EcoRoute**: compares the emissions of each route and transport mode, nudges "6 min later, −42% CO₂", with an impact dashboard | 3 | 9 | 8 | 4 | 8 | 5 | 37 | 6.4 |
+| 19 | **EchoEarth**: 3D/360° scans of places at risk from climate change, explorable in AR/VR | 4 | 6 | 6 | 4 | 8 | 5 | 33 | 5.7 |
+
+**FarmShield: Pivot, then build.** It's a solid idea.
+- **Fit:** the guide names climate-resilient farming under the Awareness track.
+- **Data:** free sources cover it: Open-Meteo for forecasts, plus elevation models (Geoscience Australia ELVIS, or SRTM globally) to find low-lying parts of a field.
+- **Demo:** draw a field on a map, a storm comes in, the low spots light up and a list of actions appears.
+- **Risks:**
+  - Scope creep: the rough notes reach into crop prices, forums and pesticides. Cut all of that.
+  - Novelty: Climate FieldView, DTN and CropX already offer farm weather tools.
+- **To gain points:**
+  - Merge with #5 Pacific Farm Advisor. Target Pacific smallholders (Fiji sugarcane, cyclones) and give advice in Fijian, Samoan or Tongan. That gives Fit 10, N7, about **47/60 and 8.0 weighted**.
+  - Stick to one hazard (flood) and do it well.
+
+**EcoRoute: Abandon.**
+- Google Maps already offers eco-friendly routing and shows CO₂ per transport mode, so novelty is 3.
+- Shifting how people travel isn't one of the five tracks or targets, so fit is weak.
+- Persuading people to change how they travel is the hard part, and judges know it.
+
+**EchoEarth: Abandon or pivot.**
+- **Prior work:** Tuvalu already announced a "digital nation" scan of itself at COP27, and photogrammetry apps already exist.
+- **Targets:** preserving places doesn't move any 2035 target. It's closer to Loss & Damage than to the five tracks.
+- **Hardware:** drones are a hardware gap.
+- **Salvage:** a "Your street in 2035" phone 360° capture with a sea-level-rise overlay could fit the Awareness track. It would land emotionally given the Tuvalu Leaders' event, but it would still be about 40/60.
+
 ## Top pick: BillShift (#1 + #8, optionally #3)
 Upload an Australian electricity or gas bill, or a Pacific diesel fuel log. The app pulls out the usage, then produces an electrification and efficiency plan with $ saved, CO₂ saved and payback. It names two 2035 targets: 35% electrification and a 25% cut in buildings' energy use per m².
 
