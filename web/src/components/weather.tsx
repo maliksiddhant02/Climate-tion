@@ -129,3 +129,91 @@ export function HeavyRainChart() {
     </figure>
   )
 }
+
+const linePath = (xs: number[], ys: number[]) => xs.map((x, i) => `${i ? "L" : "M"}${x.toFixed(1)},${ys[i].toFixed(1)}`).join("")
+
+/**
+ * Ba River flow (GloFAS), daily, against the two lines that matter: in its banks below the 2-year flood,
+ * "Act today" above the 5-year flood. Ensemble members, when there are any, are the thin lines. Dark surface.
+ */
+export function RiverChart({ time, q, members, q2, q5 }: { time: string[]; q: (number | null)[]; members?: number[][]; q2: number; q5: number }) {
+  const W = 480, H = 170, padL = 40, padB = 22, padT = 10
+  const all = [q, ...(members ?? [])].flat().map((v) => v ?? 0)
+  const max = Math.max(q5 * 1.25, ...all) * 1.05
+  const x = (i: number) => padL + (i / Math.max(1, time.length - 1)) * (W - padL - 8)
+  const y = (v: number) => padT + (H - padB - padT) * (1 - v / max)
+  const xs = time.map((_, i) => x(i))
+  const peak = Math.max(...q.map((v) => v ?? 0))
+  const pi = q.findIndex((v) => v === peak)
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={`Ba River flow, peak ${Math.round(peak)} cubic metres per second`}>
+      {[
+        [q2, "In its banks below"],
+        [q5, "Act today above"],
+      ].map(([v, label]) => (
+        <g key={label}>
+          <line x1={padL} x2={W - 8} y1={y(v as number)} y2={y(v as number)} stroke={v === q5 ? "#d4472a" : "white"} strokeOpacity={v === q5 ? 0.8 : 0.3} strokeDasharray="4 4" />
+          <text x={W - 8} y={y(v as number) - 5} textAnchor="end" className="fill-white/60 text-[10px]">{`${label} · ${(v as number).toLocaleString("en-AU")} m³/s`}</text>
+        </g>
+      ))}
+      {members?.map((m, k) => (
+        <path key={k} d={linePath(xs, m.map((v) => y(v ?? 0)))} fill="none" stroke="#9db8da" strokeOpacity={0.18} strokeWidth={1} />
+      ))}
+      <path d={linePath(xs, q.map((v) => y(v ?? 0)))} fill="none" stroke="#5a8fd8" strokeWidth={2.5} strokeLinejoin="round" />
+      {time.map((t, i) => (
+        <text key={t} x={xs[i]} y={H - 6} textAnchor="middle" className="fill-white/60 text-[10px]">{day(t)}</text>
+      ))}
+      <text x={padL - 6} y={y(0) + 3} textAnchor="end" className="fill-white/60 text-[10px] tabular-nums">0</text>
+      {peak > 0 && (
+        <text x={xs[pi]} y={Math.max(padT + 10, y(peak) - 8)} textAnchor="middle" className="fill-white text-[11px] font-semibold">{`${Math.round(peak).toLocaleString("en-AU")} m³/s`}</text>
+      )}
+    </svg>
+  )
+}
+
+/**
+ * Thirty years of Ba River flow (GloFAS weekly peaks) with every recorded Ba flood marked. The point of the chart:
+ * the floods that made the news are the tallest spikes. Light surface.
+ */
+export function FlowHistory({ time, q, floods, q2, q5 }: { time: string[]; q: number[]; floods: { start: string; name: string; peak: number; level: string }[]; q2: number; q5: number }) {
+  const W = 960, H = 260, padL = 44, padB = 24, padT = 16
+  const t0 = new Date(time[0]).getTime()
+  const t1 = new Date(time[time.length - 1]).getTime()
+  const max = Math.max(...q) * 1.12
+  const x = (iso: string) => padL + ((new Date(iso).getTime() - t0) / (t1 - t0)) * (W - padL - 8)
+  const y = (v: number) => padT + (H - padB - padT) * (1 - v / max)
+  const years = time.map((t) => t.slice(0, 4)).filter((yr, i, a) => a.indexOf(yr) === i && +yr % 5 === 0)
+  // One label per year above the Act line, on that year's biggest flood ("2012 ×2" when two floods share a year).
+  const big = floods.filter((f) => f.peak >= q5)
+  const label = (f: (typeof floods)[number]) => {
+    const same = big.filter((g) => g.start.slice(0, 4) === f.start.slice(0, 4))
+    if (Math.max(...same.map((g) => g.peak)) !== f.peak) return undefined
+    return same.length > 1 ? `${f.start.slice(0, 4)} ×${same.length}` : f.start.slice(0, 4)
+  }
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Ba River flow since 1997, with recorded floods marked at the tallest peaks">
+      {[0, 500, 1000].map((v) => (
+        <g key={v}>
+          <line x1={padL} x2={W - 8} y1={y(v)} y2={y(v)} stroke="#d9d0bd" />
+          <text x={padL - 6} y={y(v) + 3} textAnchor="end" className="fill-[#525e56] text-[10px] tabular-nums">{v}</text>
+        </g>
+      ))}
+      <line x1={padL} x2={W - 8} y1={y(q5)} y2={y(q5)} stroke="#d4472a" strokeDasharray="5 4" />
+      <text x={W - 8} y={y(q5) - 5} textAnchor="end" className="fill-[#a8361f] text-[10px]">{`Act today · ${q5} m³/s`}</text>
+      <line x1={padL} x2={W - 8} y1={y(q2)} y2={y(q2)} stroke="#6f5539" strokeOpacity={0.6} strokeDasharray="2 4" />
+      <text x={W - 8} y={y(q2) - 5} textAnchor="end" className="fill-[#525e56] text-[10px]">{`Watch · ${q2} m³/s`}</text>
+      <path d={linePath(time.map(x), q.map(y))} fill="none" stroke="#3c6fae" strokeWidth={1.2} strokeLinejoin="round" />
+      {floods.map((f) => (
+        <g key={f.start}>
+          <circle cx={x(f.start)} cy={y(f.peak)} r={5} fill={f.level === "missed" ? "#fbf8f1" : "#d4472a"} stroke="#d4472a" strokeWidth={2}>
+            <title>{`${f.name}: ${f.peak} m³/s`}</title>
+          </circle>
+          {f.peak >= q5 && label(f) && <text x={x(f.start)} y={y(f.peak) - 10} textAnchor="middle" className="fill-ink text-[11px] font-semibold">{label(f)}</text>}
+        </g>
+      ))}
+      {years.map((yr) => (
+        <text key={yr} x={x(`${yr}-01-01`)} y={H - 6} textAnchor="middle" className="fill-[#525e56] text-[10px]">{yr}</text>
+      ))}
+    </svg>
+  )
+}

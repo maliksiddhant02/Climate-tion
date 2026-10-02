@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react"
 import { AlertTriangle, ArrowRight, Check, Eye, PenLine, RotateCcw } from "lucide-react"
 import { FieldMap } from "@/components/FieldMap"
-import { DECADES, RainBars, wx } from "@/components/weather"
+import { DECADES, RainBars, RiverChart, wx } from "@/components/weather"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { getCodyReplay, getElevations, getFlowForecast, getWeather, REPLAY, type Flow, type Weather } from "@/lib/api"
+import { getCodyReplay, getElevations, getFlowForecast, getWeather, REPLAY, weatherUrl, type Flow, type Weather } from "@/lib/api"
 import { assess, floodDepths, gridInPolygon, KNOBS, levelFor, maxRolling, PLAYBOOK, riverDepths, riverStage, type Assessment, type Cell, type LatLng, type Level, type River } from "@/lib/flood"
 import { covers, loadRegion, sample, type Meta } from "@/lib/region"
 import { cn } from "@/lib/utils"
@@ -30,13 +30,13 @@ function run(w: Weather | undefined, elev: Elev | undefined, flow?: Flow, cal?: 
   const peak = maxRolling(w.hourly.rain)
   const rain = floodDepths(elev.e, elev.stepM ** 2, peak.total)
   let depths = rain
-  let river: { q: number; day: string; stage: number; cal: River; odds?: { flood: number; act: number; n: number } } | undefined
+  let river: { q: number; day: string; stage: number; cal: River; flow: Flow; odds?: { flood: number; act: number; n: number } } | undefined
   if (flow && cal && elev.hand) {
     const hand = elev.hand
     const withRiver = (q: number) => riverDepths(hand, riverStage(q, cal)).map((d, i) => Math.max(d, rain[i]))
     const q = peakQ(flow.q)
     depths = withRiver(q)
-    river = { q, day: flow.time[flow.q.indexOf(q)] ?? flow.time[0], stage: riverStage(q, cal), cal }
+    river = { q, day: flow.time[flow.q.indexOf(q)] ?? flow.time[0], stage: riverStage(q, cal), cal, flow }
     // Forecast confidence: run the field once per GloFAS ensemble member.
     if (flow.members?.length) {
       const levels = flow.members.map((m) => levelFor(withRiver(peakQ(m))))
@@ -85,7 +85,7 @@ export function useFarm() {
           const { points, stepM } = gridInPolygon(poly, 30, 2500)
           const s = points.map((p) => sample(region, p))
           setElev({ points, stepM, e: s.map((x) => x.elev), hand: s.map((x) => x.hand), land: s.map((x) => x.land) })
-          getCodyReplay()
+          getCodyReplay(region.meta.glofas)
             .then(({ weather, flow }) => !stale && (setReplay(weather), setReplayFlow(flow)))
             .catch(fail)
           getFlowForecast(region.meta.glofas).then((f) => !stale && setLiveFlow(f)).catch(fail)
@@ -329,6 +329,23 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
               How we check this <ArrowRight className="size-4" aria-hidden />
             </a>
           </div>
+
+          {r?.river && (
+            <div className={cn(card, "lg:col-span-7")}>
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <p className="text-sm text-white/60">
+                  Ba River flow, {mode === "live" ? "next 7 days" : "6–12 January 2022"}
+                  {mode === "live" && r.river.flow.members?.length ? ` · ${r.river.flow.members.length} forecast runs` : ""}
+                </p>
+                <p className="text-sm text-white/60">GloFAS · Copernicus</p>
+              </div>
+              <div className="mt-4">
+                <RiverChart time={r.river.flow.time} q={r.river.flow.q} members={mode === "live" ? r.river.flow.members : undefined} q2={r.river.cal.q2} q5={r.river.cal.q5} />
+              </div>
+            </div>
+          )}
+
+          <Sources r={r} mode={mode} poly={poly} hasRegion={!!elev?.hand} />
         </div>
       </div>
     </section>
@@ -366,6 +383,53 @@ function RiskCard({ r, live, onReplay }: { r?: Run; live: boolean; onReplay?: ()
           </button>
         )}
       </div>
+    </div>
+  )
+}
+
+const ago = (t?: number) => {
+  if (!t) return "just now"
+  const min = Math.round((Date.now() - t) / 60_000)
+  return min < 1 ? "just now" : min < 60 ? `${min} min ago` : `${Math.round(min / 60)} h ago`
+}
+
+/** Every number on this page, where it came from, and a link to the raw data so anyone can check. */
+function Sources({ r, mode, poly, hasRegion }: { r?: Run; mode: "live" | "replay"; poly: LatLng[]; hasRegion: boolean }) {
+  const center: LatLng = [poly.reduce((s, p) => s + p[0], 0) / poly.length, poly.reduce((s, p) => s + p[1], 0) / poly.length]
+  const live = mode === "live"
+  const rows: [string, string, string | undefined][] = [
+    [
+      "River flow",
+      r?.river ? (live ? `GloFAS 7-day forecast, ${r.river.flow.members?.length ?? 0} runs · fetched ${ago(r.river.flow.fetchedAt)}` : "GloFAS daily record, January 2022") : "Only inside the Ba floodplain",
+      r?.river?.flow.url,
+    ],
+    ["Rain", live ? "Open-Meteo 7-day forecast, hourly" : "ERA5 reanalysis, hourly, 6–12 January 2022", weatherUrl(center, !live)],
+    [
+      "Land height",
+      hasRegion ? `Copernicus GLO-30 · ${r?.cells.length ?? "–"} squares of 30 m` : "Copernicus GLO-90 via Open-Meteo",
+      hasRegion ? "https://planetarycomputer.microsoft.com/dataset/cop-dem-glo-30" : undefined,
+    ],
+    ["Land cover", hasRegion ? "ESA WorldCover 2021, 10 m" : "Not used outside Ba", hasRegion ? "https://planetarycomputer.microsoft.com/dataset/esa-worldcover" : undefined],
+    ["How it's built", "Every step, in one Python script", "https://github.com/maliksiddhant02/Climate-tion/blob/main/scripts/build_ba_data.py"],
+  ]
+  return (
+    <div className={cn(card, "lg:col-span-5")}>
+      <p className="text-sm text-white/60">Where these numbers come from</p>
+      <dl className="mt-4 space-y-3 text-sm">
+        {rows.map(([k, v, href]) => (
+          <div key={k} className="grid grid-cols-[6.5rem_1fr] gap-3 border-t border-white/10 pt-3">
+            <dt className="text-white/60">{k}</dt>
+            <dd>
+              {v}
+              {href && (
+                <a href={href} target="_blank" rel="noreferrer" className="ml-2 whitespace-nowrap text-cane hover:underline">
+                  {k === "How it's built" ? "View code ↗" : "Raw data ↗"}
+                </a>
+              )}
+            </dd>
+          </div>
+        ))}
+      </dl>
     </div>
   )
 }

@@ -9,7 +9,7 @@ export type Weather = {
 }
 
 /** Ba River discharge (m³/s) per day; `members` are the GloFAS ensemble runs, forecast only. */
-export type Flow = { time: string[]; q: number[]; members?: number[][] }
+export type Flow = { time: string[]; q: number[]; members?: number[][]; url: string; fetchedAt?: number }
 
 const HOUR = 3_600_000
 
@@ -38,11 +38,29 @@ async function cachedJson(url: string, ttlMs: number, fail: (status: number) => 
 
 export const REPLAY = { name: "Cyclone Cody", start: "2022-01-06", end: "2022-01-12" }
 
-export async function getWeather([lat, lng]: LatLng, replay: boolean): Promise<Weather> {
+/** The exact request Draki makes for rain, so anyone can open it and see the raw numbers. */
+export function weatherUrl([lat, lng]: LatLng, replay: boolean) {
   const at = `latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}&${TZ}&hourly=precipitation`
-  const url = replay
+  return replay
     ? `https://archive-api.open-meteo.com/v1/archive?${at}&start_date=${REPLAY.start}&end_date=${REPLAY.end}&daily=precipitation_sum,temperature_2m_max,weather_code`
     : `https://api.open-meteo.com/v1/forecast?${at}&forecast_days=7&daily=precipitation_sum,temperature_2m_max,weather_code,precipitation_probability_max`
+}
+
+/** When a cached response was fetched (ms), for showing how fresh the data is. */
+const fetchedAt = (url: string) => {
+  try {
+    return JSON.parse(localStorage.getItem(url) ?? "null")?.at as number | undefined
+  } catch {
+    return undefined
+  }
+}
+
+export const riverUrl = ([lat, lng]: LatLng, replay: boolean) =>
+  `https://flood-api.open-meteo.com/v1/flood?latitude=${lat}&longitude=${lng}&daily=river_discharge` +
+  (replay ? `&start_date=${REPLAY.start}&end_date=${REPLAY.end}` : "&forecast_days=7&ensemble=true")
+
+export async function getWeather(center: LatLng, replay: boolean): Promise<Weather> {
+  const url = weatherUrl(center, replay)
   const d = await cachedJson(url, replay ? Infinity : HOUR, (s) =>
     s === 429 ? "The weather service is busy right now. Wait a minute, then try again." : `The weather service returned an error (${s}). Try again in a minute.`,
   )
@@ -59,21 +77,24 @@ export async function getWeather([lat, lng]: LatLng, replay: boolean): Promise<W
 }
 
 /** The Cyclone Cody replay, shipped with the site (scripts/build_ba_data.py) so the demo never waits on an API. */
-export async function getCodyReplay(): Promise<{ weather: Weather; flow: Flow }> {
+export async function getCodyReplay(glofas: LatLng): Promise<{ weather: Weather; flow: Flow }> {
   const d = await fetch("/data/ba/cody.json").then((r) => r.json())
-  return { weather: d, flow: { time: d.daily.time, q: d.daily.discharge } }
+  return { weather: d, flow: { time: d.daily.time, q: d.daily.discharge, url: riverUrl(glofas, true) } }
 }
 
+/** Weekly peak Ba River flow since 1997 (GloFAS), shipped static for the Validation chart. */
+export const getFlowHistory = (): Promise<{ time: string[]; q: number[] }> => fetch("/data/ba/flow.json").then((r) => r.json())
+
 /** GloFAS v4 river discharge forecast, 7 days, with its 50-member ensemble (Copernicus EMS via Open-Meteo). */
-export async function getFlowForecast([lat, lng]: LatLng): Promise<Flow> {
-  const url = `https://flood-api.open-meteo.com/v1/flood?latitude=${lat}&longitude=${lng}&daily=river_discharge&forecast_days=7&ensemble=true`
+export async function getFlowForecast(glofas: LatLng): Promise<Flow> {
+  const url = riverUrl(glofas, false)
   const d = await cachedJson(url, HOUR, (s) =>
     s === 429 ? "The river forecast service is busy right now. Wait a minute, then try again." : `The river forecast returned an error (${s}). Try again in a minute.`,
   )
   const members = Object.keys(d.daily)
     .filter((k) => k.startsWith("river_discharge_member"))
     .map((k) => d.daily[k] as number[])
-  return { time: d.daily.time, q: d.daily.river_discharge, members }
+  return { time: d.daily.time, q: d.daily.river_discharge, members, url, fetchedAt: fetchedAt(url) }
 }
 
 /** Copernicus GLO-90 DEM via Open-Meteo. Max 100 points per call. */

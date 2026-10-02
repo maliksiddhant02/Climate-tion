@@ -92,6 +92,8 @@
   html {
     @apply font-sans antialiased;
     scroll-behavior: smooth;
+    /* Reserve the scrollbar's space on every page, so short and long pages don't shift sideways when you switch. */
+    scrollbar-gutter: stable;
   }
   ::selection { background: var(--color-cane); color: var(--color-ink); }
 }

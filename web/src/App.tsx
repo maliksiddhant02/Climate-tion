@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react"
 import { ArrowRight } from "lucide-react"
 import { fjd, LivePage, smsText, useFarm, type Farm } from "@/Live"
-import { DECADES, HeavyRainChart } from "@/components/weather"
+import { DECADES, FlowHistory, HeavyRainChart } from "@/components/weather"
+import { getFlowHistory } from "@/lib/api"
 import { KNOBS } from "@/lib/flood"
 import { cn } from "@/lib/utils"
 
@@ -259,6 +260,10 @@ function Proof({ farm }: { farm: Farm }) {
   const m = farm.meta
   const major = m?.record.filter((e) => e.peak >= m.river.q5) ?? []
   const caught = m?.record.filter((e) => e.level !== "missed").length ?? 0
+  const [history, setHistory] = useState<{ time: string[]; q: number[] }>()
+  useEffect(() => {
+    getFlowHistory().then(setHistory).catch(() => undefined)
+  }, [])
   return (
     <section className={cn(WRAP, "py-16")}>
       <h1 className="font-display text-5xl uppercase md:text-7xl">Does it work?</h1>
@@ -285,6 +290,17 @@ function Proof({ farm }: { farm: Farm }) {
           </>
         )}
       </p>
+
+      <figure className="mt-12 rounded-3xl border border-rule bg-card p-6">
+        <p className="text-sm text-muted-foreground">Ba River flow since 1997 (GloFAS, weekly peak, m³/s). Red dots are floods that made the news.</p>
+        <div className="mt-4">{history && m ? <FlowHistory time={history.time} q={history.q} floods={m.record} q2={m.river.q2} q5={m.river.q5} /> : <div className="h-64" />}</div>
+        <figcaption className="mt-3 text-sm text-muted-foreground">
+          The tallest spikes in 30 years of river data are the floods people remember. That is the signal Draki forecasts.{" "}
+          <a href="https://flood-api.open-meteo.com/v1/flood?latitude=-17.525&longitude=177.625&daily=river_discharge&start_date=1997-01-01&end_date=2026-09-30" target="_blank" rel="noreferrer" className="text-leaf hover:underline">
+            Raw data ↗
+          </a>
+        </figcaption>
+      </figure>
 
       <h2 className="mt-20 text-2xl">Every recorded Ba flood we could source</h2>
       <div className="mt-6 overflow-x-auto">

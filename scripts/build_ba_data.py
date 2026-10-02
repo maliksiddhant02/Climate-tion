@@ -7,6 +7,7 @@ Writes web/public/data/ba/:
   hand.bin     Uint16 LE, height above the Ba River / sea in decimetres
   land.bin     Uint8, ESA WorldCover 2021 class (40 = cropland, 80 = permanent water)
   cody.json    Cyclone Cody replay: hourly ERA5 rain + daily GloFAS discharge, so the demo never waits on an API
+  flow.json    Ba River flow history (weekly peak, m3/s) for the Validation chart
 
 Run from the repo root:  scripts/.venv/Scripts/python scripts/build_ba_data.py
 (set up with: python -m venv scripts/.venv && scripts/.venv/Scripts/pip install -r scripts/requirements.txt)
@@ -184,6 +185,11 @@ wx = requests.get(
 np.round(dem * 10).astype("<i2").tofile(OUT / "dem.bin")
 np.round(hand * 10).astype("<u2").tofile(OUT / "hand.bin")
 land.astype("u1").tofile(OUT / "land.bin")
+
+# ---- River flow history for the Validation chart: weekly peaks keep every flood spike at ~1/7 the size ----
+first = next(i for i, x in enumerate(Q) if np.isfinite(x))
+weeks = [(days[i].isoformat(), round(float(np.nanmax(Q[i:i + 7])))) for i in range(first, len(Q) - 6, 7) if np.isfinite(Q[i:i + 7]).any()]
+(OUT / "flow.json").write_text(json.dumps({"time": [w[0] for w in weeks], "q": [w[1] for w in weeks]}))
 
 (OUT / "meta.json").write_text(json.dumps({
     "bbox": [W, S, E, N], "width": WIDTH, "height": HEIGHT, "res": RES,
