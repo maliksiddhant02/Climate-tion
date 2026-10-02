@@ -1,0 +1,108 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "@fontsource-variable/fraunces";
+@import "@fontsource-variable/fraunces/wght-italic.css";
+@import "leaflet/dist/leaflet.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: 'Fraunces Variable', Georgia, serif;
+    --font-display: 'Fraunces Variable', Georgia, serif;
+    --font-sans: 'Geist Variable', ui-sans-serif, sans-serif;
+    --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+    --color-paper: #f3eee3;
+    --color-paper-2: #e9e2d2;
+    --color-ink: #13211a;
+    --color-ink-2: #1d3127;
+    --color-leaf: #2f5e3d;
+    --color-cane: #d4a72c;
+    --color-rain: #3c6fae;
+    --color-rain-soft: #9db8da;
+    --color-flood: #d4472a;
+    --color-silt: #8a6c4c;
+    --color-rule: #d9d0bd;
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+    --background: #f3eee3;
+    --foreground: #13211a;
+    --card: #fbf8f1;
+    --card-foreground: #13211a;
+    --popover: #fbf8f1;
+    --popover-foreground: #13211a;
+    --primary: #13211a;
+    --primary-foreground: #f3eee3;
+    --secondary: #e9e2d2;
+    --secondary-foreground: #13211a;
+    --muted: #e9e2d2;
+    --muted-foreground: #5d6a61;
+    --accent: #e9e2d2;
+    --accent-foreground: #13211a;
+    --destructive: #d4472a;
+    --border: #d9d0bd;
+    --input: #d9d0bd;
+    --ring: #2f5e3d;
+    --chart-1: #3c6fae;
+    --chart-2: #d4a72c;
+    --chart-3: #2f5e3d;
+    --chart-4: #8a6c4c;
+    --chart-5: #d4472a;
+    --radius: 0.875rem;
+}
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  html {
+    @apply font-sans antialiased;
+    scroll-behavior: smooth;
+  }
+  ::selection { background: var(--color-cane); color: var(--color-ink); }
+}
+
+.leaflet-container { font-family: var(--font-sans); background: #1d3127; }
+.leaflet-control-attribution { font-size: 10px; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

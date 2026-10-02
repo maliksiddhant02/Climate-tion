@@ -1,0 +1,50 @@
+import type { LatLng } from "./flood"
+
+// All weather and elevation data: Open-Meteo (CC BY 4.0). Forecast = best-match models, archive = ERA5.
+const TZ = "timezone=Pacific%2FFiji"
+
+export type Weather = {
+  hourly: { time: string[]; rain: number[] }
+  daily: { time: string[]; rain: number[]; temp: number[]; code: number[]; prob?: number[] }
+}
+
+export const REPLAY = { name: "Cyclone Cody", start: "2022-01-06", end: "2022-01-12" }
+
+export async function getWeather([lat, lng]: LatLng, replay: boolean): Promise<Weather> {
+  const at = `latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}&${TZ}&hourly=precipitation`
+  const url = replay
+    ? `https://archive-api.open-meteo.com/v1/archive?${at}&start_date=${REPLAY.start}&end_date=${REPLAY.end}&daily=precipitation_sum,temperature_2m_max,weather_code`
+    : `https://api.open-meteo.com/v1/forecast?${at}&forecast_days=7&daily=precipitation_sum,temperature_2m_max,weather_code,precipitation_probability_max`
+  const r = await fetch(url)
+  if (!r.ok) throw new Error(`Weather request failed (${r.status})`)
+  const d = await r.json()
+  return {
+    hourly: { time: d.hourly.time, rain: d.hourly.precipitation },
+    daily: {
+      time: d.daily.time,
+      rain: d.daily.precipitation_sum,
+      temp: d.daily.temperature_2m_max,
+      code: d.daily.weather_code,
+      prob: d.daily.precipitation_probability_max,
+    },
+  }
+}
+
+/** Copernicus GLO-90 DEM via Open-Meteo. Max 100 points per call. */
+export async function getElevations(points: LatLng[]): Promise<number[]> {
+  const q = (i: 0 | 1) => points.map((p) => p[i].toFixed(5)).join(",")
+  const r = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${q(0)}&longitude=${q(1)}`)
+  if (!r.ok) throw new Error(`Elevation request failed (${r.status})`)
+  return (await r.json()).elevation
+}
+
+/**
+ * Days per year with 50 mm+ rain at Ba (−17.53, 177.67), ERA5 via the Open-Meteo archive API,
+ * daily precipitation_sum 1991-01-01 → 2024-12-31, pulled 2 Oct 2026. Static so the page never waits on 12k rows.
+ */
+export const HEAVY_RAIN_DAYS: [number, number][] = [
+  [1991, 3], [1992, 3], [1993, 4], [1994, 6], [1995, 1], [1996, 8], [1997, 15], [1998, 3], [1999, 5], [2000, 6],
+  [2001, 1], [2002, 3], [2003, 2], [2004, 4], [2005, 4], [2006, 1], [2007, 5], [2008, 7], [2009, 9], [2010, 3],
+  [2011, 5], [2012, 17], [2013, 3], [2014, 4], [2015, 2], [2016, 9], [2017, 4], [2018, 16], [2019, 6], [2020, 5],
+  [2021, 11], [2022, 14], [2023, 7], [2024, 15],
+]
