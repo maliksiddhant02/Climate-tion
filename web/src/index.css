@@ -139,7 +139,7 @@
 
 @keyframes enter { from { opacity: 0; transform: translateY(8px); } }
 
-/* Switching This week / Cyclone Cody: the answer cross-fades rather than snapping. */
+/* Switching This week / the 2022 flood: the answer cross-fades rather than snapping. */
 .swap { animation: fade 200ms var(--ease-out); }
 @keyframes fade { from { opacity: 0; } }
 

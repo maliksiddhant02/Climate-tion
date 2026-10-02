@@ -3,23 +3,26 @@ import { AlertTriangle, ArrowRight, ArrowUpRight, Check, Eye, Pause, PenLine, Pl
 import { FieldMap } from "@/components/FieldMap"
 import { DECADES, RainBars, RiverChart, wx } from "@/components/weather"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { getCodyReplay, getElevations, getFlowForecast, getWeather, REPLAY, weatherUrl, type Flow, type Weather } from "@/lib/api"
+import { getEventReplay, getElevations, getFlowForecast, getWeather, REPLAY, weatherUrl, type Flow, type Weather } from "@/lib/api"
 import { assess, floodDepths, gridInPolygon, KNOBS, levelFor, maxRolling, PLAYBOOK, riverDepths, riverStage, type Assessment, type Cell, type LatLng, type Level, type River } from "@/lib/flood"
-import { covers, loadRegion, sample, type Meta } from "@/lib/region"
+import { BASE, covers, loadRegion, sample, type Meta } from "@/lib/region"
 import { cn } from "@/lib/utils"
 
-// Demo block: cane farms on the east bank of the Ba River, just north of Ba town.
-export const DEMO: LatLng[] = [[-17.52031, 177.68509], [-17.51976, 177.69024], [-17.52577, 177.6911], [-17.52686, 177.68566]]
+// Demo block: ~40 ha of farmland near Broadwater mill on the lower Richmond, picked by scripts/build_region.py (meta.json demo).
+export const DEMO: LatLng[] = [[-29.00167, 153.39944], [-29.00167, 153.40556], [-29.00778, 153.40556], [-29.00778, 153.39944]]
 
 // Fewer elevation cells than this and the field is too small to say anything useful.
 const MIN_CELLS = 4
 
-export const fjd = (v: number) => `F$${(Math.round(v / 100) * 100).toLocaleString("en-AU")}`
+export const aud = (v: number) => `A$${(Math.round(v / 100) * 100).toLocaleString("en-AU")}`
 const dateLabel = (iso: string) => new Date(iso).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })
 const hourLabel = (iso: string) => new Date(iso).toLocaleString("en-AU", { weekday: "short", day: "numeric", month: "short", hour: "numeric" })
 const weekday = (iso: string) => new Date(iso).toLocaleDateString("en-AU", { weekday: "short" })
 
 type Elev = { points: LatLng[]; stepM: number; e: number[]; hand?: number[]; land?: number[] }
+
+// Past 2 m the elevation data (which includes crop and roof heights) can't honestly say more than "deep".
+export const depthLabel = (d: number) => (d >= 2 ? "more than 2 m" : `~${d.toFixed(1)} m`)
 
 const flowLabel = (q: number) => `${q < 10 ? q.toFixed(1) : Math.round(q).toLocaleString("en-AU")} m³/s`
 
@@ -35,7 +38,7 @@ function qAt(flow: Flow, h: number) {
 }
 
 /**
- * Rain pooling everywhere; plus the Ba River rising over the field when we have its height above the river.
+ * Rain pooling everywhere; plus the river rising over the field when we have its height above the river.
  * With `hour`, the field as it stood at that hour of the replay (rain of the previous 72 h, river flow then).
  */
 function run(w: Weather | undefined, elev: Elev | undefined, flow?: Flow, cal?: River, hour?: number) {
@@ -96,11 +99,11 @@ export function useFarm() {
         if (stale) return
         setMeta(region?.meta)
         if (region && covers(region, poly)) {
-          // Ba floodplain: 30 m grid from the shipped data, river model on, Cody replay from static files.
+          // Inside the data area: 30 m grid from the shipped data, river model on, 2022 flood replay from static files.
           const { points, stepM } = gridInPolygon(poly, 30, 2500)
           const s = points.map((p) => sample(region, p))
           setElev({ points, stepM, e: s.map((x) => x.elev), hand: s.map((x) => x.hand), land: s.map((x) => x.land) })
-          getCodyReplay(region.meta.glofas)
+          getEventReplay(region.meta.glofas)
             .then(({ weather, flow }) => !stale && (setReplay(weather), setReplayFlow(flow)))
             .catch(fail)
           getFlowForecast(region.meta.glofas).then((f) => !stale && setLiveFlow(f)).catch(fail)
@@ -147,17 +150,17 @@ export function smsText({ a, peak, w, river }: Run, replay: boolean, demo: boole
     watch: `Flood watch from ${dateLabel(from)}${odds}`,
     clear: "No flooding expected this week",
   }[a.level]
-  const riverLine = river && river.stage > 0 ? `Ba River rising ~${river.stage.toFixed(1)} m above normal. ` : ""
+  const riverLine = river && river.stage > 0 ? `Richmond River rising ~${river.stage.toFixed(1)} m above normal. ` : ""
   const body =
     a.level === "clear"
       ? `Up to ${peak.total.toFixed(0)} mm of rain in 3 days. Your field should drain fine.`
-      : `${riverLine}${peak.total.toFixed(0)} mm of rain in 72 h. Your low ground could sit under ~${a.maxDepth.toFixed(1)} m of water. About ${a.floodedHa.toFixed(0)} ha of cane, ${fjd(a.valueAtRisk)}.`
+      : `${riverLine}${peak.total.toFixed(0)} mm of rain in 72 h. Your low ground could sit under ${depthLabel(a.maxDepth)} of water. About ${a.floodedHa.toFixed(0)} ha of cane, ${aud(a.valueAtRisk)}.`
   return [
-    `Draki · ${demo ? "Ba block" : "your field"}${replay ? " (replay)" : ""}`,
+    `Draki · ${demo ? "demo block" : "your field"}${replay ? " (replay)" : ""}`,
     head,
     body,
     PLAYBOOK[a.level].map((t, i) => `${i + 1}. ${t}`).join("\n"),
-    `Why: Ba now gets ${DECADES.now.toFixed(0)} days a year of 50 mm+ rain, up from ${DECADES.then.toFixed(0)} in the 1990s. Warmer air holds more water.`,
+    `Why: days with 50 mm+ of rain here are up from ${DECADES.then.toFixed(1)} a year in the 1990s to ${DECADES.now.toFixed(1)} now. Warmer air holds more water.`,
   ].join("\n\n")
 }
 
@@ -167,8 +170,9 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
   const { poly, setPoly, elev, error, liveRun, replayRun, retry, isDemo } = farm
   const [draft, setDraft] = useState<LatLng[]>()
   const [draftError, setDraftError] = useState<string>()
-  const [lang, setLang] = useState("en")
-  // ---- The Cyclone Cody film: replay the week hour by hour ----
+  // Show what Sentinel-1 actually saw under water on 2 March 2022, under the model's squares.
+  const [satellite, setSatellite] = useState(false)
+  // ---- The 2022 flood film: replay the week hour by hour ----
   const [hour, setHour] = useState<number>()
   const [playing, setPlaying] = useState(false)
   const film = mode === "replay" && replayRun?.river && elev?.hand ? replayRun : undefined
@@ -232,7 +236,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <h1 className="font-display text-5xl uppercase md:text-6xl">Live field</h1>
-            <p className="mt-3 text-white/60">{isDemo ? "40 ha of cane on the Ba River, Fiji." : r ? `Your ${r.a.areaHa.toFixed(1)} ha field.` : "Your field."}</p>
+            <p className="mt-3 text-white/60">{isDemo ? "A 40 ha cane block near Broadwater, lower Richmond River, NSW." : r ? `Your ${r.a.areaHa.toFixed(1)} ha field.` : "Your field."}</p>
           </div>
           <Tabs value={mode} onValueChange={(v) => setMode(v as "live" | "replay")}>
             <TabsList className="h-11 rounded-full bg-white/[0.07] p-1">
@@ -240,7 +244,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
                 This week
               </TabsTrigger>
               <TabsTrigger value="replay" className="press rounded-full px-4 text-white/60 data-active:bg-white data-active:text-ink">
-                {REPLAY.name}, 2022
+                {REPLAY.name}
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -267,7 +271,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
             <div className="flex flex-wrap items-center gap-4">
               <button onClick={togglePlay} className="press inline-flex items-center gap-2 rounded-full bg-cane px-5 py-3 text-sm font-medium text-ink hover:bg-[#e2b84a]">
                 {playing ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}
-                {playing ? "Pause" : hour === undefined || hour >= hours - 1 ? "Play the cyclone" : "Resume"}
+                {playing ? "Pause" : hour === undefined || hour >= hours - 1 ? "Play the flood" : "Resume"}
               </button>
               <div className="relative min-w-[12rem] flex-1">
                 <input
@@ -293,7 +297,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
               <p className="w-full text-sm tabular-nums text-white/80 sm:w-auto sm:min-w-[15rem] sm:text-right">
                 {hour !== undefined && r?.river
                   ? `${hourLabel(film.w.hourly.time[hour])} · river ${Math.round(r.river.q).toLocaleString("en-AU")} m³/s`
-                  : "Showing the peak of the cyclone"}
+                  : "Showing the peak of the flood"}
               </p>
             </div>
             {moments.alert !== undefined && (
@@ -316,6 +320,11 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
                 high={r && r.cells.length > 1 && r.a.high.depth < KNOBS.floodedDepth ? r.a.high : undefined}
                 draft={draft}
                 runKey={mode}
+                overlay={
+                  satellite && mode === "replay" && farm.meta
+                    ? { url: `${BASE}/water.png`, bounds: [[farm.meta.bbox[1], farm.meta.bbox[0]], [farm.meta.bbox[3], farm.meta.bbox[2]]] }
+                    : undefined
+                }
                 onMapClick={draft ? (p) => setDraft([...draft, p]) : undefined}
               />
             </div>
@@ -342,6 +351,11 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
                   </button>
                 </>
               )}
+              {mode === "replay" && farm.meta && !draft && (
+                <button onClick={() => setSatellite(!satellite)} aria-pressed={satellite} className={cn(pill, satellite && "bg-rain-soft text-ink hover:bg-rain-soft")}>
+                  {satellite ? "Hide" : "Show"} what the satellite saw
+                </button>
+              )}
               {poly !== DEMO && !draft && (
                 <button onClick={() => setPoly(DEMO)} className={cn(pill, "inline-flex items-center gap-2")}>
                   <RotateCcw className="size-4" aria-hidden /> Reset
@@ -359,7 +373,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
                   <i className="size-3 rounded-sm bg-flood" /> Under water
                 </span>
                 <span className="flex items-center gap-2">
-                  <i className="size-3 rounded-sm bg-rain-soft" /> Puddling
+                  <i className="size-3 rounded-sm bg-rain-soft" /> {satellite ? "Satellite: under water, 2 Mar 2022" : "Puddling"}
                 </span>
               </div>
             )}
@@ -391,27 +405,10 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
           </div>
 
           <div className={cn(card, "lg:col-span-5")}>
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-white/60">SMS</p>
-              <Tabs value={lang} onValueChange={(v) => setLang(v as string)}>
-                <TabsList className="h-9 rounded-full bg-white/[0.07] p-0.5">
-                  {[["en", "English"], ["fj", "iTaukei"], ["hi", "Hindi"]].map(([v, l]) => (
-                    <TabsTrigger key={v} value={v} className="press rounded-full px-3 text-sm text-white/60 data-active:bg-white data-active:text-ink">
-                      {l}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            </div>
+            <p className="text-sm text-white/60">The text the grower gets</p>
             <div className="mx-auto mt-5 max-w-sm rounded-[2rem] border border-white/15 bg-[#0d1712] p-3">
               <p className="rounded-[1.5rem] bg-white/10 p-4 text-sm leading-relaxed whitespace-pre-line text-white/90">
-                {lang !== "en"
-                  ? "Native-speaker translation coming."
-                  : frame && frame.a.level === "clear"
-                    ? "No alert yet. Draki is watching the river."
-                    : r
-                      ? smsText(r, mode === "replay", isDemo)
-                      : "…"}
+                {frame && frame.a.level === "clear" ? "No alert yet. Draki is watching the river." : r ? smsText(r, mode === "replay", isDemo) : "…"}
               </p>
             </div>
           </div>
@@ -435,7 +432,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
             <div className={cn(card, "lg:col-span-7")}>
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="text-sm text-white/60">
-                  Ba River flow, {mode === "live" ? "next 7 days" : "6–12 January 2022"}
+                  Richmond River flow, {mode === "live" ? "next 7 days" : "24 February – 4 March 2022"}
                   {mode === "live" && r.river.flow.members?.length ? ` · ${r.river.flow.members.length} forecast runs` : ""}
                 </p>
                 <p className="text-sm text-white/60">GloFAS · Copernicus</p>
@@ -475,19 +472,19 @@ function RiskCard({ r, live, now, onReplay }: { r?: Run; live: boolean; now?: bo
       {river && (
         <p className="mt-3 text-sm text-muted-foreground">
           {river.stage > 0
-            ? `Ba River ${now ? "now at" : "peaks at"} ${flowLabel(river.q)}, ~${river.stage.toFixed(1)} m above normal.`
-            : `Ba River ${now ? "in its banks" : "stays in its banks"} (${now ? "now" : "peak"} ${flowLabel(river.q)}).`}
+            ? `Richmond River ${now ? "now at" : "peaks at"} ${flowLabel(river.q)}, ~${river.stage.toFixed(1)} m above normal.`
+            : `Richmond River ${now ? "in its banks" : "stays in its banks"} (${now ? "now" : "peak"} ${flowLabel(river.q)}).`}
           {live && river.odds && ` ${river.odds.flood} of ${river.odds.n} forecast runs flood this field.`}
         </p>
       )}
       <div className="mt-6 flex items-end justify-between border-t border-rule pt-4">
         <div>
           <p className="text-sm text-muted-foreground">Cane at risk</p>
-          <p className="text-2xl font-semibold">{a ? (a.valueAtRisk > 0 ? fjd(a.valueAtRisk) : "None") : "–"}</p>
+          <p className="text-2xl font-semibold">{a ? (a.valueAtRisk > 0 ? aud(a.valueAtRisk) : "None") : "–"}</p>
         </div>
         {a?.level === "clear" && onReplay && (
           <button onClick={onReplay} className="inline-flex items-center gap-1 text-sm font-medium text-leaf hover:underline">
-            See a cyclone week <ArrowRight className="size-4" aria-hidden />
+            See the 2022 flood <ArrowRight className="size-4" aria-hidden />
           </button>
         )}
       </div>
@@ -508,16 +505,16 @@ function Sources({ r, mode, poly, hasRegion }: { r?: Run; mode: "live" | "replay
   const rows: [string, string, string | undefined][] = [
     [
       "River flow",
-      r?.river ? (live ? `GloFAS 7-day forecast, ${r.river.flow.members?.length ?? 0} runs · fetched ${ago(r.river.flow.fetchedAt)}` : "GloFAS daily record, January 2022") : "Only inside the Ba floodplain",
+      r?.river ? (live ? `GloFAS 7-day forecast, ${r.river.flow.members?.length ?? 0} runs · fetched ${ago(r.river.flow.fetchedAt)}` : "GloFAS daily record, February–March 2022") : "Only inside the lower Richmond data area",
       r?.river?.flow.url,
     ],
-    ["Rain", live ? "Open-Meteo 7-day forecast, hourly" : "ERA5 reanalysis, hourly, 6–12 January 2022", weatherUrl(center, !live)],
+    ["Rain", live ? "Open-Meteo 7-day forecast, hourly" : "ERA5 reanalysis, hourly, 24 February – 4 March 2022", weatherUrl(center, !live)],
     [
       "Land height",
       hasRegion ? `Copernicus GLO-30 · ${r?.cells.length ?? "–"} squares of 30 m` : "Copernicus GLO-90 via Open-Meteo",
       hasRegion ? "https://planetarycomputer.microsoft.com/dataset/cop-dem-glo-30" : undefined,
     ],
-    ["Land cover", hasRegion ? "ESA WorldCover 2021, 10 m" : "Not used outside Ba", hasRegion ? "https://planetarycomputer.microsoft.com/dataset/esa-worldcover" : undefined],
+    ["Land cover", hasRegion ? "ESA WorldCover 2021, 10 m" : "Not used outside the data area", hasRegion ? "https://planetarycomputer.microsoft.com/dataset/esa-worldcover" : undefined],
     ["How it's built", "Every step, in one Python script", "https://github.com/maliksiddhant02/Climate-tion/blob/main/scripts/build_ba_data.py"],
   ]
   return (

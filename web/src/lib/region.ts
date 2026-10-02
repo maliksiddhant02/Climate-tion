@@ -1,6 +1,6 @@
 import type { LatLng, River } from "./flood"
 
-// The Ba floodplain grids built by scripts/build_ba_data.py and served from public/data/ba/.
+// The lower Richmond floodplain grids (Coraki, Woodburn, Broadwater; NSW) built by scripts/build_region.py, served from public/data/richmond/.
 // Fields inside this box get the river model at 30 m; anywhere else falls back to rain-only at 90 m.
 
 export type FloodRecord = { start: string; end: string; name: string; source: string; peak: number; level: "act" | "watch" | "missed"; percentile: number }
@@ -11,16 +11,32 @@ export type Meta = {
   height: number
   res: number
   glofas: LatLng
-  river: River & { codyPeak: number; townStreetsM: number }
+  name: string
+  demo: LatLng[]
+  event: { name: string; start: string; end: string }
+  river: River & { eventPeak: number }
+  checks: { woodburnAboveRiverM: number; stageAtPeakM: number }
   record: FloodRecord[]
   unmatchedAlarms: string[]
-  sentinel1: { before: string; after: string; newWaterHa: number; dischargeDayBefore: number; note: string }
+  sentinel1: {
+    before: string
+    after: string
+    observedHa: number
+    dischargeThatDay: number
+    csi: number
+    hits: number
+    misses: number
+    falseAlarms: number
+    demoObserved: number
+    demoModel: number
+    note: string
+  }
   sources: string[]
 }
 
 export type Region = { meta: Meta; dem: Int16Array; hand: Uint16Array; land: Uint8Array }
 
-const BASE = "/data/ba"
+export const BASE = "/data/richmond"
 const bin = (name: string) =>
   fetch(`${BASE}/${name}`).then((r) => {
     if (!r.ok) throw new Error(`Missing ${name}`)

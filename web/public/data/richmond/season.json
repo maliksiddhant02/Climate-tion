@@ -1,0 +1,359 @@
+{
+ "latest": {
+  "season": "JJA",
+  "year": 2026,
+  "oni": 1.8,
+  "phase": "elnino"
+ },
+ "allMeanRain": 1064,
+ "phases": {
+  "elnino": {
+   "seasons": 12,
+   "meanRain": 904,
+   "floodSeasons": 1,
+   "floodShare": 0.08
+  },
+  "neutral": {
+   "seasons": 11,
+   "meanRain": 1085,
+   "floodSeasons": 3,
+   "floodShare": 0.27
+  },
+  "lanina": {
+   "seasons": 12,
+   "meanRain": 1207,
+   "floodSeasons": 2,
+   "floodShare": 0.17
+  }
+ },
+ "strongElNino": {
+  "seasons": [
+   "1997",
+   "2015",
+   "2023"
+  ],
+  "meanRain": 955
+ },
+ "seasons": [
+  {
+   "season": "1991",
+   "rain": 749,
+   "heavyDays": 2,
+   "peakFlow": null,
+   "actFlood": false,
+   "oni": 0.83,
+   "phase": "elnino"
+  },
+  {
+   "season": "1992",
+   "rain": 959,
+   "heavyDays": 0,
+   "peakFlow": null,
+   "actFlood": false,
+   "oni": -0.22,
+   "phase": "neutral"
+  },
+  {
+   "season": "1993",
+   "rain": 679,
+   "heavyDays": 0,
+   "peakFlow": null,
+   "actFlood": false,
+   "oni": 0.2,
+   "phase": "neutral"
+  },
+  {
+   "season": "1994",
+   "rain": 819,
+   "heavyDays": 1,
+   "peakFlow": null,
+   "actFlood": false,
+   "oni": 0.66,
+   "phase": "elnino"
+  },
+  {
+   "season": "1995",
+   "rain": 797,
+   "heavyDays": 0,
+   "peakFlow": null,
+   "actFlood": false,
+   "oni": -0.97,
+   "phase": "lanina"
+  },
+  {
+   "season": "1996",
+   "rain": 1343,
+   "heavyDays": 4,
+   "peakFlow": null,
+   "actFlood": false,
+   "oni": -0.33,
+   "phase": "neutral"
+  },
+  {
+   "season": "1997",
+   "rain": 949,
+   "heavyDays": 2,
+   "peakFlow": 705,
+   "actFlood": false,
+   "oni": 2.24,
+   "phase": "elnino"
+  },
+  {
+   "season": "1998",
+   "rain": 894,
+   "heavyDays": 0,
+   "peakFlow": 220,
+   "actFlood": false,
+   "oni": -1.12,
+   "phase": "lanina"
+  },
+  {
+   "season": "1999",
+   "rain": 1361,
+   "heavyDays": 0,
+   "peakFlow": 557,
+   "actFlood": false,
+   "oni": -1.13,
+   "phase": "lanina"
+  },
+  {
+   "season": "2000",
+   "rain": 641,
+   "heavyDays": 0,
+   "peakFlow": 38,
+   "actFlood": false,
+   "oni": -0.54,
+   "phase": "lanina"
+  },
+  {
+   "season": "2001",
+   "rain": 850,
+   "heavyDays": 1,
+   "peakFlow": 819,
+   "actFlood": false,
+   "oni": -0.26,
+   "phase": "neutral"
+  },
+  {
+   "season": "2002",
+   "rain": 613,
+   "heavyDays": 0,
+   "peakFlow": 6,
+   "actFlood": false,
+   "oni": 0.99,
+   "phase": "elnino"
+  },
+  {
+   "season": "2003",
+   "rain": 979,
+   "heavyDays": 2,
+   "peakFlow": 597,
+   "actFlood": false,
+   "oni": 0.23,
+   "phase": "neutral"
+  },
+  {
+   "season": "2004",
+   "rain": 1054,
+   "heavyDays": 2,
+   "peakFlow": 588,
+   "actFlood": false,
+   "oni": 0.61,
+   "phase": "elnino"
+  },
+  {
+   "season": "2005",
+   "rain": 749,
+   "heavyDays": 1,
+   "peakFlow": 332,
+   "actFlood": false,
+   "oni": -0.27,
+   "phase": "neutral"
+  },
+  {
+   "season": "2006",
+   "rain": 1293,
+   "heavyDays": 5,
+   "peakFlow": 1844,
+   "actFlood": false,
+   "oni": 0.71,
+   "phase": "elnino"
+  },
+  {
+   "season": "2007",
+   "rain": 825,
+   "heavyDays": 1,
+   "peakFlow": 43,
+   "actFlood": false,
+   "oni": -1.38,
+   "phase": "lanina"
+  },
+  {
+   "season": "2008",
+   "rain": 1212,
+   "heavyDays": 3,
+   "peakFlow": 2031,
+   "actFlood": true,
+   "oni": -0.36,
+   "phase": "neutral"
+  },
+  {
+   "season": "2009",
+   "rain": 1245,
+   "heavyDays": 2,
+   "peakFlow": 2488,
+   "actFlood": true,
+   "oni": 0.92,
+   "phase": "elnino"
+  },
+  {
+   "season": "2010",
+   "rain": 1242,
+   "heavyDays": 2,
+   "peakFlow": 1713,
+   "actFlood": false,
+   "oni": -1.54,
+   "phase": "lanina"
+  },
+  {
+   "season": "2011",
+   "rain": 1193,
+   "heavyDays": 1,
+   "peakFlow": 1580,
+   "actFlood": false,
+   "oni": -0.94,
+   "phase": "lanina"
+  },
+  {
+   "season": "2012",
+   "rain": 1252,
+   "heavyDays": 3,
+   "peakFlow": 1441,
+   "actFlood": false,
+   "oni": 0.28,
+   "phase": "neutral"
+  },
+  {
+   "season": "2013",
+   "rain": 1145,
+   "heavyDays": 2,
+   "peakFlow": 3613,
+   "actFlood": true,
+   "oni": -0.14,
+   "phase": "neutral"
+  },
+  {
+   "season": "2014",
+   "rain": 749,
+   "heavyDays": 1,
+   "peakFlow": 175,
+   "actFlood": false,
+   "oni": 0.51,
+   "phase": "elnino"
+  },
+  {
+   "season": "2015",
+   "rain": 1070,
+   "heavyDays": 1,
+   "peakFlow": 1402,
+   "actFlood": false,
+   "oni": 2.28,
+   "phase": "elnino"
+  },
+  {
+   "season": "2016",
+   "rain": 782,
+   "heavyDays": 1,
+   "peakFlow": 482,
+   "actFlood": false,
+   "oni": -0.51,
+   "phase": "lanina"
+  },
+  {
+   "season": "2017",
+   "rain": 1176,
+   "heavyDays": 4,
+   "peakFlow": 1870,
+   "actFlood": true,
+   "oni": -0.44,
+   "phase": "neutral"
+  },
+  {
+   "season": "2018",
+   "rain": 858,
+   "heavyDays": 0,
+   "peakFlow": 1083,
+   "actFlood": false,
+   "oni": 0.82,
+   "phase": "elnino"
+  },
+  {
+   "season": "2019",
+   "rain": 598,
+   "heavyDays": 0,
+   "peakFlow": 2,
+   "actFlood": false,
+   "oni": 0.51,
+   "phase": "elnino"
+  },
+  {
+   "season": "2020",
+   "rain": 1292,
+   "heavyDays": 4,
+   "peakFlow": 1232,
+   "actFlood": false,
+   "oni": -1.0,
+   "phase": "lanina"
+  },
+  {
+   "season": "2021",
+   "rain": 1730,
+   "heavyDays": 7,
+   "peakFlow": 1537,
+   "actFlood": false,
+   "oni": -0.77,
+   "phase": "lanina"
+  },
+  {
+   "season": "2022",
+   "rain": 2097,
+   "heavyDays": 5,
+   "peakFlow": 3326,
+   "actFlood": true,
+   "oni": -0.89,
+   "phase": "lanina"
+  },
+  {
+   "season": "2023",
+   "rain": 846,
+   "heavyDays": 0,
+   "peakFlow": 210,
+   "actFlood": false,
+   "oni": 1.74,
+   "phase": "elnino"
+  },
+  {
+   "season": "2024",
+   "rain": 1587,
+   "heavyDays": 2,
+   "peakFlow": 694,
+   "actFlood": false,
+   "oni": -0.19,
+   "phase": "neutral"
+  },
+  {
+   "season": "2025",
+   "rain": 1627,
+   "heavyDays": 3,
+   "peakFlow": 2850,
+   "actFlood": true,
+   "oni": -0.57,
+   "phase": "lanina"
+  }
+ ],
+ "sources": [
+  "NOAA CPC Oceanic Nino Index (ONI), ERSST v6",
+  "ERA5 reanalysis daily rain at Woodburn (Copernicus C3S), via Open-Meteo",
+  "GloFAS v4 river discharge, Richmond River (Copernicus EMS), via Open-Meteo"
+ ]
+}

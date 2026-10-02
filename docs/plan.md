@@ -5,6 +5,14 @@
 
 **Goal:** every number in the demo comes from real data, and section 05 shows the model checked against a real satellite flood map.
 
+## Update (Sat 3 Oct): moved to the lower Richmond River, NSW
+
+The team switched region to Northern Rivers cane country (Coraki, Woodburn, Broadwater; the 2022 Lismore floods). The validation there is stronger:
+- Sentinel-1 caught the flood on 2 March 2022, and the model overlaps that map by 72% (in-sample).
+- All 6 recorded floods since 2009 trigger "Act today", with no unmatched alarms.
+
+The Fiji notes below are history.
+
 ## Status (Fri 2 Oct, evening)
 
 Done and pushed:

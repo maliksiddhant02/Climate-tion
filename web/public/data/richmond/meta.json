@@ -1,0 +1,127 @@
+{
+  "name": "Lower Richmond River, NSW",
+  "bbox": [
+    153.25,
+    -29.12,
+    153.47,
+    -28.94
+  ],
+  "width": 792,
+  "height": 648,
+  "res": 0.0002777777777777778,
+  "glofas": [
+    -29.025,
+    153.375
+  ],
+  "demo": [
+    [
+      -29.00167,
+      153.39944
+    ],
+    [
+      -29.00167,
+      153.40556
+    ],
+    [
+      -29.00778,
+      153.40556
+    ],
+    [
+      -29.00778,
+      153.39944
+    ]
+  ],
+  "event": {
+    "name": "February 2022 flood",
+    "start": "2022-02-24",
+    "end": "2022-03-04"
+  },
+  "river": {
+    "q2": 819,
+    "q5": 1854,
+    "h0": 0.43,
+    "k": 0.3071,
+    "eventPeak": 3326
+  },
+  "sentinel1": {
+    "before": "2022-02-18",
+    "after": "2022-03-02",
+    "observedHa": 16007,
+    "dischargeThatDay": 1530,
+    "csi": 0.721,
+    "hits": 118638,
+    "misses": 9090,
+    "falseAlarms": 36842,
+    "demoObserved": 0.96,
+    "demoModel": 0.74,
+    "note": "Calibrated on this image (in-sample). The image is ~2 days after the peak, so the observed water is a lower bound for the peak flood."
+  },
+  "checks": {
+    "woodburnAboveRiverM": 3.2,
+    "stageAtPeakM": 9.3
+  },
+  "record": [
+    {
+      "start": "2009-05-20",
+      "end": "2009-05-24",
+      "name": "May 2009: major flooding on the Wilsons and Richmond rivers",
+      "source": "Australian Severe Weather flood archive",
+      "peak": 2488,
+      "level": "act",
+      "percentile": 99.94
+    },
+    {
+      "start": "2013-01-27",
+      "end": "2013-01-29",
+      "name": "Ex-Cyclone Oswald: ~2,000 evacuated around Lismore and Grafton",
+      "source": "AIDR Knowledge Hub: Cyclone Oswald 2013",
+      "peak": 3613,
+      "level": "act",
+      "percentile": 99.99
+    },
+    {
+      "start": "2017-03-30",
+      "end": "2017-04-01",
+      "name": "Cyclone Debbie: Lismore 11.6 m",
+      "source": "Lismore City Council, flood history",
+      "peak": 1870,
+      "level": "act",
+      "percentile": 99.86
+    },
+    {
+      "start": "2022-02-27",
+      "end": "2022-03-01",
+      "name": "Record flood: Lismore 14.4 m, Woodburn and Broadwater mill under water",
+      "source": "Lismore City Council; ABC; Richmond Valley Council",
+      "peak": 3326,
+      "level": "act",
+      "percentile": 99.98
+    },
+    {
+      "start": "2022-03-29",
+      "end": "2022-03-31",
+      "name": "Second 2022 flood: Lismore 11.4 m",
+      "source": "FloodList; ABC, 30 March 2022",
+      "peak": 2431,
+      "level": "act",
+      "percentile": 99.94
+    },
+    {
+      "start": "2025-03-06",
+      "end": "2025-03-10",
+      "name": "Cyclone Alfred: Lismore 9.31 m",
+      "source": "Lismore City Council, flood history",
+      "peak": 2850,
+      "level": "act",
+      "percentile": 99.96
+    }
+  ],
+  "unmatchedAlarms": [],
+  "sources": [
+    "Copernicus DEM GLO-30, via Microsoft Planetary Computer",
+    "ESA WorldCover 2021 v200, via Microsoft Planetary Computer",
+    "Sentinel-1A RTC (Copernicus, EU), via Microsoft Planetary Computer",
+    "GloFAS v4 river discharge (Copernicus EMS), via Open-Meteo Flood API",
+    "ERA5 reanalysis rain (Copernicus C3S), via Open-Meteo archive API"
+  ]
+}

@@ -1,6 +1,6 @@
 ---
 name: Draki
-description: Field-level flood alerts for cane farmers on the Ba floodplain, Fiji.
+description: Field-level flood alerts for cane farmers on the lower Richmond River, NSW.
 colors:
   ink: "#13211a"
   ink-2: "#1d3127"
@@ -116,7 +116,7 @@ components:
 
 **Creative North Star: "The Field Almanac"**
 
-Draki should read like a farmer's almanac that learned to read the weather forecast. Serif headlines and warm paper surfaces give it the weight of a printed reference. Everything else, numbers included, is set in one plain sans, so every figure looks measured, not marketed. The tone is calm, honest and local: it reassures before it alarms, it shows its working, and it speaks in Ba, F$, iTaukei and cane, never in generic "smart farming" language.
+Draki should read like a farmer's almanac that learned to read the weather forecast. Serif headlines and warm paper surfaces give it the weight of a printed reference. Everything else, numbers included, is set in one plain sans, so every figure looks measured, not marketed. The tone is calm, honest and local: it reassures before it alarms, it shows its working, and it speaks in Woodburn, Broadwater, A$ and cane, never in generic "smart farming" language.
 
 The page alternates between two grounds. **Paper** sections (paper and paper-2) carry the story and the explanation. **Ink** sections (the hero, the live field, the footer) carry live data and the map, like a night-time weather desk. A single **leaf** band carries the COP31 commitment. Colour is drawn from the place: cane gold, leaf green, rain blue, silt brown. Flood red is held back for the one thing that is actually dangerous.
 
@@ -189,7 +189,7 @@ Chart text inside SVG is a fixed 10px viewBox size that scales with the chart.
 ### Named Rules
 **The One Colour Rule.** Each display or headline gets at most one coloured phrase, cane on ink or flood/leaf on paper. It marks the single idea the reader should take away.
 
-**The Unit Rule.** A number never appears without its unit (ha, mm, m, F$, °). Dates use Fiji/Australian order ("6 Jan"), never MM/DD.
+**The Unit Rule.** A number never appears without its unit (ha, mm, m, A$, °). Dates use Australian order ("6 Jan"), never MM/DD.
 
 ## Layout
 
@@ -205,7 +205,7 @@ Chart text inside SVG is a fixed 10px viewBox size that scales with the chart.
 - **Below `sm` (640px):**
   - The 7-day forecast becomes a horizontal snap-scroller that bleeds to the screen edge.
   - The map readout stacks its legend onto its own row.
-  - Long tab labels shorten ("Replay: Cyclone Cody").
+  - Long tab labels shorten.
 - **Map on phones:** one-finger drag scrolls the page rather than panning the map.
 
 ## Elevation & Depth
@@ -263,7 +263,7 @@ These three are the only status vocabulary.
 - **Sizes:** 40px for the mode switch, 32px for the language switch.
 
 ### Navigation and pages
-The site is five hash-routed pages: `#/` (landing: hackathon + vision), `#/how`, `#/live` (the working dashboard), `#/why`, `#/proof`. Add `?replay` to `#/live` to open on Cyclone Cody.
+The site is five hash-routed pages: `#/` (landing: hackathon + vision), `#/how`, `#/live` (the working dashboard), `#/why`, `#/proof`. Add `?replay` to `#/live` to open on the February 2022 flood. `#/farm` is the year-round My farm page.
 
 A sticky paper bar with a hairline bottom border and blur holds the logo, 4 page links and a cane "Try it" pill. The current page's link is an ink pill. Below `md` (768px) the links become a horizontal scroller under the logo.
 
@@ -283,10 +283,10 @@ A sticky paper bar with a hairline bottom border and blur holds the logo, 4 page
 - **Content:** shows the exact text the farmer receives: headline, numbered actions, and a "Why:" climate line.
 
 ### Flood valley hero (signature)
-The Home hero is the real Ba floodplain, drawn on a canvas from the 30 m elevation grid: a night-time hillshade, with land coloured by WorldCover class. The page pins the hero while the visitor scrolls through 280svh, and the Ba River rises from normal flow to Cyclone Cody's peak. Water fills every cell lower than the river level, shallow `#8fbcf0` deepening to `#1d4f94`. A readout panel (ink/70, blurred, on the map) tracks the flow, the status pill, the river level and the hectares under water. The headline fades as the river starts rising, and a closing line arrives at the peak. The hero fills the space under the nav (`--nav`). If the data fails to load, the storm photo stays.
+The Home hero is the real lower Richmond floodplain, drawn on a canvas from the 30 m elevation grid: a night-time hillshade, with land coloured by WorldCover class. The page pins the hero while the visitor scrolls through 280svh, and the Richmond River rises from normal flow to its February 2022 peak. Water fills every cell lower than the river level, shallow `#8fbcf0` deepening to `#1d4f94`. A readout panel (ink/70, blurred, on the map) tracks the flow, the status pill, the river level and the hectares under water. The headline fades as the river starts rising, and a closing line arrives at the peak. The hero fills the space under the nav (`--nav`). If the data fails to load, the storm photo stays.
 
-### Cody film (signature)
-On the live demo's Cyclone Cody tab, "Play the cyclone" replays 6–12 January 2022 hour by hour, at 70 ms per hour. The field map, risk card, SMS and river-chart playhead all follow the same hour. A flood-red tick on the scrubber marks Draki's first "Act today", stated with how many hours it came before the peak.
+### Flood film (signature)
+On the live demo's February 2022 tab, "Play the flood" replays 24 February to 4 March 2022 hour by hour, at 70 ms per hour. The field map, risk card, SMS and river-chart playhead all follow the same hour. A flood-red tick on the scrubber marks Draki's first "Act today", stated with how many hours it came before the peak.
 
 ## Do's and Don'ts
 
@@ -294,7 +294,7 @@ On the live demo's Cyclone Cody tab, "Play the cyclone" replays 6–12 January 2
 - **Do** keep motion to Emil Kowalski's rules (`.claude/skills/animate`): `transform` and `opacity` only, `--ease-out` (cubic-bezier(0.23, 1, 0.32, 1)), UI motion under 300 ms. Press feedback is `.press` (scale 0.97, 160 ms). Pages enter with `.page-enter`; the map's flooded cells fill deepest-first (`.rise-0…9`), the one longer, explanatory moment. Reduced motion keeps the fades and drops the movement.
 - **Do** put live data and the map on ink, and explanation on paper.
 - **Do** show your working: list model inputs, data sources and caveats next to the result.
-- **Do** use local language and units: Ba, F$, cane, iTaukei, and "6 Jan" date order.
+- **Do** use local language and units: Woodburn, Broadwater, A$, cane, and "6 Jan" date order.
 - **Do** keep every control a full pill and every container at 30.8px corners.
 - **Do** give the clear state a positive answer ("Nothing goes under.") rather than a row of zeros.
 - **Do** keep small text on ink at `white/60` or brighter, and secondary text on paper at the muted-text colour.
@@ -304,4 +304,4 @@ On the live demo's Cyclone Cody tab, "Play the cyclone" replays 6–12 January 2
 - **Don't** use flood red for anything that isn't water damage or an error.
 - **Don't** use cane gold for small text on the leaf band; use cane-light.
 - **Don't** let AI-generated wording stand in for the farming playbook. Actions come from the fixed playbook only.
-- **Don't** show a dry week as the first impression: when the live forecast is clear, lead with the Cyclone Cody replay.
+- **Don't** show a dry week as the first impression: when the live forecast is clear, lead with the February 2022 flood replay.

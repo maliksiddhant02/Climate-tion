@@ -326,7 +326,7 @@
       "kind": "button",
       "refersTo": "button-ghost-dark",
       "description": "Secondary action on dark: hairline pill.",
-      "html": "<div class=\"ds-dark\"><button class=\"ds-btn-ghost\">Replay Cyclone Cody, 2022</button></div>",
+      "html": "<div class=\"ds-dark\"><button class=\"ds-btn-ghost\">Replay the 2022 flood</button></div>",
       "css": ".ds-dark{background:#13211a;padding:24px}.ds-btn-ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:9999px;padding:12px 20px;font:400 14px/1 'Archivo Variable',sans-serif;cursor:pointer;transition:background .15s}.ds-btn-ghost:hover{background:rgba(255,255,255,.1)}.ds-btn-ghost:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}"
     },
     {
@@ -366,7 +366,7 @@
       "kind": "nav",
       "refersTo": "tabs",
       "description": "Pill track with pill triggers: live week vs. replay.",
-      "html": "<div class=\"ds-dark\"><div class=\"ds-tabs\" role=\"tablist\"><button role=\"tab\" aria-selected=\"false\">This week</button><button role=\"tab\" aria-selected=\"true\">Replay: Cyclone Cody</button></div></div>",
+      "html": "<div class=\"ds-dark\"><div class=\"ds-tabs\" role=\"tablist\"><button role=\"tab\" aria-selected=\"false\">This week</button><button role=\"tab\" aria-selected=\"true\">February 2022 flood</button></div></div>",
       "css": ".ds-dark{background:#13211a;padding:24px}.ds-tabs{display:inline-flex;gap:2px;background:rgba(255,255,255,.07);border-radius:9999px;padding:4px}.ds-tabs button{background:transparent;color:rgba(255,255,255,.6);border:0;border-radius:9999px;padding:8px 16px;font:500 14px/1 'Archivo Variable',sans-serif;cursor:pointer}.ds-tabs button[aria-selected=true]{background:#fff;color:#13211a}.ds-tabs button:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}"
     },
     {
@@ -374,13 +374,13 @@
       "kind": "custom",
       "refersTo": "sms-mock",
       "description": "Signature: the exact text the farmer receives.",
-      "html": "<div class=\"ds-dark\"><div class=\"ds-phone\"><div class=\"ds-screen\"><p class=\"ds-hdr\">Draki · +679 SMS</p><p class=\"ds-msg\">FLOOD RISK HIGH from Sat 8 Jan\n\n1. Move cut cane, fertiliser and seed off the low corner today.\n\nWhy: Ba now gets more 50 mm+ rain days than in the 1990s.</p></div></div></div>",
+      "html": "<div class=\"ds-dark\"><div class=\"ds-phone\"><div class=\"ds-screen\"><p class=\"ds-hdr\">Draki · +679 SMS</p><p class=\"ds-msg\">FLOOD RISK HIGH from Sat 8 Jan\n\n1. Move cut cane, fertiliser and seed off the low corner today.\n\nWhy: heavy-rain days here are up since the 1990s.</p></div></div></div>",
       "css": ".ds-dark{background:#13211a;padding:24px}.ds-phone{max-width:300px;background:#0d1712;border:1px solid rgba(255,255,255,.15);border-radius:2rem;padding:12px}.ds-screen{background:#16241c;border-radius:1.5rem;padding:16px}.ds-hdr{margin:0;text-align:center;font:400 11px 'Archivo Variable',sans-serif;color:rgba(255,255,255,.6)}.ds-msg{margin:12px 0 0;background:rgba(255,255,255,.1);border-radius:1rem 1rem 1rem 1rem;border-top-left-radius:4px;padding:14px;font:400 13px/1.6 'Archivo Variable',sans-serif;color:rgba(255,255,255,.9);white-space:pre-line}"
     }
   ],
   "narrative": {
     "northStar": "The Field Almanac",
-    "overview": "Draki should read like a farmer's almanac that learned to read the weather forecast. Serif headlines and warm paper surfaces give it the weight of a printed reference. The data is set in plain sans figures and mono labels, so every number looks measured, not marketed. The tone is calm, honest and local: it reassures before it alarms, it shows its working, and it speaks in Ba, F$, iTaukei and cane, never in generic \"smart farming\" language.",
+    "overview": "Draki should read like a farmer's almanac that learned to read the weather forecast. Serif headlines and warm paper surfaces give it the weight of a printed reference. The data is set in plain sans figures and mono labels, so every number looks measured, not marketed. The tone is calm, honest and local: it reassures before it alarms, it shows its working, and it speaks in Woodburn, Broadwater, A$ and cane, never in generic \"smart farming\" language.",
     "keyCharacteristics": [
       "Archivo expanded 800 for display, full-width and uppercase on the hero, with cane-gold colour on the one phrase that matters.",
       "Paper and ink as the only two grounds; leaf green as a single closing band.",
@@ -411,7 +411,7 @@
       },
       {
         "name": "The Unit Rule",
-        "body": "A number never appears without its unit (ha, mm, m, F$, °). Dates use Fiji/Australian order (\"6 Jan\"), never MM/DD.",
+        "body": "A number never appears without its unit (ha, mm, m, A$, °). Dates use Australian order (\"6 Jan\"), never MM/DD.",
         "section": "typography"
       },
       {
@@ -428,7 +428,7 @@
     "dos": [
       "Do put live data and the map on ink, and explanation on paper.",
       "Do show your working: list model inputs, data sources and caveats next to the result.",
-      "Do use local language and units: Ba, F$, cane, iTaukei, and \"6 Jan\" date order.",
+      "Do use local language and units: Woodburn, Broadwater, A$, cane, and \"6 Jan\" date order.",
       "Do keep every control a full pill and every container at 30.8px corners.",
       "Do give the clear state a positive answer (\"Nothing goes under.\") rather than a row of zeros.",
       "Do keep small text on ink at white/60 or brighter, and secondary text on paper at the muted-text colour."
@@ -438,7 +438,7 @@
       "Don't use flood red for anything that isn't water damage or an error.",
       "Don't use cane gold for small text on the leaf band; use cane-light.",
       "Don't let AI-generated wording stand in for the farming playbook. Actions come from the fixed playbook only.",
-      "Don't show a dry week as the first impression: when the live forecast is clear, lead with the Cyclone Cody replay."
+      "Don't show a dry week as the first impression: when the live forecast is clear, lead with the February 2022 flood replay."
     ]
   }
 }

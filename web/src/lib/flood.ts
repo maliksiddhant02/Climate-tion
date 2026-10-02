@@ -2,7 +2,7 @@
 
 export type LatLng = [number, number]
 
-/** hand = height above the Ba River (m); land = ESA WorldCover class. Both only inside the Ba data region. */
+/** hand = height above the river (m); land = ESA WorldCover class. Both only inside the shipped data region. */
 export type Cell = { lat: number; lng: number; elev: number; depth: number; hand?: number; land?: number }
 
 export type Level = "clear" | "watch" | "act"
@@ -18,10 +18,10 @@ export const KNOBS = {
   /** Water deeper than this (m) counts as "under water" for cane and machinery. */
   floodedDepth: 0.15,
   /**
-   * Cane value per hectare, F$: Fiji's 2025 average yield, 46.4 t/ha (Fiji Sun, "FSC records lowest cane production
-   * in 2025"), × FSC's 2026 forecast cane price, F$57.40/t (Fijivillage, "FSC confirms $42 per tonne delivery cane price").
+   * Cane value per hectare, A$, for a two-year Northern Rivers crop: 125 t/ha (midpoint of the 105–150 t/ha NSW DPI
+   * reports for two-year cane, 2023–24) × A$55/t (the 2024 NSW average cane price, NSW DPI).
    */
-  caneValuePerHa: 46.4 * 57.4,
+  caneValuePerHa: 125 * 55,
 }
 
 export function inPolygon([lat, lng]: LatLng, poly: LatLng[]): boolean {
@@ -94,7 +94,7 @@ export function floodDepths(
 export type River = { q2: number; q5: number; h0: number; k: number }
 
 /**
- * How far the Ba River rises over its normal level (m) at a discharge (m³/s).
+ * How far the river rises over its normal level (m) at a discharge (m³/s).
  * Below the 2-year flood it stays in its banks; above that the level grows with √Q, a standard rating-curve shape.
  */
 export function riverStage(q: number, r: River): number {

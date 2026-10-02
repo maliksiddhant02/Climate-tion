@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import L from "leaflet"
-import { CircleMarker, MapContainer, ZoomControl, Polygon, Polyline, Rectangle, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet"
+import { CircleMarker, ImageOverlay, MapContainer, ZoomControl, Polygon, Polyline, Rectangle, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet"
 import { KNOBS, type Cell, type LatLng } from "@/lib/flood"
 
 const M_PER_DEG = 111_320
@@ -35,10 +35,12 @@ export function FieldMap(props: {
   high?: Cell
   draft?: LatLng[]
   onMapClick?: (p: LatLng) => void
-  /** Changing this replays the water-rising animation (e.g. switching This week / Cody). */
+  /** Changing this replays the water-rising animation (e.g. switching This week / the 2022 flood). */
   runKey?: string
+  /** What the satellite saw under water, drawn under the model's squares. */
+  overlay?: { url: string; bounds: [LatLng, LatLng] }
 }) {
-  const { poly, cells, stepM, high, draft, onMapClick, runKey = "" } = props
+  const { poly, cells, stepM, high, draft, onMapClick, runKey = "", overlay } = props
   const half = stepM / 2 / M_PER_DEG
   const maxDepth = Math.max(0, ...cells.map((c) => c.depth))
   const cos = Math.cos((poly[0][0] * Math.PI) / 180)
@@ -51,6 +53,7 @@ export function FieldMap(props: {
         attribution="Imagery © Esri, Maxar, Earthstar Geographics · Elevation: Copernicus DEM · Land: ESA WorldCover · River: GloFAS"
         maxZoom={18}
       />
+      {overlay && <ImageOverlay url={overlay.url} bounds={overlay.bounds} opacity={0.85} />}
       <Fit poly={poly} />
       <Clicks onClick={onMapClick} />
       {!draft &&

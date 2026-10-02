@@ -1,14 +1,14 @@
 import type { LatLng } from "./flood"
 
 // All weather and elevation data: Open-Meteo (CC BY 4.0). Forecast = best-match models, archive = ERA5.
-const TZ = "timezone=Pacific%2FFiji"
+const TZ = "timezone=Australia%2FSydney"
 
 export type Weather = {
   hourly: { time: string[]; rain: number[] }
   daily: { time: string[]; rain: number[]; temp: number[]; code: number[]; prob?: number[] }
 }
 
-/** Ba River discharge (m³/s) per day; `members` are the GloFAS ensemble runs, forecast only. */
+/** Richmond River discharge (m³/s) per day; `members` are the GloFAS ensemble runs, forecast only. */
 export type Flow = { time: string[]; q: number[]; members?: number[][]; url: string; fetchedAt?: number }
 
 const HOUR = 3_600_000
@@ -36,7 +36,7 @@ async function cachedJson(url: string, ttlMs: number, fail: (status: number) => 
   return data
 }
 
-export const REPLAY = { name: "Cyclone Cody", start: "2022-01-06", end: "2022-01-12" }
+export const REPLAY = { name: "February 2022 flood", start: "2022-02-24", end: "2022-03-04" }
 
 /** The exact request Draki makes for rain, so anyone can open it and see the raw numbers. */
 export function weatherUrl([lat, lng]: LatLng, replay: boolean) {
@@ -76,14 +76,14 @@ export async function getWeather(center: LatLng, replay: boolean): Promise<Weath
   }
 }
 
-/** The Cyclone Cody replay, shipped with the site (scripts/build_ba_data.py) so the demo never waits on an API. */
-export async function getCodyReplay(glofas: LatLng): Promise<{ weather: Weather; flow: Flow }> {
-  const d = await fetch("/data/ba/cody.json").then((r) => r.json())
+/** The February 2022 flood replay, shipped with the site (scripts/build_region.py) so the demo never waits on an API. */
+export async function getEventReplay(glofas: LatLng): Promise<{ weather: Weather; flow: Flow }> {
+  const d = await fetch("/data/richmond/event.json").then((r) => r.json())
   return { weather: d, flow: { time: d.daily.time, q: d.daily.discharge, url: riverUrl(glofas, true) } }
 }
 
-/** Weekly peak Ba River flow since 1997 (GloFAS), shipped static for the Validation chart. */
-export const getFlowHistory = (): Promise<{ time: string[]; q: number[] }> => fetch("/data/ba/flow.json").then((r) => r.json())
+/** Weekly peak Richmond River flow (GloFAS), shipped static for the Validation chart. */
+export const getFlowHistory = (): Promise<{ time: string[]; q: number[] }> => fetch("/data/richmond/flow.json").then((r) => r.json())
 
 /** GloFAS v4 river discharge forecast, 7 days, with its 50-member ensemble (Copernicus EMS via Open-Meteo). */
 export async function getFlowForecast(glofas: LatLng): Promise<Flow> {
@@ -107,12 +107,12 @@ export async function getElevations(points: LatLng[]): Promise<number[]> {
 }
 
 /**
- * Days per year with 50 mm+ rain at Ba (−17.53, 177.67), ERA5 via the Open-Meteo archive API,
- * daily precipitation_sum 1991-01-01 → 2024-12-31, pulled 2 Oct 2026. Static so the page never waits on 12k rows.
+ * Days per year with 50 mm+ rain at Woodburn (−29.07, 153.34), ERA5 via the Open-Meteo archive API,
+ * calendar years 1991–2025 (scripts/build_season_data.py, October 2026). Static so the page never waits on 12k rows.
  */
 export const HEAVY_RAIN_DAYS: [number, number][] = [
-  [1991, 3], [1992, 3], [1993, 4], [1994, 6], [1995, 1], [1996, 8], [1997, 15], [1998, 3], [1999, 5], [2000, 6],
-  [2001, 1], [2002, 3], [2003, 2], [2004, 4], [2005, 4], [2006, 1], [2007, 5], [2008, 7], [2009, 9], [2010, 3],
-  [2011, 5], [2012, 17], [2013, 3], [2014, 4], [2015, 2], [2016, 9], [2017, 4], [2018, 16], [2019, 6], [2020, 5],
-  [2021, 11], [2022, 14], [2023, 7], [2024, 15],
+  [1991, 2], [1992, 0], [1993, 0], [1994, 1], [1995, 0], [1996, 4], [1997, 2], [1998, 0], [1999, 0], [2000, 0],
+  [2001, 1], [2002, 0], [2003, 2], [2004, 2], [2005, 1], [2006, 5], [2007, 1], [2008, 3], [2009, 2], [2010, 2],
+  [2011, 1], [2012, 3], [2013, 2], [2014, 1], [2015, 1], [2016, 1], [2017, 4], [2018, 0], [2019, 0], [2020, 4],
+  [2021, 7], [2022, 5], [2023, 0], [2024, 2], [2025, 3],
 ]

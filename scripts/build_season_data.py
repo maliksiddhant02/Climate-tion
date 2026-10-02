@@ -1,10 +1,10 @@
 """
-Build Draki's season data for Ba: how El Nino and La Nina change Ba's rain and floods. No API keys needed.
+Build Draki's season data for the lower Richmond: how El Nino and La Nina change its rain and floods. No API keys needed.
 
-Writes web/public/data/ba/season.json:
+Writes web/public/data/richmond/season.json:
   latest   the most recent NOAA ONI value (El Nino / La Nina index) and what phase it means
-  phases   per phase (El Nino, neutral, La Nina): wet-season rain at Ba and how often the Ba River hit "Act today"
-  seasons  every wet season (Nov-Apr) since 1991: rain, peak river flow, ONI
+  phases   per phase (El Nino, neutral, La Nina): yearly rain and how often the Richmond River hit "Act today"
+  seasons  every calendar year since 1991: rain, peak river flow, ONI (Sep-Nov)
 
 Run from the repo root:  scripts/.venv/Scripts/python scripts/build_season_data.py
 Sources: NOAA CPC Oceanic Nino Index (ONI); ERA5 daily rain and GloFAS v4 river flow via Open-Meteo.
@@ -15,10 +15,10 @@ from pathlib import Path
 
 import requests
 
-OUT = Path(__file__).resolve().parent.parent / "web" / "public" / "data" / "ba" / "season.json"
-BA = (-17.53, 177.67)  # rain: Ba town
-GLOFAS = (-17.525, 177.625)  # river: Ba River main channel
-FIRST, LAST = 1991, 2025  # wet seasons Nov FIRST .. Apr LAST+1 (ERA5 + GloFAS both complete)
+OUT = Path(__file__).resolve().parent.parent / "web" / "public" / "data" / "richmond" / "season.json"
+BA = (-29.07, 153.34)  # rain: Woodburn
+GLOFAS = (-29.025, 153.375)  # river: Richmond River main channel
+FIRST, LAST = 1991, 2025  # calendar years (ERA5 + GloFAS both complete)
 
 # ---- ONI: 3-month running mean of Nino 3.4 sea temperature anomalies ----
 oni_rows = [l.split() for l in requests.get("https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt", timeout=60).text.splitlines()[1:] if l.strip()]
@@ -35,31 +35,28 @@ def phase(v: float) -> str:
 latest["phase"] = phase(latest["oni"])
 
 # ---- Daily rain and river flow ----
+# Calendar years, classified by the September-November index: in eastern Australia El Nino and La Nina peak in spring
+# and shape the whole year's rain (BoM), and Northern Rivers cane is a two-year crop, so a full year is the useful unit.
 rain = requests.get(
     "https://archive-api.open-meteo.com/v1/archive",
-    params={"latitude": BA[0], "longitude": BA[1], "daily": "precipitation_sum", "start_date": f"{FIRST}-11-01", "end_date": f"{LAST + 1}-04-30", "timezone": "Pacific/Fiji"},
+    params={"latitude": BA[0], "longitude": BA[1], "daily": "precipitation_sum", "start_date": f"{FIRST}-01-01", "end_date": f"{LAST}-12-31", "timezone": "Australia/Sydney"},
     timeout=120,
 ).json()["daily"]
 flow = requests.get(
     "https://flood-api.open-meteo.com/v1/flood",
-    params={"latitude": GLOFAS[0], "longitude": GLOFAS[1], "daily": "river_discharge", "start_date": f"{FIRST}-11-01", "end_date": f"{LAST + 1}-04-30"},
+    params={"latitude": GLOFAS[0], "longitude": GLOFAS[1], "daily": "river_discharge", "start_date": f"{FIRST}-01-01", "end_date": f"{LAST}-12-31"},
     timeout=120,
 ).json()["daily"]
 meta = json.loads((OUT.parent / "meta.json").read_text())
 q5 = meta["river"]["q5"]
 
-rain_by_day = dict(zip(rain["time"], rain["precipitation_sum"]))
-flow_by_day = dict(zip(flow["time"], flow["river_discharge"]))
-
 seasons = []
 for y in range(FIRST, LAST + 1):
-    days = [(dt.date(y, 11, 1) + dt.timedelta(d)).isoformat() for d in range((dt.date(y + 1, 4, 30) - dt.date(y, 11, 1)).days + 1)]
-    r = [rain_by_day.get(d) for d in days]
-    q = [flow_by_day.get(d) for d in days]
-    q = [x for x in q if x is not None]
-    v = oni[("DJF", y + 1)]  # the peak-season index for the wet season Nov y .. Apr y+1
+    r = [v for k, v in zip(rain["time"], rain["precipitation_sum"]) if k.startswith(str(y))]
+    q = [v for k, v in zip(flow["time"], flow["river_discharge"]) if k.startswith(str(y)) and v is not None]
+    v = oni[("SON", y)]
     seasons.append({
-        "season": f"{y}-{str(y + 1)[2:]}",
+        "season": str(y),
         "rain": round(sum(x or 0 for x in r)),
         "heavyDays": sum(1 for x in r if (x or 0) >= 50),
         "peakFlow": round(max(q)) if q else None,
@@ -89,8 +86,8 @@ OUT.write_text(json.dumps({
     "seasons": seasons,
     "sources": [
         "NOAA CPC Oceanic Nino Index (ONI), ERSST v6",
-        "ERA5 reanalysis daily rain at Ba (Copernicus C3S), via Open-Meteo",
-        "GloFAS v4 river discharge, Ba River (Copernicus EMS), via Open-Meteo",
+        "ERA5 reanalysis daily rain at Woodburn (Copernicus C3S), via Open-Meteo",
+        "GloFAS v4 river discharge, Richmond River (Copernicus EMS), via Open-Meteo",
     ],
 }, indent=1))
 

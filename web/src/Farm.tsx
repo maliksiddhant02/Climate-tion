@@ -1,26 +1,27 @@
 import { useEffect, useMemo, useState } from "react"
 import { ArrowRight, ArrowUpRight, Check } from "lucide-react"
 import type { Farm } from "@/Live"
-import { fjd } from "@/Live"
+import { aud, depthLabel } from "@/Live"
+import { BASE } from "@/lib/region"
 import { cn } from "@/lib/utils"
 
-// "My farm": the whole season for one cane block, so a grower hears from Draki every week, not just when it floods.
+// "My farm": the whole season for one Northern Rivers cane block, so a grower hears from Draki every week, not just when it floods.
 // Every number is either computed from the shipped data or cited next to where it's defined.
 
 const WRAP = "mx-auto w-full max-w-[1600px] px-6 md:px-10"
 const card = "rounded-3xl border border-rule bg-card p-6"
 
-// Cane: Fiji's 2025 average yield, FSC's 2026 forecast price (both cited in lib/flood.ts KNOBS.caneValuePerHa).
-const YIELD_T_HA = 46.4
-const PRICE_T = 57.4
-// Maturity: plant cane 12–18 months (we use 14), ratoon about 12. The mill season runs from about 30 June to November (FSC, 2026).
-const MATURITY = { plant: 14, ratoon: 12 } as const
-const MILL = { open: 6, close: 10 } // month index, Jul–Nov
-// 1997–98 El Niño drought: Fiji's cane harvest fell about 50% (Fiji drought loss-and-damage study, Local Environment 2024).
-const EL_NINO_9798_LOSS = 0.5
+// Cane, NSW DPI: two-year cane yields of 105–150 t/ha (2023–24, we use 125), one-year cane roughly half that;
+// 2024 average cane price A$55/t. Mills crush from late June to December (Sunshine Sugar).
+const CROP = {
+  twoYear: { label: "Two-year cane", months: 24, yield: 125 },
+  oneYear: { label: "One-year cane", months: 12, yield: 62 },
+} as const
+const PRICE_T = 55
+const MILL = { open: 5, close: 11 } // month index: June to December
 
-// Fuel: FCCC prices for Viti Levu from 1 October 2026. CO₂ per litre burned: US EPA emission factors.
-const FUEL = { petrol: { price: 3.15, co2: 2.31 }, diesel: { price: 3.41, co2: 2.68 } }
+// Fuel: national average pump prices, October 2026 (AIP / dailyfuels). CO₂ per litre burned: US EPA emission factors.
+const FUEL = { petrol: { price: 2.26, co2: 2.31 }, diesel: { price: 2.62, co2: 2.68 } }
 type Tool = { id: string; name: string; fuel: "petrol" | "diesel"; lph: number; hours: number; swap?: string }
 // Litres per hour are typical figures for farm-size machines; every one is shown and editable on the page.
 const TOOLS: Tool[] = [
@@ -32,11 +33,12 @@ const TOOLS: Tool[] = [
   { id: "tractor", name: "Tractor", fuel: "diesel", lph: 6, hours: 250 },
 ]
 
+type Phase = "elnino" | "lanina" | "neutral"
 type Season = {
-  latest: { season: string; year: number; oni: number; phase: "elnino" | "lanina" | "neutral" }
+  latest: { season: string; year: number; oni: number; phase: Phase }
   allMeanRain: number
-  phases: Record<"elnino" | "lanina" | "neutral", { seasons: number; meanRain: number; floodSeasons: number }>
-  seasons: { season: string; rain: number; oni: number; phase: "elnino" | "lanina" | "neutral" }[]
+  phases: Record<Phase, { seasons: number; meanRain: number; floodSeasons: number }>
+  seasons: { season: string; rain: number; oni: number; phase: Phase; actFlood: boolean }[]
 }
 
 const month = (d: Date) => d.toLocaleDateString("en-AU", { month: "long", year: "numeric" })
@@ -44,29 +46,29 @@ const t = (n: number) => `${Math.round(n).toLocaleString("en-AU")} t`
 const pct = (a: number, b: number) => Math.round((1 - a / b) * 100)
 
 /** When cut cane can reach the mill: once it's mature, and only while the mill is crushing. */
-function readyDate(start: string, crop: keyof typeof MATURITY) {
+function readyDate(start: string, months: number) {
   const d = new Date(`${start}-01T00:00:00`)
-  d.setMonth(d.getMonth() + MATURITY[crop])
+  d.setMonth(d.getMonth() + months)
   if (d.getMonth() < MILL.open) d.setMonth(MILL.open)
   if (d.getMonth() > MILL.close) d.setFullYear(d.getFullYear() + 1, MILL.open)
   return d
 }
 
-const PHASE = {
+const PHASE: Record<Phase, { label: string; color: string }> = {
   elnino: { label: "El Niño", color: "#d4a72c" },
   neutral: { label: "Neutral", color: "#cdc3ad" },
   lanina: { label: "La Niña", color: "#3c6fae" },
 }
 
-/** Nov–Apr rain at Ba for every wet season since 1991, coloured by El Niño / La Niña. Light surface. */
+/** Yearly rain at Woodburn since 1991, coloured by El Niño / La Niña. Light surface. */
 function SeasonChart({ s }: { s: Season }) {
   const W = 760, H = 220, padL = 40, padB = 26, padT = 12
   const max = Math.max(...s.seasons.map((x) => x.rain)) * 1.08
   const slot = (W - padL) / s.seasons.length
   const y = (v: number) => padT + (H - padB - padT) * (1 - v / max)
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={`Wet-season rain at Ba by year. El Niño seasons average ${s.phases.elnino.meanRain} mm, La Niña ${s.phases.lanina.meanRain} mm.`}>
-      {[0, 1000, 2000, 3000].filter((v) => v < max).map((v) => (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={`Yearly rain at Woodburn. El Niño years average ${s.phases.elnino.meanRain} mm, La Niña ${s.phases.lanina.meanRain} mm.`}>
+      {[0, 500, 1000, 1500, 2000].filter((v) => v < max).map((v) => (
         <g key={v}>
           <line x1={padL} x2={W} y1={y(v)} y2={y(v)} stroke="#d9d0bd" />
           <text x={padL - 6} y={y(v) + 3} textAnchor="end" className="fill-[#525e56] text-[10px] tabular-nums">{v}</text>
@@ -74,14 +76,14 @@ function SeasonChart({ s }: { s: Season }) {
       ))}
       {s.seasons.map((x, i) => (
         <rect key={x.season} x={padL + i * slot + 1.5} y={y(x.rain)} width={slot - 3} height={y(0) - y(x.rain)} rx={2} fill={PHASE[x.phase].color}>
-          <title>{`${x.season}: ${x.rain} mm, ${PHASE[x.phase].label} (ONI ${x.oni})`}</title>
+          <title>{`${x.season}: ${x.rain} mm, ${PHASE[x.phase].label} (spring ONI ${x.oni})${x.actFlood ? ", Act-level flood" : ""}`}</title>
         </rect>
       ))}
       <line x1={padL} x2={W} y1={y(s.allMeanRain)} y2={y(s.allMeanRain)} stroke="#13211a" strokeDasharray="4 4" />
       <text x={W} y={y(s.allMeanRain) - 5} textAnchor="end" className="fill-ink text-[10px]">{`Average ${s.allMeanRain.toLocaleString("en-AU")} mm`}</text>
       {s.seasons.map((x, i) =>
-        x.season.endsWith("-98") || x.season.endsWith("-12") || x.season.endsWith("-22") || i === 0 || i === s.seasons.length - 1 ? (
-          <text key={x.season} x={padL + i * slot + slot / 2} y={H - 8} textAnchor="middle" className="fill-[#525e56] text-[10px]">{x.season.slice(0, 4)}</text>
+        ["1991", "2000", "2010", "2022", "2025"].includes(x.season) ? (
+          <text key={x.season} x={padL + i * slot + slot / 2} y={H - 8} textAnchor="middle" className="fill-[#525e56] text-[10px]">{x.season}</text>
         ) : null,
       )}
     </svg>
@@ -89,25 +91,27 @@ function SeasonChart({ s }: { s: Season }) {
 }
 
 export function FarmPage({ farm }: { farm: Farm }) {
-  const r = farm.replayRun // the Cody replay: what a record flood does to this field
+  const r = farm.replayRun // the February 2022 replay: what a record flood does to this field
   const now = farm.liveRun
-  const [crop, setCrop] = useState<keyof typeof MATURITY>("ratoon")
-  const [start, setStart] = useState("2026-08")
+  const [crop, setCrop] = useState<keyof typeof CROP>("twoYear")
+  const [start, setStart] = useState("2025-09")
   const [tools, setTools] = useState<Record<string, { on: boolean; hours: number; lph: number }>>(() =>
     Object.fromEntries(TOOLS.map((x) => [x.id, { on: x.id === "pump" || x.id === "saw" || x.id === "tractor", hours: x.hours, lph: x.lph }])),
   )
   const [season, setSeason] = useState<Season>()
   useEffect(() => {
-    fetch("/data/ba/season.json").then((r) => r.json()).then(setSeason).catch(() => undefined)
+    fetch(`${BASE}/season.json`).then((r) => r.json()).then(setSeason).catch(() => undefined)
   }, [])
 
   // Cane only grows on farmland squares (WorldCover grass/cropland), not on the house or the trees.
   const cellHa = farm.elev ? farm.elev.stepM ** 2 / 10_000 : 0
   const caneHa = r ? r.cells.filter((c) => c.land === undefined || c.land === 30 || c.land === 40).length * cellHa : 0
-  const tonnes = caneHa * YIELD_T_HA
+  const tonnes = caneHa * CROP[crop].yield
   const value = tonnes * PRICE_T
-  const ready = readyDate(start, crop)
+  const ready = readyDate(start, CROP[crop].months)
   const elNinoNow = season?.latest.phase === "elnino"
+  const driest = season ? season.seasons.reduce((a, b) => (b.rain < a.rain ? b : a)) : undefined
+  const floodShare = (p: Phase) => (season ? `${season.phases[p].floodSeasons} of ${season.phases[p].seasons}` : "–")
 
   const toolRows = useMemo(
     () =>
@@ -118,31 +122,31 @@ export function FarmPage({ farm }: { farm: Farm }) {
     [tools],
   )
   const swappable = toolRows.filter((x) => x.swap)
-  const saved = { cost: swappable.reduce((s, x) => s + x.cost, 0), co2: swappable.reduce((s, x) => s + x.co2, 0) }
+  const saved = { litres: swappable.reduce((s, x) => s + x.litres, 0), cost: swappable.reduce((s, x) => s + x.cost, 0), co2: swappable.reduce((s, x) => s + x.co2, 0) }
 
   const texts: { when: string; from: "draki" | "farmer"; body: string }[] = [
     {
-      when: "October, before the wet season",
+      when: "Spring, before the wet season",
       from: "draki",
       body: season
-        ? `Draki: ${elNinoNow ? "El Niño is under way" : `${PHASE[season.latest.phase].label} conditions`}. In El Niño years Ba gets about ${pct(season.phases.elnino.meanRain, season.allMeanRain)}% less rain from Nov to Apr. Leave cane trash on the field as mulch, don't burn it: it holds water in the soil.`
+        ? `Draki: ${elNinoNow ? "El Niño is under way" : `${PHASE[season.latest.phase].label} conditions`}. In El Niño years this part of the Richmond gets about ${pct(season.phases.elnino.meanRain, season.allMeanRain)}% less rain. Keep your trash blanket on the ground to hold soil moisture.`
         : "…",
     },
     {
       when: "Every week",
       from: "draki",
-      body: now ? `Draki: ${now.peak.total.toFixed(0)} mm of rain in the next 3 days, Ba River ${now.river && now.river.stage > 0 ? "rising" : "in its banks"}. ${now.a.level === "clear" ? "No flooding expected on your block." : "Flood watch for your low ground."}` : "…",
+      body: now ? `Draki: ${now.peak.total.toFixed(0)} mm of rain in the next 3 days, Richmond River ${now.river && now.river.stage > 0 ? "rising" : "in its banks"}. ${now.a.level === "clear" ? "No flooding expected on your block." : "Flood watch for your low ground."}` : "…",
     },
     {
       when: "When a flood is coming",
       from: "draki",
       body: r
-        ? `Draki: FLOOD RISK HIGH. Ba River rising ~${r.river?.stage.toFixed(1) ?? "–"} m. Your low ground could sit under ~${r.a.maxDepth.toFixed(1)} m of water. 1. Move cut cane off the low corner today. 2. Park the tractor on the high ground. Reply 1 if your block floods, 2 if it stays dry.`
+        ? `Draki: FLOOD RISK HIGH. Richmond River rising ~${r.river?.stage.toFixed(1) ?? "–"} m. Your low ground could sit under ${depthLabel(r.a.maxDepth)} of water. 1. Move the harvester and haul-outs to the high ground. 2. Shift fertiliser and fuel off the low side. Reply 1 if your block floods, 2 if it stays dry.`
         : "…",
     },
     { when: "", from: "farmer", body: "1" },
-    { when: "", from: "draki", body: "Draki: Thanks. Your sector officer knows your block flooded. Your flood report (date, hectares, depth) is ready for your insurance or assistance claim." },
-    { when: "Before harvest", from: "draki", body: `Draki: Your block is ready from ${month(ready)}. Expect about ${t(tonnes)} of cane, ${fjd(value)} at F$${PRICE_T.toFixed(2)}/t.` },
+    { when: "", from: "draki", body: "Draki: Thanks. Your mill's cane adviser knows your block flooded. Your flood report (date, hectares, depth) is ready for your insurer or a disaster grant claim." },
+    { when: "Before the crush", from: "draki", body: `Draki: Your block is ready from ${month(ready)}. Expect about ${t(tonnes)} of cane, ${aud(value)} at A$${PRICE_T}/t.` },
   ]
 
   return (
@@ -150,26 +154,29 @@ export function FarmPage({ farm }: { farm: Farm }) {
       <h1 className="font-display text-5xl uppercase md:text-7xl">My farm</h1>
       <p className="mt-4 max-w-3xl text-lg text-muted-foreground">
         One cane block through a whole season: what it will earn, what the weather could take, and what to change. A grower gets all of this as texts.
-        This page is for the extension officer who helps them set it up.
+        This page is for whoever sets it up with them: a mill cane adviser, a co-op, or a family member.
       </p>
 
       <div className="mt-10 flex flex-wrap items-end gap-6 rounded-3xl border border-rule bg-paper-2 p-5">
         <div>
           <p className="text-sm text-muted-foreground">Field</p>
-          <p className="text-lg">{r ? `${r.a.areaHa.toFixed(1)} ha on the Ba River` : "Loading…"}</p>
+          <p className="text-lg">{r ? `${r.a.areaHa.toFixed(1)} ha on the lower Richmond` : "Loading…"}</p>
           <a href="#/live" className="text-sm text-leaf hover:underline">
             Change the field on the map
           </a>
         </div>
         <label className="grid gap-1 text-sm">
           <span className="text-muted-foreground">Crop</span>
-          <select value={crop} onChange={(e) => setCrop(e.target.value as keyof typeof MATURITY)} className="rounded-full border border-rule bg-card px-4 py-2 text-base">
-            <option value="ratoon">Sugarcane, ratoon (regrowth)</option>
-            <option value="plant">Sugarcane, newly planted</option>
+          <select value={crop} onChange={(e) => setCrop(e.target.value as keyof typeof CROP)} className="rounded-full border border-rule bg-card px-4 py-2 text-base">
+            {Object.entries(CROP).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v.label}
+              </option>
+            ))}
           </select>
         </label>
         <label className="grid gap-1 text-sm">
-          <span className="text-muted-foreground">{crop === "plant" ? "Planted" : "Last harvested"}</span>
+          <span className="text-muted-foreground">Planted or last harvested</span>
           <input type="month" value={start} onChange={(e) => e.target.value && setStart(e.target.value)} className="rounded-full border border-rule bg-card px-4 py-2 text-base" />
         </label>
       </div>
@@ -182,31 +189,33 @@ export function FarmPage({ farm }: { farm: Farm }) {
             <div>
               <p className="text-sm text-muted-foreground">Ready to cut</p>
               <p className="mt-1 text-3xl font-semibold">{ready.toLocaleDateString("en-AU", { month: "short", year: "numeric" })}</p>
-              <p className="mt-1 text-sm text-muted-foreground">Mill crushes July to November</p>
+              <p className="mt-1 text-sm text-muted-foreground">Mills crush June to December</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Expected harvest</p>
               <p className="mt-1 text-3xl font-semibold">{r ? t(tonnes) : "–"}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{caneHa.toFixed(1)} ha of cane × {YIELD_T_HA} t/ha (Fiji average)</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {caneHa.toFixed(1)} ha of cane × {CROP[crop].yield} t/ha
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Worth</p>
-              <p className="mt-1 text-3xl font-semibold">{r ? fjd(value) : "–"}</p>
-              <p className="mt-1 text-sm text-muted-foreground">at FSC's F${PRICE_T.toFixed(2)}/t forecast price</p>
+              <p className="mt-1 text-3xl font-semibold">{r ? aud(value) : "–"}</p>
+              <p className="mt-1 text-sm text-muted-foreground">at A${PRICE_T}/t, the 2024 NSW average</p>
             </div>
           </div>
           <h3 className="mt-8 text-sm text-muted-foreground">What the weather could take</h3>
           <ul className="mt-2 divide-y divide-rule border-y border-rule">
             <li className="flex flex-wrap items-baseline justify-between gap-2 py-3">
-              <span>A drought like the 1997–98 El Niño, when Fiji's cane harvest halved</span>
-              <span className="font-semibold text-flood">−{fjd(value * EL_NINO_9798_LOSS)}</span>
+              <span>A flood like February 2022: cane under water on this block</span>
+              <span className="font-semibold text-flood">{r ? (r.a.valueAtRisk >= value * 0.95 ? `the whole crop, ${aud(r.a.valueAtRisk)}` : `${aud(r.a.valueAtRisk)} at risk`) : "–"}</span>
             </li>
             <li className="flex flex-wrap items-baseline justify-between gap-2 py-3">
-              <span>A flood like Cyclone Cody: cane under water on this block</span>
-              <span className="font-semibold text-flood">{r ? `−${fjd(r.a.valueAtRisk)} at risk` : "–"}</span>
+              <span>An El Niño year: less rain while the cane grows</span>
+              <span className="font-semibold text-flood">{season ? `about ${pct(season.phases.elnino.meanRain, season.allMeanRain)}% less rain` : "–"}</span>
             </li>
           </ul>
-          <p className="mt-3 text-sm text-muted-foreground">The price is FSC's 2026 forecast; the final payment can differ. Yield is the Fiji average, not this block's own record.</p>
+          <p className="mt-3 text-sm text-muted-foreground">Yield is the NSW DPI range for this crop type, not this block's own record. The price changes every season.</p>
         </div>
 
         {/* 2. This season: El Niño */}
@@ -220,22 +229,22 @@ export function FarmPage({ farm }: { farm: Farm }) {
                 {season.latest.oni.toFixed(1)} ({season.latest.season} {season.latest.year}). Above +0.5 is El Niño.
               </p>
               <p className="mt-6 text-lg leading-snug">
-                In El Niño years Ba averages <strong>{season.phases.elnino.meanRain.toLocaleString("en-AU")} mm</strong> of rain from November to April, against{" "}
-                {season.phases.lanina.meanRain.toLocaleString("en-AU")} mm in La Niña years. That's {pct(season.phases.elnino.meanRain, season.allMeanRain)}% below average: a
-                dry season for cane.
+                In El Niño years Woodburn averages <strong>{season.phases.elnino.meanRain.toLocaleString("en-AU")} mm</strong> of rain, against{" "}
+                {season.phases.lanina.meanRain.toLocaleString("en-AU")} mm in La Niña years. Floods go the other way: the river hit Act level in {floodShare("lanina")}{" "}
+                La Niña years and {floodShare("elnino")} El Niño years.
               </p>
-              {season.seasons.find((x) => x.season === "1997-98") && (
+              {driest && (
                 <p className="mt-3 text-white/70">
-                  In 1997–98, the strongest El Niño on record here, Ba got just {season.seasons.find((x) => x.season === "1997-98")!.rain} mm, about a quarter of normal. Not every
-                  El Niño is dry (2023–24 was wet), so Draki watches the actual rain all season.
+                  The driest year since 1991 was {driest.season}, with {driest.rain.toLocaleString("en-AU")} mm ({PHASE[driest.phase].label}). Not every El Niño is dry, so
+                  Draki watches the actual rain all season.
                 </p>
               )}
               <h3 className="mt-6 text-sm text-white/60">What to do this season</h3>
               <ul className="mt-2 space-y-2">
                 {[
-                  "Leave cane trash on the field as mulch instead of burning it. It keeps water in the soil.",
-                  "Check pumps and water sources before the dry months.",
-                  "Ask your sector officer about drought-tolerant varieties before replanting.",
+                  "Keep the trash blanket from harvest on the ground. It holds water in the soil.",
+                  "Check pumps and irrigation before the dry months.",
+                  "Ask your mill's cane adviser about drought-tolerant varieties before replanting.",
                 ].map((x) => (
                   <li key={x} className="flex gap-3">
                     <Check className="mt-1 size-4 shrink-0 text-cane" aria-hidden />
@@ -252,7 +261,7 @@ export function FarmPage({ farm }: { farm: Farm }) {
         {season && (
           <figure className={cn(card, "lg:col-span-12")}>
             <div className="flex flex-wrap items-baseline justify-between gap-4">
-              <p className="text-sm text-muted-foreground">Rain at Ba, November to April, every season since 1991</p>
+              <p className="text-sm text-muted-foreground">Rain at Woodburn, every year since 1991</p>
               <p className="flex flex-wrap gap-4 text-sm">
                 {(["elnino", "neutral", "lanina"] as const).map((p) => (
                   <span key={p} className="flex items-center gap-2">
@@ -266,8 +275,7 @@ export function FarmPage({ farm }: { farm: Farm }) {
               <SeasonChart s={season} />
             </div>
             <figcaption className="mt-3 text-sm text-muted-foreground">
-              ERA5 rain at Ba, classified by NOAA's Oceanic Niño Index for December–February. Ba's three record floods (2009, 2012, 2022) all came in La Niña
-              years; the 1997–98 El Niño brought the drought that halved Fiji's cane harvest.
+              ERA5 rain at Woodburn, each year classified by NOAA's Oceanic Niño Index for September–November, when El Niño and La Niña peak.
             </figcaption>
           </figure>
         )}
@@ -281,19 +289,19 @@ export function FarmPage({ farm }: { farm: Farm }) {
               <dd className="text-lg">{now ? (now.a.level === "clear" ? "No flooding expected" : `${now.a.floodedHa.toFixed(1)} ha could go under`) : "–"}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">In a Cyclone Cody-size flood</dt>
-              <dd className="text-lg">{r ? `${r.a.floodedHa.toFixed(1)} of ${r.a.areaHa.toFixed(1)} ha under water, ${fjd(r.a.valueAtRisk)} of cane` : "–"}</dd>
+              <dt className="text-sm text-muted-foreground">In a flood like February 2022</dt>
+              <dd className="text-lg">{r ? `${r.a.floodedHa.toFixed(1)} of ${r.a.areaHa.toFixed(1)} ha under water, ${aud(r.a.valueAtRisk)} of cane` : "–"}</dd>
             </div>
           </dl>
           <a href="#/live?replay" className="mt-6 inline-flex items-center gap-2 font-medium text-leaf hover:underline">
-            Watch the cyclone replay <ArrowRight className="size-4" aria-hidden />
+            Watch the 2022 flood replay <ArrowRight className="size-4" aria-hidden />
           </a>
         </div>
 
         {/* 4. Equipment */}
         <div className={cn(card, "lg:col-span-7")}>
           <h2 className="text-2xl">Switch your equipment</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Tick what you use. Fuel at FCCC prices for Viti Levu, October 2026. Hours and litres per hour are typical; change them to yours.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Tick what you use. Fuel at national average pump prices, October 2026. Hours and litres per hour are typical; change them to yours.</p>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[34rem] text-left text-sm">
               <thead className="text-muted-foreground">
@@ -324,7 +332,7 @@ export function FarmPage({ farm }: { farm: Farm }) {
                       <td className="py-2 pr-3">
                         <input type="number" min={0} step={0.1} value={s.lph} disabled={!s.on} onChange={(e) => set({ lph: Math.max(0, +e.target.value) })} aria-label={`${x.name} litres per hour`} className="w-20 rounded-lg border border-rule bg-paper px-2 py-1 tabular-nums" />
                       </td>
-                      <td className="py-2 pr-3 text-right tabular-nums">{s.on ? `${Math.round(litres)} L · ${fjd(litres * FUEL[x.fuel].price)}` : "–"}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums">{s.on ? `${Math.round(litres)} L · ${aud(litres * FUEL[x.fuel].price)}` : "–"}</td>
                       <td className="py-2">{x.swap ?? <span className="text-muted-foreground">No practical electric option yet. Keep it tuned.</span>}</td>
                     </tr>
                   )
@@ -333,8 +341,8 @@ export function FarmPage({ farm }: { farm: Farm }) {
             </table>
           </div>
           <p className="mt-4 text-lg">
-            Switching the ticked tools saves about <strong>{Math.round(swappable.reduce((s, x) => s + x.litres, 0)).toLocaleString("en-AU")} L of fuel</strong>,{" "}
-            <strong>{fjd(saved.cost)}</strong> and <strong>{(saved.co2 / 1000).toFixed(1)} t of CO₂</strong> a year.
+            Switching the ticked tools saves about <strong>{Math.round(saved.litres).toLocaleString("en-AU")} L of fuel</strong>, <strong>{aud(saved.cost)}</strong> and{" "}
+            <strong>{(saved.co2 / 1000).toFixed(1)} t of CO₂</strong> a year.
           </p>
           <p className="mt-2 text-sm text-muted-foreground">Fuel savings only: the cost of the new tools, batteries and panels isn't included. CO₂: 2.31 kg per litre of petrol, 2.68 kg per litre of diesel (US EPA).</p>
         </div>
@@ -342,7 +350,7 @@ export function FarmPage({ farm }: { farm: Farm }) {
         {/* The texts */}
         <div className="rounded-3xl bg-ink p-6 text-white lg:col-span-5">
           <h2 className="text-2xl">The texts this farm gets</h2>
-          <p className="mt-2 text-sm text-white/60">An example season. No app, no internet: any phone, and replies are one number.</p>
+          <p className="mt-2 text-sm text-white/60">An example season. No app needed: any phone, and replies are one number.</p>
           <ol className="mt-5 space-y-3">
             {texts.map((m, i) => (
               <li key={i} className={cn("flex flex-col", m.from === "farmer" ? "items-end" : "items-start")}>
@@ -359,19 +367,14 @@ export function FarmPage({ farm }: { farm: Farm }) {
           <ul className="mt-4 divide-y divide-rule border-y border-rule">
             {[
               [
-                "Climate micro-insurance (PICAP)",
-                "About F$100 a year. Pays up to F$1,000 by mobile money within weeks of a cyclone. Sold through the Sugar Cane Growers Fund and Council.",
-                "https://www.uncdf.org/article/8039/timely-risk-cover-for-sugar-cane-farmers-in-fiji",
+                "Special Disaster Grants for primary producers",
+                "After the 2022 floods, NSW and the Commonwealth offered grants of up to A$75,000 through the NSW Rural Assistance Authority (Disaster Recovery Funding Arrangements) for clean-up, repairs and restoring fields.",
+                "https://www.nsw.gov.au/sites/default/files/2023-01/Special-Disaster-Assistance-AGRN-1025-Primary-Producer-Grant-Guidelines-V1.1-November.pdf",
               ],
               [
-                "Anticipatory action pilot",
-                "Pays Fijian farming groups before a forecast cyclone, so they can prepare. A Draki forecast is exactly the kind of early signal it needs.",
-                "https://www.uncdf.org/article/8428/pacifics-first-anticipatory-action-pilot-insurance-scheme-to-provide-fijian-farming-groups-with-funds-to-better-prepare-for-cyclones",
-              ],
-              [
-                "2026 harvest fuel subsidy",
-                "F$5 million from the government to cut cane growers' harvest fuel costs this crushing season.",
-                "https://www.chinimandi.com/fiji-launches-5-million-fuel-subsidy-to-cut-sugar-harvest-costs-during-2026-crushing-season/",
+                "Disaster assistance for the 2022 floods",
+                "The Australian Government's register of what was available for the Northern Rivers floods, and the model for what opens after the next one.",
+                "https://www.disasterassist.gov.au/Pages/disasters/current-disasters/New-South-Wales/nth-nsw-floods-22-february-2022.aspx",
               ],
             ].map(([h, p, href]) => (
               <li key={h} className="py-4">

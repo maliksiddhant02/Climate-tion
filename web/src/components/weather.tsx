@@ -69,15 +69,15 @@ const mean = (from: number, to: number) => {
   const r = HEAVY_RAIN_DAYS.filter(([y]) => y >= from && y <= to)
   return r.reduce((s, [, n]) => s + n, 0) / r.length
 }
-export const DECADES = { then: mean(1991, 2000), now: mean(2015, 2024) }
+export const DECADES = { then: mean(1991, 2000), now: mean(2016, 2025) }
 
-/** 50 mm+ rain days per year at Ba, 1991–2024; the two compared decades in rain blue, the rest recessive. Light surface. */
+/** 50 mm+ rain days per year at Woodburn, 1991–2025; the two compared decades in rain blue, the rest recessive. Light surface. */
 export function HeavyRainChart() {
   const W = 640, H = 220, padL = 26, padB = 24, padT = 26
   const n = HEAVY_RAIN_DAYS.length
   const slot = (W - padL) / n
   const bw = Math.min(12, slot - 2)
-  const max = 20
+  const max = Math.max(5, ...HEAVY_RAIN_DAYS.map(([, d]) => d)) + 1
   const y = (v: number) => padT + (H - padB - padT) * (1 - v / max)
   const x = (i: number) => padL + i * slot + (slot - bw) / 2
   const idx = (yr: number) => HEAVY_RAIN_DAYS.findIndex(([y]) => y === yr)
@@ -89,29 +89,29 @@ export function HeavyRainChart() {
   )
   return (
     <figure>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={`Days with 50 mm or more rain at Ba: ${DECADES.then.toFixed(1)} a year in 1991–2000, ${DECADES.now.toFixed(1)} a year in 2015–2024`}>
-        {[0, 5, 10, 15, 20].map((v) => (
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={`Days with 50 mm or more rain at Woodburn: ${DECADES.then.toFixed(1)} a year in 1991–2000, ${DECADES.now.toFixed(1)} a year in 2016–2025`}>
+        {[0, 2, 4, 6, 8].filter((v) => v <= max).map((v) => (
           <g key={v}>
             <line x1={padL} x2={W} y1={y(v)} y2={y(v)} stroke="#d9d0bd" />
             <text x={padL - 6} y={y(v) + 3} textAnchor="end" className="fill-[#525e56] text-[10px] tabular-nums">{v}</text>
           </g>
         ))}
         {HEAVY_RAIN_DAYS.map(([yr, d], i) => {
-          const hot = (yr >= 1991 && yr <= 2000) || (yr >= 2015 && yr <= 2024)
+          const hot = (yr >= 1991 && yr <= 2000) || (yr >= 2016 && yr <= 2025)
           return (
             <g key={yr}>
               <path d={bar(x(i), y(d), bw, y(0) - y(d))} fill={hot ? "#3c6fae" : "#cdc3ad"} />
               <rect x={padL + i * slot} y={padT} width={slot} height={H - padB - padT} fill="transparent">
                 <title>{`${yr}: ${d} days with 50 mm+`}</title>
               </rect>
-              {[1991, 2000, 2015, 2024].includes(yr) && (
-                <text x={yr === 2024 ? x(i) + bw : x(i) + bw / 2} y={H - 6} textAnchor={yr === 2024 ? "end" : "middle"} className="fill-[#525e56] text-[10px]">{yr}</text>
+              {[1991, 2000, 2016, 2025].includes(yr) && (
+                <text x={yr === 2025 ? x(i) + bw : x(i) + bw / 2} y={H - 6} textAnchor={yr === 2025 ? "end" : "middle"} className="fill-[#525e56] text-[10px]">{yr}</text>
               )}
             </g>
           )
         })}
         {decade(1991, 2000, DECADES.then, `1990s avg ${DECADES.then.toFixed(1)}`)}
-        {decade(2015, 2024, DECADES.now, `2015–24 avg ${DECADES.now.toFixed(1)}`)}
+        {decade(2016, 2025, DECADES.now, `2016–25 avg ${DECADES.now.toFixed(1)}`)}
       </svg>
       <details className="mt-3 text-sm text-muted-foreground">
         <summary className="cursor-pointer">Show the numbers</summary>
@@ -133,7 +133,7 @@ export function HeavyRainChart() {
 const linePath = (xs: number[], ys: number[]) => xs.map((x, i) => `${i ? "L" : "M"}${x.toFixed(1)},${ys[i].toFixed(1)}`).join("")
 
 /**
- * Ba River flow (GloFAS), daily, against the two lines that matter: in its banks below the 2-year flood,
+ * Richmond River flow (GloFAS), daily, against the two lines that matter: in its banks below the 2-year flood,
  * "Act today" above the 5-year flood. Ensemble members, when there are any, are the thin lines. Dark surface.
  */
 export function RiverChart({ time, q, members, q2, q5, cursor }: { time: string[]; q: (number | null)[]; members?: number[][]; q2: number; q5: number; cursor?: number }) {
@@ -146,7 +146,7 @@ export function RiverChart({ time, q, members, q2, q5, cursor }: { time: string[
   const peak = Math.max(...q.map((v) => v ?? 0))
   const pi = q.findIndex((v) => v === peak)
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={`Ba River flow, peak ${Math.round(peak)} cubic metres per second`}>
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={`Richmond River flow, peak ${Math.round(peak)} cubic metres per second`}>
       {[
         [q2, "In its banks below"],
         [q5, "Act today above"],
@@ -176,7 +176,7 @@ export function RiverChart({ time, q, members, q2, q5, cursor }: { time: string[
 }
 
 /**
- * Thirty years of Ba River flow (GloFAS weekly peaks) with every recorded Ba flood marked. The point of the chart:
+ * Decades of Richmond River flow (GloFAS weekly peaks) with every recorded flood marked. The point of the chart:
  * the floods that made the news are the tallest spikes. Light surface.
  */
 export function FlowHistory({ time, q, floods, q2, q5 }: { time: string[]; q: number[]; floods: { start: string; name: string; peak: number; level: string }[]; q2: number; q5: number }) {
@@ -195,7 +195,7 @@ export function FlowHistory({ time, q, floods, q2, q5 }: { time: string[]; q: nu
     return same.length > 1 ? `${f.start.slice(0, 4)} ×${same.length}` : f.start.slice(0, 4)
   }
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Ba River flow since 1997, with recorded floods marked at the tallest peaks">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Richmond River flow over the years, with recorded floods marked at the tallest peaks">
       {[0, 500, 1000].map((v) => (
         <g key={v}>
           <line x1={padL} x2={W - 8} y1={y(v)} y2={y(v)} stroke="#d9d0bd" />

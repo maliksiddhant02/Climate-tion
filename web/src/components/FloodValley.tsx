@@ -3,11 +3,11 @@ import { ArrowDown, ArrowRight } from "lucide-react"
 import { riverStage } from "@/lib/flood"
 import { loadRegion, type Region } from "@/lib/region"
 
-// The Home hero: the real Ba floodplain (Copernicus GLO-30, 30 m) drawn as shaded terrain, with the Ba River
-// rising as the visitor scrolls, from normal flow to Cyclone Cody's peak. Every pixel is our model's own data.
+// The Home hero: the real lower Richmond floodplain, NSW (Copernicus GLO-30, 30 m) drawn as shaded terrain, with the
+// Richmond River rising as the visitor scrolls, from normal flow to the February 2022 peak. Every pixel is our model's own data.
 
-const BA_TOWN = [-17.5345, 177.6735] as const
-const NORMAL_Q = 20 // m³/s, a typical dry-season flow
+const TOWN = [-29.0717, 153.3408] as const // Woodburn
+const NORMAL_Q = 30 // m³/s, a typical dry-season flow
 const IN_BANKS = 0.12 // share of the scroll spent showing the river still inside its banks
 
 const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
@@ -17,7 +17,7 @@ const LAND: Record<number, number[]> = {
   20: rgb("#3a4a2c"), // shrubs
   30: rgb("#4a6a34"), // grassland (where WorldCover puts most sugarcane)
   40: rgb("#55703a"), // cropland
-  50: rgb("#77756c"), // built-up: Ba Town
+  50: rgb("#77756c"), // built-up: Woodburn, Coraki, Broadwater
   60: rgb("#7a6a4f"), // bare
   80: rgb("#2c5f9e"), // permanent water: the river and the sea
   90: rgb("#2b4a3a"), // wetland
@@ -30,7 +30,7 @@ type Prepared = { region: Region; base: Uint8ClampedArray; hand: Float32Array; s
 
 function prepare(region: Region): Prepared {
   const { width: w, height: h, res } = region.meta
-  const dx = res * 111_320 * Math.cos((17.525 * Math.PI) / 180)
+  const dx = res * 111_320 * Math.cos(((region.meta.bbox[1] + region.meta.bbox[3]) / 2) * (Math.PI / 180))
   const dy = res * 111_320
   const base = new Uint8ClampedArray(w * h * 4)
   const hand = new Float32Array(w * h)
@@ -54,7 +54,7 @@ function prepare(region: Region): Prepared {
       if (cls !== 80) land.push(hand[i])
     }
   const cellHa = (dx * dy) / 10_000
-  return { region, base, hand, sortedHand: Float32Array.from(land).sort(), cellHa, stageMax: riverStage(region.meta.river.codyPeak, region.meta.river) }
+  return { region, base, hand, sortedHand: Float32Array.from(land).sort(), cellHa, stageMax: riverStage(region.meta.river.eventPeak, region.meta.river) }
 }
 
 /** How many land cells sit below the water: binary search over the sorted heights. */
@@ -136,7 +136,7 @@ export function FloodValley({ children }: { children: ReactNode }) {
   }, [])
 
   const cal = prep?.region.meta.river
-  const q = !cal ? 0 : progress < IN_BANKS ? NORMAL_Q + (cal.q2 - NORMAL_Q) * (progress / IN_BANKS) : cal.q2 + (cal.codyPeak - cal.q2) * ((progress - IN_BANKS) / (1 - IN_BANKS))
+  const q = !cal ? 0 : progress < IN_BANKS ? NORMAL_Q + (cal.q2 - NORMAL_Q) * (progress / IN_BANKS) : cal.q2 + (cal.eventPeak - cal.q2) * ((progress - IN_BANKS) / (1 - IN_BANKS))
   const stage = cal ? riverStage(q, cal) : 0
   const ha = prep ? below(prep.sortedHand, stage) * prep.cellHa : 0
 
@@ -152,13 +152,13 @@ export function FloodValley({ children }: { children: ReactNode }) {
   useEffect(() => {
     const c = canvas.current
     if (!prep || !c) return
-    const place = () => setTown(coverPoint(c, prep.region, BA_TOWN))
+    const place = () => setTown(coverPoint(c, prep.region, TOWN))
     place()
     addEventListener("resize", place)
     return () => removeEventListener("resize", place)
   }, [prep])
 
-  const phase = !cal ? "" : q < cal.q2 ? "In its banks" : q < cal.q5 ? "Over its banks: Watch" : progress < 0.995 ? "Act today" : "Cyclone Cody, 9 January 2022"
+  const phase = !cal ? "" : q < cal.q2 ? "In its banks" : q < cal.q5 ? "Over its banks: Watch" : progress < 0.995 ? "Act today" : "28 February 2022"
 
   return (
     <section ref={section} className="relative h-[280svh] bg-ink">
@@ -169,7 +169,7 @@ export function FloodValley({ children }: { children: ReactNode }) {
           width={prep?.region.meta.width ?? 1}
           height={prep?.region.meta.height ?? 1}
           role="img"
-          aria-label="Map of the Ba River floodplain in Fiji. As you scroll, the river rises to its Cyclone Cody peak and floods the low ground."
+          aria-label="Map of the lower Richmond River floodplain in NSW. As you scroll, the river rises to its February 2022 peak and floods the low ground."
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${prep ? "opacity-100" : "opacity-0"}`}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-ink/0" />
@@ -178,13 +178,13 @@ export function FloodValley({ children }: { children: ReactNode }) {
         {town && prep && (
           <div className="pointer-events-none absolute" style={{ left: town.x, top: town.y }}>
             <span className="absolute -translate-x-1/2 -translate-y-1/2 size-3 rounded-full border-2 border-white bg-cane" />
-            <span className="absolute top-3 left-3 text-sm font-medium whitespace-nowrap text-white drop-shadow">Ba Town</span>
+            <span className="absolute top-3 left-3 text-sm font-medium whitespace-nowrap text-white drop-shadow">Woodburn</span>
           </div>
         )}
 
         {prep && cal && (
           <div className="absolute top-5 right-6 w-52 rounded-2xl bg-ink/70 p-4 text-white backdrop-blur sm:w-64 sm:p-5 md:top-8 md:right-10 md:w-72" aria-live="polite">
-            <p className="text-sm text-white/70">Ba River</p>
+            <p className="text-sm text-white/70">Richmond River</p>
             <p className="mt-1 font-display text-4xl leading-none tabular-nums sm:text-5xl">
               {Math.round(q).toLocaleString("en-AU")}
               <span className="ml-1 font-sans text-base font-normal tracking-normal text-white/70">m³/s</span>
