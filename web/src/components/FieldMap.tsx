@@ -1,6 +1,7 @@
-import { useEffect } from "react"
+import { useEffect, type ComponentType } from "react"
+import { renderToStaticMarkup } from "react-dom/server"
 import L from "leaflet"
-import { CircleMarker, ImageOverlay, MapContainer, ZoomControl, Polygon, Polyline, Rectangle, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet"
+import { CircleMarker, ImageOverlay, MapContainer, Marker, ZoomControl, Polygon, Polyline, Rectangle, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet"
 import { KNOBS, type Cell, type LatLng } from "@/lib/flood"
 
 const M_PER_DEG = 111_320
@@ -28,6 +29,18 @@ function cellStyle(c: Cell) {
   return { fillOpacity: 0, color: "#ffffff", opacity: 0.18, weight: 1 }
 }
 
+/** A farm item on the map: an icon in a round chip, red when it would sit in water. */
+export type Pin = { id: string; at: LatLng; Icon: ComponentType<{ className?: string }>; label: string; wet?: boolean }
+export type Shape = { id: string; poly: LatLng[]; color: string; label: string }
+
+const pinIcon = ({ Icon, wet }: Pin) =>
+  L.divIcon({
+    className: "",
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+    html: `<div class="farm-pin${wet ? " farm-pin-wet" : ""}">${renderToStaticMarkup(<Icon className="size-[18px]" />)}</div>`,
+  })
+
 export function FieldMap(props: {
   poly: LatLng[]
   cells: Cell[]
@@ -39,8 +52,15 @@ export function FieldMap(props: {
   runKey?: string
   /** What the satellite saw under water, drawn under the model's squares. */
   overlay?: { url: string; bounds: [LatLng, LatLng] }
+  /** Paddocks, coloured by crop and labelled. */
+  shapes?: Shape[]
+  pins?: Pin[]
+  /** Only draw cells that hold water (no grid over dry ground), for maps that already show paddocks. */
+  wetOnly?: boolean
+  /** Hide the field outline (e.g. while the farmer is still marking it). */
+  noOutline?: boolean
 }) {
-  const { poly, cells, stepM, high, draft, onMapClick, runKey = "", overlay } = props
+  const { poly, cells, stepM, high, draft, onMapClick, runKey = "", overlay, shapes, pins, wetOnly, noOutline } = props
   const half = stepM / 2 / M_PER_DEG
   const maxDepth = Math.max(0, ...cells.map((c) => c.depth))
   const cos = Math.cos((poly[0][0] * Math.PI) / 180)
@@ -56,8 +76,15 @@ export function FieldMap(props: {
       {overlay && <ImageOverlay url={overlay.url} bounds={overlay.bounds} opacity={0.85} />}
       <Fit poly={poly} />
       <Clicks onClick={onMapClick} />
+      {shapes?.map((s) => (
+        <Polygon key={s.id} positions={s.poly} pathOptions={{ color: s.color, weight: 2, fillColor: s.color, fillOpacity: 0.4 }}>
+          <Tooltip permanent direction="center" className="farm-label">
+            {s.label}
+          </Tooltip>
+        </Polygon>
+      ))}
       {!draft &&
-        cells.map((c) => (
+        cells.filter((c) => !wetOnly || c.depth > 0).map((c) => (
           <Rectangle
             key={`${runKey}:${c.lat},${c.lng}`}
             bounds={[[c.lat - half, c.lng - half / cos], [c.lat + half, c.lng + half / cos]]}
@@ -66,7 +93,12 @@ export function FieldMap(props: {
             <Tooltip sticky>{`${c.hand !== undefined ? `${c.hand.toFixed(1)} m above the river` : `${c.elev.toFixed(0)} m above sea level`}${c.depth > 0.01 ? ` · ~${c.depth.toFixed(1)} m of water` : ""}`}</Tooltip>
           </Rectangle>
         ))}
-      {!draft && <Polygon positions={poly} pathOptions={{ color: "#d4a72c", weight: 2, fill: false }} />}
+      {!noOutline && (!draft || shapes) && <Polygon positions={poly} pathOptions={{ color: shapes ? "#ffffff" : "#d4a72c", weight: 2.5, fill: false }} />}
+      {pins?.map((p) => (
+        <Marker key={p.id} position={p.at} icon={pinIcon(p)}>
+          <Tooltip direction="top" offset={[0, -16]}>{p.label}</Tooltip>
+        </Marker>
+      ))}
       {!draft && high && (
         <CircleMarker center={[high.lat, high.lng]} radius={6} pathOptions={{ color: "#13211a", weight: 2, fillColor: "#d4a72c", fillOpacity: 1 }}>
           <Tooltip permanent direction="top" offset={[0, -8]}>High ground · park machinery here</Tooltip>

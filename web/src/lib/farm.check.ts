@@ -1,0 +1,30 @@
+// Run: node src/lib/farm.check.ts
+import assert from "node:assert/strict"
+import { areaHa, itemDepth, paddockRisk, readyDate, type Paddock } from "./farm.ts"
+import type { Cell, LatLng } from "./flood.ts"
+
+// 100 m × 100 m square at the equator is 1 ha.
+const d = 100 / 111_320
+const sq: LatLng[] = [[0, 0], [0, d], [d, d], [d, 0]]
+assert.ok(Math.abs(areaHa(sq) - 1) < 0.01)
+
+// Two 50 m cells inside the paddock, one flooded; one cell outside.
+const cells: Cell[] = [
+  { lat: d * 0.25, lng: d * 0.25, elev: 1, depth: 1 },
+  { lat: d * 0.75, lng: d * 0.75, elev: 5, depth: 0 },
+  { lat: d * 3, lng: d * 3, elev: 0, depth: 2 },
+]
+const cane: Paddock = { id: "a", crop: "cane", poly: sq }
+const r = paddockRisk(cane, cells, 50)
+assert.equal(r.floodedHa, 0.25)
+assert.equal(r.maxDepth, 1)
+assert.ok(r.atRisk > 0)
+assert.equal(paddockRisk({ ...cane, crop: "pasture" }, cells, 50).atRisk, 0) // no value entered yet
+
+assert.equal(itemDepth({ id: "t", kind: "tractor", at: [d * 0.25, d * 0.25] }, cells, 50), 1)
+assert.equal(itemDepth({ id: "t", kind: "tractor", at: [d * 10, d * 10] }, cells, 50), undefined)
+
+// Cane planted Jan 2025 matures Jan 2027, waits for the mill to open in June.
+assert.equal(readyDate({ ...cane, planted: "2025-01" })?.getMonth(), 5)
+
+console.log("farm model: ok")

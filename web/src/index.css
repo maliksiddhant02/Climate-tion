@@ -163,3 +163,8 @@
   .leaflet-container .rise { animation-delay: 0ms; }
   .animate-pulse { animation: none; }
 }
+/* Farm map: equipment chips and paddock labels. */
+.farm-pin { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9999px; background: #13211a; color: #f3eee3; border: 2px solid #f3eee3; }
+.farm-pin-wet { background: #d4472a; color: #fff; }
+.leaflet-tooltip.farm-label { background: rgba(19, 33, 26, 0.8); color: #fff; border: 0; border-radius: 9999px; padding: 2px 10px; font-size: 12px; box-shadow: none; }
+.leaflet-tooltip.farm-label::before { display: none; }
