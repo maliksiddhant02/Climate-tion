@@ -1,17 +1,16 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
-@import "@fontsource-variable/fraunces";
-@import "@fontsource-variable/fraunces/wght-italic.css";
+/* Archivo: one variable family, weight 100–900 and width 62–125%. Expanded for display, normal for reading. */
+@import "@fontsource-variable/archivo/wdth.css";
 @import "leaflet/dist/leaflet.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: 'Fraunces Variable', Georgia, serif;
-    --font-display: 'Fraunces Variable', Georgia, serif;
-    --font-sans: 'Geist Variable', ui-sans-serif, sans-serif;
+    --font-heading: 'Archivo Variable', 'Arial Narrow', sans-serif;
+    --font-display: 'Archivo Variable', 'Arial', sans-serif;
+    --font-sans: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif;
     --color-paper: #f3eee3;
     --color-paper-2: #e9e2d2;
     --color-ink: #13211a;
@@ -103,6 +102,13 @@
 
 .leaflet-container { font-family: var(--font-sans); background: #1d3127; }
 .leaflet-control-attribution { font-size: 10px; }
+
+/* Display voice: Archivo stretched to 125% and heavy, like the plate on a tractor. Emphasis is colour, never italic. */
+@layer base {
+  .font-display { font-stretch: 125%; font-weight: 800; letter-spacing: -0.02em; }
+  .font-display em { font-style: normal; }
+  body { font-feature-settings: "tnum" 0; }
+}
 
 /* ---- Motion (Emil Kowalski's rules: transform + opacity only, strong ease-out, UI under 300 ms) ---- */
 :root {

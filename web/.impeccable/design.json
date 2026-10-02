@@ -311,7 +311,7 @@
       "refersTo": "button-primary",
       "description": "Main call to action on dark sections: white pill, ink text.",
       "html": "<div class=\"ds-dark\"><button class=\"ds-btn-primary\">See the live field <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></button></div>",
-      "css": ".ds-dark{background:#13211a;padding:24px}.ds-btn-primary{display:inline-flex;align-items:center;gap:8px;background:#fff;color:#13211a;border:0;border-radius:9999px;padding:12px 20px;font:500 14px/1 'Geist Variable',sans-serif;cursor:pointer;transition:background .15s}.ds-btn-primary:hover{background:#f3eee3}.ds-btn-primary:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}"
+      "css": ".ds-dark{background:#13211a;padding:24px}.ds-btn-primary{display:inline-flex;align-items:center;gap:8px;background:#fff;color:#13211a;border:0;border-radius:9999px;padding:12px 20px;font:500 14px/1 'Archivo Variable',sans-serif;cursor:pointer;transition:background .15s}.ds-btn-primary:hover{background:#f3eee3}.ds-btn-primary:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}"
     },
     {
       "name": "Cane Button",
@@ -319,7 +319,7 @@
       "refersTo": "button-cane",
       "description": "Accent action: 'Try it', 'Done'.",
       "html": "<div class=\"ds-dark\"><button class=\"ds-btn-cane\">Try it</button> <button class=\"ds-btn-cane\" disabled>Done</button></div>",
-      "css": ".ds-dark{background:#13211a;padding:24px}.ds-btn-cane{background:#d4a72c;color:#13211a;border:0;border-radius:9999px;padding:8px 16px;font:500 14px/1.2 'Geist Variable',sans-serif;cursor:pointer;transition:background .15s}.ds-btn-cane:hover{background:#e2b84a}.ds-btn-cane:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}.ds-btn-cane:disabled{opacity:.4;cursor:default}"
+      "css": ".ds-dark{background:#13211a;padding:24px}.ds-btn-cane{background:#d4a72c;color:#13211a;border:0;border-radius:9999px;padding:8px 16px;font:500 14px/1.2 'Archivo Variable',sans-serif;cursor:pointer;transition:background .15s}.ds-btn-cane:hover{background:#e2b84a}.ds-btn-cane:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}.ds-btn-cane:disabled{opacity:.4;cursor:default}"
     },
     {
       "name": "Ghost Button (on ink)",
@@ -327,7 +327,7 @@
       "refersTo": "button-ghost-dark",
       "description": "Secondary action on dark: hairline pill.",
       "html": "<div class=\"ds-dark\"><button class=\"ds-btn-ghost\">Replay Cyclone Cody, 2022</button></div>",
-      "css": ".ds-dark{background:#13211a;padding:24px}.ds-btn-ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:9999px;padding:12px 20px;font:400 14px/1 'Geist Variable',sans-serif;cursor:pointer;transition:background .15s}.ds-btn-ghost:hover{background:rgba(255,255,255,.1)}.ds-btn-ghost:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}"
+      "css": ".ds-dark{background:#13211a;padding:24px}.ds-btn-ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:9999px;padding:12px 20px;font:400 14px/1 'Archivo Variable',sans-serif;cursor:pointer;transition:background .15s}.ds-btn-ghost:hover{background:rgba(255,255,255,.1)}.ds-btn-ghost:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}"
     },
     {
       "name": "Status Pills",
@@ -335,7 +335,7 @@
       "refersTo": "status-act",
       "description": "The only status vocabulary: Act today / Watch / All clear.",
       "html": "<div class=\"ds-row\"><span class=\"ds-pill ds-act\">Act today</span><span class=\"ds-pill ds-watch\">Watch</span><span class=\"ds-pill ds-clear\">All clear</span></div>",
-      "css": ".ds-row{display:flex;gap:8px;padding:16px;background:#fbf8f1}.ds-pill{display:inline-flex;align-items:center;border-radius:9999px;padding:4px 10px;font:400 11px/1.2 'Geist Mono Variable',monospace;text-transform:uppercase;letter-spacing:.08em}.ds-act{background:#d4472a;color:#fff}.ds-watch{background:#d4a72c;color:#13211a}.ds-clear{background:#2f5e3d;color:#fff}"
+      "css": ".ds-row{display:flex;gap:8px;padding:16px;background:#fbf8f1}.ds-pill{display:inline-flex;align-items:center;border-radius:9999px;padding:4px 10px;font:400 11px/1.2 'Archivo Variable',sans-serif;text-transform:uppercase;letter-spacing:.08em}.ds-act{background:#d4472a;color:#fff}.ds-watch{background:#d4a72c;color:#13211a}.ds-clear{background:#2f5e3d;color:#fff}"
     },
     {
       "name": "Map Chip",
@@ -343,7 +343,7 @@
       "refersTo": "map-chip",
       "description": "Floating control over the satellite map.",
       "html": "<div class=\"ds-map\"><button class=\"ds-chip\">Draw your field</button><button class=\"ds-chip\">Cancel</button></div>",
-      "css": ".ds-map{display:flex;gap:8px;padding:16px;background:linear-gradient(135deg,#4a5a3a,#2f3f2a)}.ds-chip{background:rgba(19,33,26,.8);color:#fff;border:0;border-radius:9999px;padding:8px 14px;font:400 12px/1 'Geist Variable',sans-serif;backdrop-filter:blur(8px);cursor:pointer}.ds-chip:hover{background:#13211a}.ds-chip:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}"
+      "css": ".ds-map{display:flex;gap:8px;padding:16px;background:linear-gradient(135deg,#4a5a3a,#2f3f2a)}.ds-chip{background:rgba(19,33,26,.8);color:#fff;border:0;border-radius:9999px;padding:8px 14px;font:400 12px/1 'Archivo Variable',sans-serif;backdrop-filter:blur(8px);cursor:pointer}.ds-chip:hover{background:#13211a}.ds-chip:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}"
     },
     {
       "name": "Risk Card",
@@ -351,7 +351,7 @@
       "refersTo": "card-paper",
       "description": "The paper 'answer' card on the dark dashboard.",
       "html": "<div class=\"ds-dark\"><div class=\"ds-risk\"><div class=\"ds-top\"><span>Likely under water</span><span class=\"ds-pill\">Act today</span></div><p class=\"ds-fig\">22.6 ha</p><p class=\"ds-sub\">of 40.4 ha · deepest ~2.9 m</p><div class=\"ds-foot\"><span>Cane at risk</span><strong>F$86,600</strong></div></div></div>",
-      "css": ".ds-dark{background:#13211a;padding:24px}.ds-risk{background:#fbf8f1;color:#13211a;border-radius:30.8px;padding:24px;max-width:360px;font-family:'Geist Variable',sans-serif}.ds-top{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:#525e56}.ds-pill{background:#d4472a;color:#fff;border-radius:9999px;padding:4px 10px;font:400 11px/1.2 'Geist Mono Variable',monospace;text-transform:uppercase;letter-spacing:.08em}.ds-fig{font-size:60px;font-weight:600;letter-spacing:-.025em;margin:24px 0 0;line-height:1}.ds-sub{color:#525e56;margin:8px 0 0}.ds-foot{display:flex;flex-direction:column;border-top:1px solid #d9d0bd;margin-top:24px;padding-top:16px;font-size:12px;color:#525e56}.ds-foot strong{font-size:24px;color:#13211a}"
+      "css": ".ds-dark{background:#13211a;padding:24px}.ds-risk{background:#fbf8f1;color:#13211a;border-radius:30.8px;padding:24px;max-width:360px;font-family:'Archivo Variable',sans-serif}.ds-top{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:#525e56}.ds-pill{background:#d4472a;color:#fff;border-radius:9999px;padding:4px 10px;font:400 11px/1.2 'Archivo Variable',sans-serif;text-transform:uppercase;letter-spacing:.08em}.ds-fig{font-size:60px;font-weight:600;letter-spacing:-.025em;margin:24px 0 0;line-height:1}.ds-sub{color:#525e56;margin:8px 0 0}.ds-foot{display:flex;flex-direction:column;border-top:1px solid #d9d0bd;margin-top:24px;padding-top:16px;font-size:12px;color:#525e56}.ds-foot strong{font-size:24px;color:#13211a}"
     },
     {
       "name": "Dark Card",
@@ -359,7 +359,7 @@
       "refersTo": "card-dark",
       "description": "Translucent panel on ink for charts and model details.",
       "html": "<div class=\"ds-dark\"><div class=\"ds-card\"><p class=\"ds-cap\">Wettest 72 hours, mm per 3 h</p><p class=\"ds-big\">454 mm</p></div></div>",
-      "css": ".ds-dark{background:#13211a;padding:24px}.ds-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:30.8px;padding:24px;color:#fff;font-family:'Geist Variable',sans-serif;max-width:360px}.ds-cap{margin:0;font-size:14px;color:rgba(255,255,255,.6)}.ds-big{margin:8px 0 0;font-size:24px;font-weight:600}"
+      "css": ".ds-dark{background:#13211a;padding:24px}.ds-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:30.8px;padding:24px;color:#fff;font-family:'Archivo Variable',sans-serif;max-width:360px}.ds-cap{margin:0;font-size:14px;color:rgba(255,255,255,.6)}.ds-big{margin:8px 0 0;font-size:24px;font-weight:600}"
     },
     {
       "name": "Mode Tabs",
@@ -367,7 +367,7 @@
       "refersTo": "tabs",
       "description": "Pill track with pill triggers: live week vs. replay.",
       "html": "<div class=\"ds-dark\"><div class=\"ds-tabs\" role=\"tablist\"><button role=\"tab\" aria-selected=\"false\">This week</button><button role=\"tab\" aria-selected=\"true\">Replay: Cyclone Cody</button></div></div>",
-      "css": ".ds-dark{background:#13211a;padding:24px}.ds-tabs{display:inline-flex;gap:2px;background:rgba(255,255,255,.07);border-radius:9999px;padding:4px}.ds-tabs button{background:transparent;color:rgba(255,255,255,.6);border:0;border-radius:9999px;padding:8px 16px;font:500 14px/1 'Geist Variable',sans-serif;cursor:pointer}.ds-tabs button[aria-selected=true]{background:#fff;color:#13211a}.ds-tabs button:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}"
+      "css": ".ds-dark{background:#13211a;padding:24px}.ds-tabs{display:inline-flex;gap:2px;background:rgba(255,255,255,.07);border-radius:9999px;padding:4px}.ds-tabs button{background:transparent;color:rgba(255,255,255,.6);border:0;border-radius:9999px;padding:8px 16px;font:500 14px/1 'Archivo Variable',sans-serif;cursor:pointer}.ds-tabs button[aria-selected=true]{background:#fff;color:#13211a}.ds-tabs button:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}"
     },
     {
       "name": "SMS Mock",
@@ -375,14 +375,14 @@
       "refersTo": "sms-mock",
       "description": "Signature: the exact text the farmer receives.",
       "html": "<div class=\"ds-dark\"><div class=\"ds-phone\"><div class=\"ds-screen\"><p class=\"ds-hdr\">Draki · +679 SMS</p><p class=\"ds-msg\">FLOOD RISK HIGH from Sat 8 Jan\n\n1. Move cut cane, fertiliser and seed off the low corner today.\n\nWhy: Ba now gets more 50 mm+ rain days than in the 1990s.</p></div></div></div>",
-      "css": ".ds-dark{background:#13211a;padding:24px}.ds-phone{max-width:300px;background:#0d1712;border:1px solid rgba(255,255,255,.15);border-radius:2rem;padding:12px}.ds-screen{background:#16241c;border-radius:1.5rem;padding:16px}.ds-hdr{margin:0;text-align:center;font:400 11px 'Geist Mono Variable',monospace;color:rgba(255,255,255,.6)}.ds-msg{margin:12px 0 0;background:rgba(255,255,255,.1);border-radius:1rem 1rem 1rem 1rem;border-top-left-radius:4px;padding:14px;font:400 13px/1.6 'Geist Variable',sans-serif;color:rgba(255,255,255,.9);white-space:pre-line}"
+      "css": ".ds-dark{background:#13211a;padding:24px}.ds-phone{max-width:300px;background:#0d1712;border:1px solid rgba(255,255,255,.15);border-radius:2rem;padding:12px}.ds-screen{background:#16241c;border-radius:1.5rem;padding:16px}.ds-hdr{margin:0;text-align:center;font:400 11px 'Archivo Variable',sans-serif;color:rgba(255,255,255,.6)}.ds-msg{margin:12px 0 0;background:rgba(255,255,255,.1);border-radius:1rem 1rem 1rem 1rem;border-top-left-radius:4px;padding:14px;font:400 13px/1.6 'Archivo Variable',sans-serif;color:rgba(255,255,255,.9);white-space:pre-line}"
     }
   ],
   "narrative": {
     "northStar": "The Field Almanac",
     "overview": "Draki should read like a farmer's almanac that learned to read the weather forecast. Serif headlines and warm paper surfaces give it the weight of a printed reference. The data is set in plain sans figures and mono labels, so every number looks measured, not marketed. The tone is calm, honest and local: it reassures before it alarms, it shows its working, and it speaks in Ba, F$, iTaukei and cane, never in generic \"smart farming\" language.",
     "keyCharacteristics": [
-      "Fraunces display serif with cane-gold italic emphasis on the one phrase that matters (\"your farm\", \"bottom third\").",
+      "Archivo expanded 800 for display, full-width and uppercase on the hero, with cane-gold colour on the one phrase that matters.",
       "Paper and ink as the only two grounds; leaf green as a single closing band.",
       "Flat surfaces. Depth comes from tone, translucency and borders, never from shadows.",
       "Fully rounded pills for every control; large soft-cornered cards for every container.",

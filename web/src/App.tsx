@@ -5,7 +5,8 @@ import { DECADES, HeavyRainChart } from "@/components/weather"
 import { KNOBS } from "@/lib/flood"
 import { cn } from "@/lib/utils"
 
-// Type scale, four sizes only: text-sm (labels), text-base (body), text-2xl (subheads, numbers), text-5xl (page titles).
+// Type: Archivo throughout. font-display = 125% width, 800 weight. One wide frame (WRAP) so every page shares the nav's left edge.
+const WRAP = "mx-auto w-full max-w-[1600px] px-6 md:px-10"
 
 const NAV = [
   ["how", "How it works"],
@@ -36,7 +37,7 @@ function Logo() {
         <path d="M4 12c4-3 8-3 12 0s8 3 12 0" fill="none" stroke="#d4a72c" strokeWidth={2.4} strokeLinecap="round" />
         <path d="M4 20c4-3 8-3 12 0s8 3 12 0" fill="none" stroke="#3c6fae" strokeWidth={2.4} strokeLinecap="round" />
       </svg>
-      <span className="font-display text-2xl">Draki</span>
+      <span className="font-display text-2xl uppercase">Draki</span>
     </a>
   )
 }
@@ -65,7 +66,7 @@ export default function App() {
   return (
     <div className="flex min-h-svh flex-col bg-paper text-ink">
       <nav className="sticky top-0 z-[2000] border-b border-rule bg-paper/85 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+        <div className={cn(WRAP, "flex items-center justify-between py-4")}>
           <Logo />
           <div className="hidden gap-1 md:flex">
             {NAV.map(([id, label]) => (
@@ -106,7 +107,7 @@ export default function App() {
       </main>
 
       <footer className="border-t border-rule">
-        <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-4 px-6 py-8 text-sm text-muted-foreground">
+        <div className={cn(WRAP, "flex flex-wrap justify-between gap-4 py-8 text-sm text-muted-foreground")}>
           <p>Team Pixelers · Peter Ma, Siddhant Malik, Adin Sreekesh · Climate Hack-tion 2026</p>
           <p>Data: Copernicus (DEM, Sentinel-1, GloFAS, ERA5), ESA WorldCover, Open-Meteo, Esri · Photos: Unsplash (Troy Olson, insung yoon, Christine Walker)</p>
         </div>
@@ -120,59 +121,73 @@ function Home({ farm }: { farm: Farm }) {
   const m = farm.meta
   return (
     <>
-      <section className="relative isolate flex min-h-[min(80svh,760px)] items-end overflow-hidden">
+      <section className="relative isolate flex min-h-[calc(100svh-4.5rem)] items-end overflow-hidden">
         <img src="/photos/storm-field.jpg" alt="Storm clouds over a green field" className="absolute inset-0 -z-10 h-full w-full object-cover object-[center_65%]" />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink/90 via-ink/40 to-ink/10" />
-        <div className="stagger mx-auto w-full max-w-7xl px-6 pt-24 pb-14 text-white md:pb-20">
-          <h1 className="max-w-3xl font-display text-5xl leading-[1.05] lg:text-6xl">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/45 to-ink/5" />
+        <div className={cn(WRAP, "stagger pt-24 pb-10 text-white md:pb-14")}>
+          <h1 className="font-display text-[clamp(2.5rem,7.4vw,8.75rem)] leading-[0.92] uppercase">
             Know which part of your farm will <em className="text-cane">flood.</em>
           </h1>
-          <p className="mt-5 max-w-xl text-white/75">Field-level flood alerts by SMS for cane growers on the Ba River, Fiji.</p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <a href="#/live" className={cn(btn, "bg-white text-ink hover:bg-paper")}>
-              Open live demo <ArrowRight className="size-4" aria-hidden />
-            </a>
-            <a href="#/how" className={cn(btn, "border border-white/30 text-white hover:bg-white/10")}>
-              How it works
-            </a>
+          <div className="mt-10 grid gap-8 border-t border-white/25 pt-6 md:grid-cols-12 md:items-end">
+            <p className="text-lg text-white/80 md:col-span-5">Field-level flood alerts by SMS for cane growers on the Ba River, Fiji.</p>
+            <div className="flex flex-wrap gap-3 md:col-span-7 md:justify-end">
+              <a href="#/live" className={cn(btn, "bg-white text-ink hover:bg-paper")}>
+                Open live demo <ArrowRight className="size-4" aria-hidden />
+              </a>
+              <a href="#/how" className={cn(btn, "border border-white/30 text-white hover:bg-white/10")}>
+                How it works
+              </a>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl items-center gap-12 px-6 py-24 lg:grid-cols-2">
-        <div>
-          <h2 className="font-display text-5xl leading-tight">Flood warnings cover districts. Floods hit paddocks.</h2>
-          <p className="mt-6 max-w-xl text-muted-foreground">
-            A warning for the whole Western Division can't tell a grower that the bottom of their block goes under first. Draki works it out for one
-            field: how high each 30 m of ground sits above the Ba River, how high the river is forecast to rise, and what to move before it does.
-          </p>
-        </div>
-        <figure>
-          <div className="mx-auto max-w-sm rounded-[2rem] bg-ink p-3">
-            <p className="rounded-[1.5rem] bg-white/10 p-4 text-sm leading-relaxed whitespace-pre-line text-white/90">{r ? smsText(r, true, true) : "…"}</p>
+      <section className={cn(WRAP, "py-24 md:py-32")}>
+        <h2 className="font-display text-[clamp(2.25rem,5.6vw,6rem)] leading-[0.95]">
+          Flood warnings cover districts. <span className="text-flood">Floods hit paddocks.</span>
+        </h2>
+        <div className="mt-16 grid gap-12 md:grid-cols-12">
+          <div className="md:col-span-5">
+            <p className="text-lg leading-relaxed text-muted-foreground">
+              A warning for the whole Western Division can't tell a grower that the bottom of their block goes under first. Draki works it out for
+              one field: how high each 30 m of ground sits above the Ba River, how high the river is forecast to rise, and what to move before it does.
+            </p>
+            <a href="#/how" className="mt-8 inline-flex items-center gap-2 font-medium text-leaf hover:underline">
+              How the model works <ArrowRight className="size-4" aria-hidden />
+            </a>
           </div>
-          <figcaption className="mx-auto mt-3 max-w-sm text-sm text-muted-foreground">
-            The text Draki writes for the demo block from Cyclone Cody's recorded rain and river flow.
-          </figcaption>
-        </figure>
+          <figure className="md:col-span-6 md:col-start-7 md:-mt-4">
+            <div className="rounded-[2rem] bg-ink p-3">
+              <p className="rounded-[1.5rem] bg-white/10 p-5 text-base leading-relaxed whitespace-pre-line text-white/90">{r ? smsText(r, true, true) : "…"}</p>
+            </div>
+            <figcaption className="mt-3 text-sm text-muted-foreground">The text Draki writes for the demo block from Cyclone Cody's recorded rain and river flow.</figcaption>
+          </figure>
+        </div>
       </section>
 
       <section className="bg-ink text-white">
-        <div className="mx-auto max-w-7xl px-6 py-20">
-          <p className="max-w-4xl font-display text-3xl leading-snug md:text-4xl">
-            In January 2022 Cyclone Cody dropped {r ? `${r.peak.total.toFixed(0)} mm` : "450 mm"} of rain on Ba in three days, and the Ba River reached{" "}
-            {m ? `${m.river.codyPeak.toLocaleString("en-AU")} m³/s` : "1,090 m³/s"}, its highest flow since records began in 1997.
+        <div className={cn(WRAP, "grid gap-10 py-20 md:grid-cols-12 md:items-end md:py-28")}>
+          <p className="font-display text-[clamp(4rem,13vw,13rem)] leading-[0.85] text-cane md:col-span-8">
+            {m ? m.river.codyPeak.toLocaleString("en-AU") : "1,090"}
+            <span className="ml-3 align-top text-[0.28em] tracking-normal text-white/70">m³/s</span>
           </p>
-          <a href="#/live?replay" className="mt-8 inline-flex items-center gap-2 text-white/70 hover:text-white">
-            Replay it on the map <ArrowRight className="size-4" aria-hidden />
-          </a>
+          <div className="md:col-span-4">
+            <p className="text-lg leading-relaxed text-white/80">
+              The Ba River at Cyclone Cody's peak, January 2022: its highest flow since records began in 1997, after{" "}
+              {r ? `${r.peak.total.toFixed(0)} mm` : "450 mm"} of rain in three days.
+            </p>
+            <a href="#/live?replay" className="mt-6 inline-flex items-center gap-2 text-white hover:text-cane">
+              Replay it on the map <ArrowRight className="size-4" aria-hidden />
+            </a>
+          </div>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl items-center gap-12 px-6 py-24 md:grid-cols-2">
-        <div>
-          <h2 className="font-display text-5xl leading-tight">Climate Awareness & Education</h2>
-          <dl className="mt-10 space-y-6">
+      <section className="grid md:grid-cols-2">
+        <img src="/photos/flooded-field.jpg" alt="Farm fields partly under floodwater" className="h-full min-h-80 w-full object-cover" loading="lazy" />
+        <div className="px-6 py-20 md:px-14 md:py-28">
+          <h2 className="font-display text-[clamp(2rem,3.6vw,3.75rem)] leading-[0.95]">Climate Awareness & Education</h2>
+          <dl className="mt-10 max-w-xl space-y-6">
             {[
               ["COP31 target", "Climate action education for all by 2035"],
               ["How", "Each alert ends with one line on why Ba's storms are getting heavier, tied to rain the grower can see"],
@@ -185,7 +200,6 @@ function Home({ farm }: { farm: Farm }) {
             ))}
           </dl>
         </div>
-        <img src="/photos/flooded-field.jpg" alt="Farm fields partly under floodwater" className="aspect-[4/3] w-full rounded-3xl object-cover" loading="lazy" />
       </section>
     </>
   )
@@ -193,9 +207,9 @@ function Home({ farm }: { farm: Farm }) {
 
 function How() {
   return (
-    <section className="mx-auto grid max-w-7xl gap-12 px-6 py-16 lg:grid-cols-2">
+    <section className={cn(WRAP, "grid gap-12 py-16 lg:grid-cols-2")}>
       <div>
-        <h1 className="font-display text-5xl">How it works</h1>
+        <h1 className="font-display text-5xl uppercase md:text-7xl">How it works</h1>
         <ol className="mt-12">
           {[
             ["Mark your field", "Tap its corners on a satellite map. Once."],
@@ -203,7 +217,7 @@ function How() {
             ["You get a text", "What to move, where to park, and why it's happening."],
           ].map(([h, p], i) => (
             <li key={h} className="grid grid-cols-[3.5rem_1fr] border-t border-rule py-8">
-              <span className="font-display text-5xl leading-none text-leaf/40">{i + 1}</span>
+              <span className="font-display text-5xl leading-none text-leaf">{i + 1}</span>
               <div>
                 <h2 className="text-2xl">{h}</h2>
                 <p className="mt-2 text-muted-foreground">{p}</p>
@@ -223,12 +237,12 @@ function How() {
 function Why() {
   const up = Math.round((DECADES.now / DECADES.then - 1) * 100)
   return (
-    <section className="mx-auto max-w-5xl px-6 py-16">
-      <h1 className="font-display text-5xl leading-tight">Heavy-rain days in Ba are up {up}%.</h1>
+    <section className={cn(WRAP, "py-16")}>
+      <h1 className="max-w-5xl font-display text-5xl leading-[0.95] md:text-7xl">Heavy-rain days in Ba are up {up}%.</h1>
       <p className="mt-4 text-muted-foreground">
         Days a year with 50 mm+ rain: {DECADES.then.toFixed(1)} in the 1990s, {DECADES.now.toFixed(1)} in 2015–24. Every alert ends with this why.
       </p>
-      <div className="mt-12 rounded-3xl border border-rule bg-card p-6">
+      <div className="mt-12 max-w-5xl rounded-3xl border border-rule bg-card p-6">
         <HeavyRainChart />
       </div>
       <p className="mt-4 text-sm text-muted-foreground">ERA5 reanalysis via Open-Meteo. Context for farmers, not proof of a trend.</p>
@@ -246,8 +260,8 @@ function Proof({ farm }: { farm: Farm }) {
   const major = m?.record.filter((e) => e.peak >= m.river.q5) ?? []
   const caught = m?.record.filter((e) => e.level !== "missed").length ?? 0
   return (
-    <section className="mx-auto max-w-5xl px-6 py-16">
-      <h1 className="font-display text-5xl leading-tight">Does it work?</h1>
+    <section className={cn(WRAP, "py-16")}>
+      <h1 className="font-display text-5xl uppercase md:text-7xl">Does it work?</h1>
       <p className="mt-6 max-w-3xl text-2xl leading-snug">
         {m ? (
           <>

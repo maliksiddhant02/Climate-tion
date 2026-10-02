@@ -18,23 +18,32 @@ colors:
   flood: "#d4472a"
   silt: "#6f5539"
 typography:
+  display:
+    fontFamily: "Archivo Variable, Arial, sans-serif"
+    fontSize: "clamp(2.5rem, 7.4vw, 8.75rem)"
+    fontWeight: 800
+    lineHeight: 0.92
+    letterSpacing: "-0.02em"
+    fontVariation: "'wdth' 125"
   title:
-    fontFamily: "Fraunces Variable, Georgia, serif"
-    fontSize: "3rem"
-    fontWeight: 400
-    lineHeight: 1.05
+    fontFamily: "Archivo Variable, Arial, sans-serif"
+    fontSize: "clamp(2.25rem, 5.6vw, 6rem)"
+    fontWeight: 800
+    lineHeight: 0.95
+    letterSpacing: "-0.02em"
+    fontVariation: "'wdth' 125"
   subhead:
-    fontFamily: "Geist Variable, ui-sans-serif, sans-serif"
+    fontFamily: "Archivo Variable, ui-sans-serif, sans-serif"
     fontSize: "1.5rem"
     fontWeight: 400
     lineHeight: 1.3
   body:
-    fontFamily: "Geist Variable, ui-sans-serif, sans-serif"
+    fontFamily: "Archivo Variable, ui-sans-serif, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.6
   label:
-    fontFamily: "Geist Variable, ui-sans-serif, sans-serif"
+    fontFamily: "Archivo Variable, ui-sans-serif, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 400
     lineHeight: 1.4
@@ -111,10 +120,10 @@ Draki should read like a farmer's almanac that learned to read the weather forec
 
 The page alternates between two grounds. **Paper** sections (paper and paper-2) carry the story and the explanation. **Ink** sections (the hero, the live field, the footer) carry live data and the map, like a night-time weather desk. A single **leaf** band carries the COP31 commitment. Colour is drawn from the place: cane gold, leaf green, rain blue, silt brown. Flood red is held back for the one thing that is actually dangerous.
 
-Density is generous on paper (112px section rhythm, long measures, big serif statements) and tighter on ink, where the live dashboard packs map, risk, rain and SMS into one 12-column grid.
+Density is generous on paper (112px section rhythm, long measures, big expanded statements) and tighter on ink, where the live dashboard packs map, risk, rain and SMS into one 12-column grid.
 
 **Key Characteristics:**
-- Fraunces display serif with cane-gold italic emphasis on the one phrase that matters ("*your farm*", "*bottom third*").
+- Archivo expanded 800 for display, full-width and uppercase on the hero, with cane-gold colour on the one phrase that matters ("flood.").
 - Paper and ink as the only two grounds; leaf green as a single closing band.
 - Flat surfaces. Depth comes from tone, translucency and borders, never from shadows.
 - Fully rounded pills for every control; large soft-cornered cards for every container.
@@ -125,7 +134,7 @@ Density is generous on paper (112px section rhythm, long measures, big serif sta
 An earthy, place-derived palette: two neutral grounds (paper and ink), one warm accent (cane), and weather colours that carry meaning.
 
 ### Primary
-- **Cane Gold** (cane): the accent. The "Try it" button, emphasis italics in headlines on ink, the field outline on the map, the high-ground marker, check icons, the live pulse, text selection. It also marks "Watch" status.
+- **Cane Gold** (cane): the accent. The "Try it" button, the coloured emphasis phrase in headlines on ink, the field outline on the map, the high-ground marker, check icons, the live pulse, text selection. It also marks "Watch" status.
 - **Pale Cane** (cane-light): cane lightened for small text on the leaf band, where full cane fails contrast.
 
 ### Secondary
@@ -157,14 +166,17 @@ An earthy, place-derived palette: two neutral grounds (paper and ink), one warm 
 
 ## Typography
 
-Two fonts only:
-- **Fraunces Variable** (with Georgia, serif) for titles.
-- **Geist Variable** (with ui-sans-serif) for everything else, including numbers.
+One family: **Archivo Variable** (weight 100–900, width 62–125%), self-hosted from Fontsource.
+- **Display voice** (`font-display`): 125% width, weight 800, −0.02em tracking. It reads like a warning plate on farm machinery. The hero and page titles are uppercase; section statements are sentence case.
+- **Reading voice:** normal width, weight 400, for body, labels and numbers.
 
-No mono, no uppercase tracked labels, no numbered section eyebrows.
+No mono, no italics (emphasis is colour), no numbered section eyebrows.
+
+### The Full Width Rule
+Display type is sized against the viewport (`clamp(…vw…)`) so headlines span the whole frame. Nothing sits in a narrow centred column. Every page shares one 1600px frame (`WRAP`, 24/40px gutters), aligned with the nav's left edge.
 
 ### Four sizes only
-- **Title** (`text-5xl`; the home hero alone steps up to `lg:text-6xl`): page and section titles in Fraunces. Hero figures (ha, F$) also use this size, in Geist semibold.
+- **Title** (`text-5xl`, `md:text-7xl` on page titles; the home hero and statements use the fluid clamps above): Archivo expanded 800. Hero figures (ha, F$) use `text-5xl` semibold at normal width.
 - **Subhead** (`text-2xl`): step and card headings, secondary figures.
 - **Body** (`text-base`): one sentence of explanation per idea, never a paragraph.
 - **Label** (`text-sm`): captions, nav, buttons, chart labels.
@@ -175,7 +187,7 @@ Chart text inside SVG is a fixed 10px viewBox size that scales with the chart.
 **The One Sentence Rule.** If an idea needs more than one sentence, it belongs on its own page or not at all.
 
 ### Named Rules
-**The One Italic Rule.** Each display or headline gets at most one italic phrase, coloured cane on ink or flood/leaf on paper. It marks the single idea the reader should take away.
+**The One Colour Rule.** Each display or headline gets at most one coloured phrase, cane on ink or flood/leaf on paper. It marks the single idea the reader should take away.
 
 **The Unit Rule.** A number never appears without its unit (ha, mm, m, F$, °). Dates use Fiji/Australian order ("6 Jan"), never MM/DD.
 
@@ -231,7 +243,7 @@ Soft, confident pills with no shadow; the colour carries the hierarchy.
 - **Disabled:** 40% opacity.
 
 ### Status pills
-Geist, 14px medium, sentence case, with an icon:
+Archivo, 14px medium, sentence case, with an icon:
 - **Act today:** flood fill, white text.
 - **Watch:** cane fill, ink text.
 - **All clear:** leaf fill, white text.

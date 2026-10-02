@@ -177,10 +177,10 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
 
   return (
     <section className="bg-ink text-white">
-      <div className="mx-auto max-w-7xl px-6 py-16">
+      <div className="mx-auto w-full max-w-[1600px] px-6 py-16 md:px-10">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
-            <h1 className="font-display text-5xl">Live field</h1>
+            <h1 className="font-display text-5xl uppercase md:text-6xl">Live field</h1>
             <p className="mt-3 text-white/60">{isDemo ? "40 ha of cane on the Ba River, Fiji." : r ? `Your ${r.a.areaHa.toFixed(1)} ha field.` : "Your field."}</p>
           </div>
           <Tabs value={mode} onValueChange={(v) => setMode(v as "live" | "replay")}>
