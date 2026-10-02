@@ -53,6 +53,7 @@ scripts/.venv/Scripts/python scripts/build_ba_data.py
 | Fontsource: Fraunces, Geist, Geist Mono | Typography | SIL OFL |
 | Unsplash photos: Troy Olson (storm over field), insung yoon (flooded farmland), Christine Walker (cane harvest) | Imagery, credited on page | Unsplash License |
 | Claude Code (Anthropic, Claude Opus) | AI coding assistant: scaffolding, model code, page build | Disclosed per hackathon rules |
+| Claude Code skills: Impeccable (design critique/polish), Emil Kowalski's `animate` and `find-animation-opportunities` ([emilkowalski/skills](https://github.com/emilkowalski/skills)) | Design review and motion guidance for the AI assistant | Emil's skills MIT, licence kept in `.claude/skills/` |
 
 ## Status
 
