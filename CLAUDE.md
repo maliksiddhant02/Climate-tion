@@ -15,6 +15,7 @@ Sources: the Participant Guide PDF and the "Climate Hacktion Library" background
 - `.claude/skills/hackathon-idea-evaluator/`: the skill for scoring ideas, adjusted to this hackathon's judging weights.
 - `web/`: the Draki site (Vite + React + Tailwind v4 + Leaflet). Run `npm install` then `npm run dev` inside `web/`. The flood model is in `web/src/lib/flood.ts`, with its check in `node web/src/lib/flood.check.ts`. Data comes from Open-Meteo (cached in localStorage).
 - `scripts/build_ba_data.py`: builds the Ba floodplain data into `web/public/data/ba/` (30 m elevation, height above river, land cover, Cody replay, flood-record check). Python venv in `scripts/.venv` (gitignored); see README.
+- `web/src/Farm.tsx` (`#/farm`): the year-round "My farm" companion (harvest and money, El Niño season outlook via `scripts/build_season_data.py`, flood risk, equipment electrification, the season of texts, help to claim). It answers "why would a farmer use this all year?": growers only get texts, and extension officers use the site.
 - `docs/plan.md`: the real-data build plan and its status (river model, sharper elevation, Sentinel-1 validation), split across the team with a timeline.
 - `web/DESIGN.md`: the visual system ("The Field Almanac"). Read it before any UI work.
 

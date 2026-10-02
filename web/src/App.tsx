@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, ArrowUpRight } from "lucide-react"
 import { fjd, LivePage, smsText, useFarm, type Farm } from "@/Live"
 import { DECADES, FlowHistory, HeavyRainChart } from "@/components/weather"
 import { FloodValley } from "@/components/FloodValley"
+import { FarmPage } from "@/Farm"
 import { getFlowHistory } from "@/lib/api"
 import { KNOBS } from "@/lib/flood"
 import { cn } from "@/lib/utils"
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils"
 const WRAP = "mx-auto w-full max-w-[1600px] px-6 md:px-10"
 
 const NAV = [
+  ["farm", "My farm"],
   ["how", "How it works"],
   ["live", "Live demo"],
   ["why", "Why now"],
@@ -114,6 +116,8 @@ export default function App() {
           <Why />
         ) : page === "proof" ? (
           <Proof farm={farm} />
+        ) : page === "farm" ? (
+          <FarmPage farm={farm} />
         ) : (
           <Home farm={farm} />
         )}
@@ -309,7 +313,7 @@ function Proof({ farm }: { farm: Farm }) {
         <figcaption className="mt-3 text-sm text-muted-foreground">
           The tallest spikes in 30 years of river data are the floods people remember. That is the signal Draki forecasts.{" "}
           <a href="https://flood-api.open-meteo.com/v1/flood?latitude=-17.525&longitude=177.625&daily=river_discharge&start_date=1997-01-01&end_date=2026-09-30" target="_blank" rel="noreferrer" className="text-leaf hover:underline">
-            Raw data ↗
+            Raw data <ArrowUpRight className="inline size-3.5" aria-hidden />
           </a>
         </figcaption>
       </figure>

@@ -1,0 +1,360 @@
+{
+ "latest": {
+  "season": "JJA",
+  "year": 2026,
+  "oni": 1.8,
+  "phase": "elnino"
+ },
+ "allMeanRain": 1583,
+ "phases": {
+  "elnino": {
+   "seasons": 12,
+   "meanRain": 1167,
+   "floodSeasons": 1,
+   "floodShare": 0.08
+  },
+  "neutral": {
+   "seasons": 10,
+   "meanRain": 1572,
+   "floodSeasons": 3,
+   "floodShare": 0.3
+  },
+  "lanina": {
+   "seasons": 13,
+   "meanRain": 1976,
+   "floodSeasons": 3,
+   "floodShare": 0.23
+  }
+ },
+ "strongElNino": {
+  "seasons": [
+   "1991-92",
+   "1997-98",
+   "2015-16",
+   "2023-24"
+  ],
+  "meanRain": 1148
+ },
+ "seasons": [
+  {
+   "season": "1991-92",
+   "rain": 841,
+   "heavyDays": 3,
+   "peakFlow": null,
+   "actFlood": false,
+   "oni": 1.54,
+   "phase": "elnino"
+  },
+  {
+   "season": "1992-93",
+   "rain": 1463,
+   "heavyDays": 5,
+   "peakFlow": null,
+   "actFlood": false,
+   "oni": 0.13,
+   "phase": "neutral"
+  },
+  {
+   "season": "1993-94",
+   "rain": 1361,
+   "heavyDays": 5,
+   "peakFlow": null,
+   "actFlood": false,
+   "oni": 0.07,
+   "phase": "neutral"
+  },
+  {
+   "season": "1994-95",
+   "rain": 1018,
+   "heavyDays": 1,
+   "peakFlow": null,
+   "actFlood": false,
+   "oni": 0.88,
+   "phase": "elnino"
+  },
+  {
+   "season": "1995-96",
+   "rain": 1171,
+   "heavyDays": 3,
+   "peakFlow": null,
+   "actFlood": false,
+   "oni": -0.88,
+   "phase": "lanina"
+  },
+  {
+   "season": "1996-97",
+   "rain": 1979,
+   "heavyDays": 11,
+   "peakFlow": 954,
+   "actFlood": true,
+   "oni": -0.41,
+   "phase": "neutral"
+  },
+  {
+   "season": "1997-98",
+   "rain": 421,
+   "heavyDays": 2,
+   "peakFlow": 147,
+   "actFlood": false,
+   "oni": 2.22,
+   "phase": "elnino"
+  },
+  {
+   "season": "1998-99",
+   "rain": 1699,
+   "heavyDays": 4,
+   "peakFlow": 531,
+   "actFlood": false,
+   "oni": -1.51,
+   "phase": "lanina"
+  },
+  {
+   "season": "1999-00",
+   "rain": 1688,
+   "heavyDays": 3,
+   "peakFlow": 351,
+   "actFlood": false,
+   "oni": -1.47,
+   "phase": "lanina"
+  },
+  {
+   "season": "2000-01",
+   "rain": 1513,
+   "heavyDays": 2,
+   "peakFlow": 262,
+   "actFlood": false,
+   "oni": -0.76,
+   "phase": "lanina"
+  },
+  {
+   "season": "2001-02",
+   "rain": 1096,
+   "heavyDays": 2,
+   "peakFlow": 425,
+   "actFlood": false,
+   "oni": -0.15,
+   "phase": "neutral"
+  },
+  {
+   "season": "2002-03",
+   "rain": 904,
+   "heavyDays": 2,
+   "peakFlow": 312,
+   "actFlood": false,
+   "oni": 0.9,
+   "phase": "elnino"
+  },
+  {
+   "season": "2003-04",
+   "rain": 1037,
+   "heavyDays": 2,
+   "peakFlow": 245,
+   "actFlood": false,
+   "oni": 0.34,
+   "phase": "neutral"
+  },
+  {
+   "season": "2004-05",
+   "rain": 816,
+   "heavyDays": 1,
+   "peakFlow": 287,
+   "actFlood": false,
+   "oni": 0.62,
+   "phase": "elnino"
+  },
+  {
+   "season": "2005-06",
+   "rain": 1088,
+   "heavyDays": 1,
+   "peakFlow": 237,
+   "actFlood": false,
+   "oni": -0.86,
+   "phase": "lanina"
+  },
+  {
+   "season": "2006-07",
+   "rain": 1363,
+   "heavyDays": 2,
+   "peakFlow": 294,
+   "actFlood": false,
+   "oni": 0.62,
+   "phase": "elnino"
+  },
+  {
+   "season": "2007-08",
+   "rain": 1895,
+   "heavyDays": 8,
+   "peakFlow": 396,
+   "actFlood": false,
+   "oni": -1.76,
+   "phase": "lanina"
+  },
+  {
+   "season": "2008-09",
+   "rain": 1970,
+   "heavyDays": 7,
+   "peakFlow": 1053,
+   "actFlood": true,
+   "oni": -0.89,
+   "phase": "lanina"
+  },
+  {
+   "season": "2009-10",
+   "rain": 766,
+   "heavyDays": 2,
+   "peakFlow": 365,
+   "actFlood": false,
+   "oni": 1.47,
+   "phase": "elnino"
+  },
+  {
+   "season": "2010-11",
+   "rain": 1787,
+   "heavyDays": 4,
+   "peakFlow": 401,
+   "actFlood": false,
+   "oni": -1.29,
+   "phase": "lanina"
+  },
+  {
+   "season": "2011-12",
+   "rain": 2907,
+   "heavyDays": 17,
+   "peakFlow": 1004,
+   "actFlood": true,
+   "oni": -0.71,
+   "phase": "lanina"
+  },
+  {
+   "season": "2012-13",
+   "rain": 1549,
+   "heavyDays": 5,
+   "peakFlow": 814,
+   "actFlood": true,
+   "oni": -0.24,
+   "phase": "neutral"
+  },
+  {
+   "season": "2013-14",
+   "rain": 1046,
+   "heavyDays": 2,
+   "peakFlow": 227,
+   "actFlood": false,
+   "oni": -0.24,
+   "phase": "neutral"
+  },
+  {
+   "season": "2014-15",
+   "rain": 1148,
+   "heavyDays": 3,
+   "peakFlow": 285,
+   "actFlood": false,
+   "oni": 0.73,
+   "phase": "elnino"
+  },
+  {
+   "season": "2015-16",
+   "rain": 1098,
+   "heavyDays": 5,
+   "peakFlow": 540,
+   "actFlood": false,
+   "oni": 2.5,
+   "phase": "elnino"
+  },
+  {
+   "season": "2016-17",
+   "rain": 1835,
+   "heavyDays": 4,
+   "peakFlow": 788,
+   "actFlood": true,
+   "oni": -0.08,
+   "phase": "neutral"
+  },
+  {
+   "season": "2017-18",
+   "rain": 2732,
+   "heavyDays": 16,
+   "peakFlow": 451,
+   "actFlood": false,
+   "oni": -0.71,
+   "phase": "lanina"
+  },
+  {
+   "season": "2018-19",
+   "rain": 1481,
+   "heavyDays": 1,
+   "peakFlow": 276,
+   "actFlood": false,
+   "oni": 0.99,
+   "phase": "elnino"
+  },
+  {
+   "season": "2019-20",
+   "rain": 1912,
+   "heavyDays": 4,
+   "peakFlow": 761,
+   "actFlood": true,
+   "oni": 0.71,
+   "phase": "elnino"
+  },
+  {
+   "season": "2020-21",
+   "rain": 2468,
+   "heavyDays": 9,
+   "peakFlow": 745,
+   "actFlood": false,
+   "oni": -0.99,
+   "phase": "lanina"
+  },
+  {
+   "season": "2021-22",
+   "rain": 2950,
+   "heavyDays": 14,
+   "peakFlow": 1090,
+   "actFlood": true,
+   "oni": -0.76,
+   "phase": "lanina"
+  },
+  {
+   "season": "2022-23",
+   "rain": 1822,
+   "heavyDays": 4,
+   "peakFlow": 403,
+   "actFlood": false,
+   "oni": -0.55,
+   "phase": "lanina"
+  },
+  {
+   "season": "2023-24",
+   "rain": 2234,
+   "heavyDays": 9,
+   "peakFlow": 557,
+   "actFlood": false,
+   "oni": 1.84,
+   "phase": "elnino"
+  },
+  {
+   "season": "2024-25",
+   "rain": 2348,
+   "heavyDays": 9,
+   "peakFlow": 506,
+   "actFlood": false,
+   "oni": -0.46,
+   "phase": "neutral"
+  },
+  {
+   "season": "2025-26",
+   "rain": 2004,
+   "heavyDays": 7,
+   "peakFlow": 445,
+   "actFlood": false,
+   "oni": -0.39,
+   "phase": "neutral"
+  }
+ ],
+ "sources": [
+  "NOAA CPC Oceanic Nino Index (ONI), ERSST v6",
+  "ERA5 reanalysis daily rain at Ba (Copernicus C3S), via Open-Meteo",
+  "GloFAS v4 river discharge, Ba River (Copernicus EMS), via Open-Meteo"
+ ]
+}

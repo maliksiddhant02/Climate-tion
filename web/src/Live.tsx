@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { AlertTriangle, ArrowRight, Check, Eye, Pause, PenLine, Play, RotateCcw } from "lucide-react"
+import { AlertTriangle, ArrowRight, ArrowUpRight, Check, Eye, Pause, PenLine, Play, RotateCcw } from "lucide-react"
 import { FieldMap } from "@/components/FieldMap"
 import { DECADES, RainBars, RiverChart, wx } from "@/components/weather"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -531,7 +531,7 @@ function Sources({ r, mode, poly, hasRegion }: { r?: Run; mode: "live" | "replay
               {v}
               {href && (
                 <a href={href} target="_blank" rel="noreferrer" className="ml-2 whitespace-nowrap text-cane hover:underline">
-                  {k === "How it's built" ? "View code ↗" : "Raw data ↗"}
+                  {k === "How it's built" ? "View code" : "Raw data"} <ArrowUpRight className="inline size-3.5" aria-hidden />
                 </a>
               )}
             </dd>
