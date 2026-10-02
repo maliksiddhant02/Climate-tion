@@ -42,7 +42,9 @@ type Season = {
 }
 
 const month = (d: Date) => d.toLocaleDateString("en-AU", { month: "long", year: "numeric" })
-const t = (n: number) => `${Math.round(n).toLocaleString("en-AU")} t`
+const t = (n: number) => `${Math.round(n).toLocaleString("en-AU")} tonnes`
+// NOAA names its 3-month seasons by initials (JJA = June–August).
+const SEASON_NAME: Record<string, string> = { DJF: "December–February", JFM: "January–March", FMA: "February–April", MAM: "March–May", AMJ: "April–June", MJJ: "May–July", JJA: "June–August", JAS: "July–September", ASO: "August–October", SON: "September–November", OND: "October–December", NDJ: "November–January" }
 const pct = (a: number, b: number) => Math.round((1 - a / b) * 100)
 
 /** When cut cane can reach the mill: once it's mature, and only while the mill is crushing. */
@@ -141,12 +143,12 @@ export function FarmPage({ farm }: { farm: Farm }) {
       when: "When a flood is coming",
       from: "draki",
       body: r
-        ? `Draki: FLOOD RISK HIGH. Richmond River rising ~${r.river?.stage.toFixed(1) ?? "–"} m. Your low ground could sit under ${depthLabel(r.a.maxDepth)} of water. 1. Move the harvester and haul-outs to the high ground. 2. Shift fertiliser and fuel off the low side. Reply 1 if your block floods, 2 if it stays dry.`
+        ? `Draki: FLOOD RISK HIGH. The Richmond River is rising, about ${Math.round(r.river?.stage ?? 0)} m above normal. Your low ground could sit under ${depthLabel(r.a.maxDepth)} of water. 1. Move the harvester and haul-outs to the high ground. 2. Shift fertiliser and fuel off the low side. Reply 1 if your block floods, 2 if it stays dry.`
         : "…",
     },
     { when: "", from: "farmer", body: "1" },
     { when: "", from: "draki", body: "Draki: Thanks. Your mill's cane adviser knows your block flooded. Your flood report (date, hectares, depth) is ready for your insurer or a disaster grant claim." },
-    { when: "Before the crush", from: "draki", body: `Draki: Your block is ready from ${month(ready)}. Expect about ${t(tonnes)} of cane, ${aud(value)} at A$${PRICE_T}/t.` },
+    { when: "Before the crush", from: "draki", body: `Draki: Your block is ready from ${month(ready)}. Expect about ${t(tonnes)} of cane, ${aud(value)} at A$${PRICE_T} a tonne.` },
   ]
 
   return (
@@ -196,13 +198,13 @@ export function FarmPage({ farm }: { farm: Farm }) {
               <p className="text-sm text-muted-foreground">Expected harvest</p>
               <p className="mt-1 text-3xl font-semibold">{r ? t(tonnes) : "–"}</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {caneHa.toFixed(1)} hectares of cane × {CROP[crop].yield} t per hectare
+                {caneHa.toFixed(1)} hectares of cane × {CROP[crop].yield} tonnes per hectare
               </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Worth</p>
               <p className="mt-1 text-3xl font-semibold">{r ? aud(value) : "–"}</p>
-              <p className="mt-1 text-sm text-muted-foreground">at A${PRICE_T}/t, the 2024 NSW average</p>
+              <p className="mt-1 text-sm text-muted-foreground">at A${PRICE_T} a tonne, the 2024 NSW average</p>
             </div>
           </div>
           <h3 className="mt-8 text-sm text-muted-foreground">What the weather could take</h3>
@@ -216,7 +218,7 @@ export function FarmPage({ farm }: { farm: Farm }) {
               <span className="font-semibold text-flood">{season ? `about ${pct(season.phases.elnino.meanRain, season.allMeanRain)}% less rain` : "–"}</span>
             </li>
           </ul>
-          <p className="mt-3 text-sm text-muted-foreground">Yield is the NSW DPI range for this crop type, not this block's own record. The price changes every season.</p>
+          <p className="mt-3 text-sm text-muted-foreground">Yield uses NSW Department of Primary Industries figures for this crop type, not this block's own records. The price changes every season.</p>
         </div>
 
         {/* 2. This season: El Niño */}
@@ -226,12 +228,12 @@ export function FarmPage({ farm }: { farm: Farm }) {
             <>
               <p className="mt-6 font-display text-4xl leading-none text-cane">{elNinoNow ? "El Niño is under way" : `${PHASE[season.latest.phase].label} conditions`}</p>
               <p className="mt-3 text-white/70">
-                NOAA's El Niño index is {season.latest.oni > 0 ? "+" : ""}
-                {season.latest.oni.toFixed(1)} ({season.latest.season} {season.latest.year}). Above +0.5 is El Niño.
+                The US weather agency NOAA tracks El Niño through ocean temperatures in the Pacific. Its index is {season.latest.oni > 0 ? "+" : ""}
+                {season.latest.oni.toFixed(1)} for {SEASON_NAME[season.latest.season] ?? season.latest.season} {season.latest.year}; anything above +0.5 counts as El Niño.
               </p>
               <p className="mt-6 text-lg leading-snug">
                 In El Niño years Woodburn averages <strong>{season.phases.elnino.meanRain.toLocaleString("en-AU")} mm</strong> of rain, against{" "}
-                {season.phases.lanina.meanRain.toLocaleString("en-AU")} mm in La Niña years. Floods go the other way: the river hit Act level in {floodShare("lanina")}{" "}
+                {season.phases.lanina.meanRain.toLocaleString("en-AU")} mm in La Niña years. Floods go the other way: the river reached flood-alert level in {floodShare("lanina")}{" "}
                 La Niña years and {floodShare("elnino")} El Niño years.
               </p>
               {driest && (
@@ -276,7 +278,7 @@ export function FarmPage({ farm }: { farm: Farm }) {
               <SeasonChart s={season} />
             </div>
             <figcaption className="mt-3 text-sm text-muted-foreground">
-              ERA5 rain at Woodburn, each year classified by NOAA's Oceanic Niño Index for September–November, when El Niño and La Niña peak.
+              Rain records for Woodburn (ERA5). Each year is coloured by whether the Pacific was in El Niño or La Niña that spring, when they're strongest.
             </figcaption>
           </figure>
         )}

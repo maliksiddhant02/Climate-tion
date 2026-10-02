@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { AlertTriangle, ArrowRight, ArrowUpRight, Check, Eye, Pause, PenLine, Play, RotateCcw } from "lucide-react"
 import { FieldMap } from "@/components/FieldMap"
-import { DECADES, RainBars, RiverChart, wx } from "@/components/weather"
+import { RainBars, RiverChart, wx } from "@/components/weather"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getEventReplay, getElevations, getFlowForecast, getWeather, REPLAY, weatherUrl, type Flow, type Weather } from "@/lib/api"
 import { assess, floodDepths, gridInPolygon, KNOBS, levelFor, maxRolling, PLAYBOOK, riverDepths, riverStage, type Assessment, type Cell, type LatLng, type Level, type River } from "@/lib/flood"
@@ -24,7 +24,6 @@ type Elev = { points: LatLng[]; stepM: number; e: number[]; hand?: number[]; lan
 // Past 2 m the elevation data (which includes crop and roof heights) can't honestly say more than "deep".
 export const depthLabel = (d: number) => (d >= 2 ? "more than 2 m" : `~${d.toFixed(1)} m`)
 
-const flowLabel = (q: number) => `${q < 10 ? q.toFixed(1) : Math.round(q).toLocaleString("en-AU")} m³/s`
 
 const peakQ = (q: (number | null)[]) => Math.max(0, ...q.map((v) => v ?? 0))
 
@@ -150,17 +149,17 @@ export function smsText({ a, peak, w, river }: Run, replay: boolean, demo: boole
     watch: `Flood watch from ${dateLabel(from)}${odds}`,
     clear: "No flooding expected this week",
   }[a.level]
-  const riverLine = river && river.stage > 0 ? `Richmond River rising ~${river.stage.toFixed(1)} m above normal. ` : ""
+  const riverLine = river && river.stage > 0 ? `The Richmond River is rising, about ${Math.round(river.stage)} m above normal. ` : ""
   const body =
     a.level === "clear"
       ? `Up to ${peak.total.toFixed(0)} mm of rain in 3 days. Your field should drain fine.`
-      : `${riverLine}${peak.total.toFixed(0)} mm of rain in 72 h. Your low ground could sit under ${depthLabel(a.maxDepth)} of water. About ${a.floodedHa.toFixed(0)} hectares of cane, ${aud(a.valueAtRisk)}.`
+      : `${riverLine}${peak.total.toFixed(0)} mm of rain in 3 days. Your low ground could sit under ${depthLabel(a.maxDepth)} of water. About ${a.floodedHa.toFixed(0)} hectares of cane, ${aud(a.valueAtRisk)}.`
   return [
     `Draki · ${demo ? "demo block" : "your field"}${replay ? " (replay)" : ""}`,
     head,
     body,
     PLAYBOOK[a.level].map((t, i) => `${i + 1}. ${t}`).join("\n"),
-    `Why: days with 50 mm+ of rain here are up from ${DECADES.then.toFixed(1)} a year in the 1990s to ${DECADES.now.toFixed(1)} now. Warmer air holds more water.`,
+    `Why: very heavy rain days (50 mm or more) have nearly tripled here since the 1990s. A warmer climate puts more water in the air.`,
   ].join("\n\n")
 }
 
@@ -296,7 +295,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
               </div>
               <p className="w-full text-sm tabular-nums text-white/80 sm:w-auto sm:min-w-[15rem] sm:text-right">
                 {hour !== undefined && r?.river
-                  ? `${hourLabel(film.w.hourly.time[hour])} · river ${Math.round(r.river.q).toLocaleString("en-AU")} m³/s`
+                  ? `${hourLabel(film.w.hourly.time[hour])} · river ${r.river.stage > 0 ? `${r.river.stage.toFixed(1)} m above normal` : "in its banks"}`
                   : "Showing the peak of the flood"}
               </p>
             </div>
@@ -373,7 +372,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
                   <i className="size-3 rounded-sm bg-flood" /> Under water
                 </span>
                 <span className="flex items-center gap-2">
-                  <i className="size-3 rounded-sm bg-rain-soft" /> {satellite ? "Satellite: under water, 2 Mar 2022" : "Puddling"}
+                  <i className="size-3 rounded-sm bg-rain-soft" /> {satellite ? "Satellite: under water, 2 Mar 2022" : "Shallow water"}
                 </span>
               </div>
             )}
@@ -383,7 +382,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
 
           <div className={cn(card, "lg:col-span-5")}>
             <div className="flex items-baseline justify-between">
-              <p className="text-sm text-white/60">Wettest 72 hours</p>
+              <p className="text-sm text-white/60">Wettest 3 days</p>
               <p className="text-2xl font-semibold">{r ? `${r.peak.total.toFixed(0)} mm` : "–"}</p>
             </div>
             <div className="mt-4">{r && <RainBars time={r.w.hourly.time} rain={r.w.hourly.rain} start={r.peak.start} />}</div>
@@ -433,9 +432,9 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="text-sm text-white/60">
                   Richmond River flow, {mode === "live" ? "next 7 days" : "24 February – 4 March 2022"}
-                  {mode === "live" && r.river.flow.members?.length ? ` · ${r.river.flow.members.length} forecast runs` : ""}
+                  {mode === "live" && r.river.flow.members?.length ? ` · ${r.river.flow.members.length} forecasts` : ""}
                 </p>
-                <p className="text-sm text-white/60">GloFAS · Copernicus</p>
+                <p className="text-sm text-white/60">European flood forecasts (GloFAS)</p>
               </div>
               <div className="mt-4">
                 <RiverChart
@@ -477,9 +476,9 @@ function RiskCard({ r, live, now, onReplay }: { r?: Run; live: boolean; now?: bo
       {river && (
         <p className="mt-3 text-sm text-muted-foreground">
           {river.stage > 0
-            ? `Richmond River ${now ? "now at" : "peaks at"} ${flowLabel(river.q)}, ~${river.stage.toFixed(1)} m above normal.`
-            : `Richmond River ${now ? "in its banks" : "stays in its banks"} (${now ? "now" : "peak"} ${flowLabel(river.q)}).`}
-          {live && river.odds && ` ${river.odds.flood} of ${river.odds.n} forecast runs flood this field.`}
+            ? `The Richmond River ${now ? "is" : "peaks"} about ${river.stage.toFixed(1)} m above normal.`
+            : `The Richmond River ${now ? "is in its banks" : "stays in its banks"}.`}
+          {live && river.odds && ` ${river.odds.flood} of ${river.odds.n} forecasts flood this field.`}
         </p>
       )}
       <div className="mt-6 flex items-end justify-between border-t border-rule pt-4">
@@ -510,16 +509,16 @@ function Sources({ r, mode, poly, hasRegion }: { r?: Run; mode: "live" | "replay
   const rows: [string, string, string | undefined][] = [
     [
       "River flow",
-      r?.river ? (live ? `GloFAS 7-day forecast, ${r.river.flow.members?.length ?? 0} runs · fetched ${ago(r.river.flow.fetchedAt)}` : "GloFAS daily record, February–March 2022") : "Only inside the lower Richmond data area",
+      r?.river ? (live ? `European flood forecast (GloFAS), next 7 days, ${r.river.flow.members?.length ?? 0} versions · fetched ${ago(r.river.flow.fetchedAt)}` : "European flood record (GloFAS), daily, February–March 2022") : "Only inside the lower Richmond area",
       r?.river?.flow.url,
     ],
-    ["Rain", live ? "Open-Meteo 7-day forecast, hourly" : "ERA5 reanalysis, hourly, 24 February – 4 March 2022", weatherUrl(center, !live)],
+    ["Rain", live ? "Weather forecast (Open-Meteo), hourly, next 7 days" : "European weather record (ERA5), hourly, 24 February – 4 March 2022", weatherUrl(center, !live)],
     [
       "Land height",
-      hasRegion ? `Copernicus GLO-30 · ${r?.cells.length ?? "–"} squares of 30 m` : "Copernicus GLO-90 via Open-Meteo",
+      hasRegion ? `Satellite height map (Copernicus), ${r?.cells.length ?? "–"} squares of 30 m` : "Satellite height map (Copernicus), 90 m squares",
       hasRegion ? "https://planetarycomputer.microsoft.com/dataset/cop-dem-glo-30" : undefined,
     ],
-    ["Land cover", hasRegion ? "ESA WorldCover 2021, 10 m" : "Not used outside the data area", hasRegion ? "https://planetarycomputer.microsoft.com/dataset/esa-worldcover" : undefined],
+    ["Land cover", hasRegion ? "Satellite land-cover map (ESA WorldCover)" : "Not used outside the lower Richmond area", hasRegion ? "https://planetarycomputer.microsoft.com/dataset/esa-worldcover" : undefined],
     ["How it's built", "Every step, in one Python script", "https://github.com/maliksiddhant02/Climate-tion/blob/main/scripts/build_ba_data.py"],
   ]
   return (

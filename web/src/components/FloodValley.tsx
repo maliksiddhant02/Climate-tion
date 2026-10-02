@@ -248,16 +248,16 @@ export function FloodValley({ children }: { children: ReactNode }) {
 
         {prep && cal && (
           <div className="absolute top-5 right-6 w-52 rounded-2xl bg-ink/70 p-4 text-white backdrop-blur sm:w-64 sm:p-5 md:top-8 md:right-10 md:w-72" aria-live="polite">
-            <p className="text-sm text-white/70">Richmond River</p>
+            <p className="text-sm text-white/70">Richmond River height</p>
             <p className="mt-1 font-display text-4xl leading-none tabular-nums sm:text-5xl">
-              {Math.round(q).toLocaleString("en-AU")}
-              <span className="ml-1 font-sans text-base font-normal tracking-normal text-white/70">m³/s</span>
+              {stage > 0 ? `+${stage.toFixed(1)}` : "0.0"}
+              <span className="ml-1 font-sans text-base font-normal tracking-normal text-white/70">m above normal</span>
             </p>
             <p className={`mt-3 inline-block rounded-full px-3 py-1 text-sm font-medium ${q >= cal.q5 ? "bg-flood text-white" : q >= cal.q2 ? "bg-cane text-ink" : "bg-white/15 text-white"}`}>{phase}</p>
             <dl className="mt-4 hidden grid-cols-2 gap-3 border-t border-white/15 pt-3 text-sm sm:grid">
               <div>
-                <dt className="text-white/60">River level</dt>
-                <dd className="tabular-nums">{stage > 0 ? `+${stage.toFixed(1)} m` : "Normal"}</dd>
+                <dt className="text-white/60">Water flowing</dt>
+                <dd className="tabular-nums">{Math.round(q).toLocaleString("en-AU")} m³ a second</dd>
               </div>
               <div>
                 <dt className="text-white/60">Under water</dt>

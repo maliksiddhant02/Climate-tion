@@ -148,12 +148,12 @@ export function RiverChart({ time, q, members, q2, q5, cursor }: { time: string[
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={`Richmond River flow, peak ${Math.round(peak)} cubic metres per second`}>
       {[
-        [q2, "In its banks below"],
-        [q5, "Act today above"],
+        [q2, "Over its banks above this line"],
+        [q5, "Act today above this line"],
       ].map(([v, label]) => (
         <g key={label}>
           <line x1={padL} x2={W - 8} y1={y(v as number)} y2={y(v as number)} stroke={v === q5 ? "#d4472a" : "white"} strokeOpacity={v === q5 ? 0.8 : 0.3} strokeDasharray="4 4" />
-          <text x={W - 8} y={y(v as number) - 5} textAnchor="end" className="fill-white/60 text-[10px]">{`${label} · ${(v as number).toLocaleString("en-AU")} m³/s`}</text>
+          <text x={W - 8} y={y(v as number) - 5} textAnchor="end" className="fill-white/60 text-[10px]">{label as string}</text>
         </g>
       ))}
       {members?.map((m, k) => (
@@ -169,7 +169,7 @@ export function RiverChart({ time, q, members, q2, q5, cursor }: { time: string[
       ))}
       <text x={padL - 6} y={y(0) + 3} textAnchor="end" className="fill-white/60 text-[10px] tabular-nums">0</text>
       {peak > 0 && (
-        <text x={xs[pi]} y={Math.max(padT + 10, y(peak) - 8)} textAnchor="middle" className="fill-white text-[11px] font-semibold">{`${Math.round(peak).toLocaleString("en-AU")} m³/s`}</text>
+        <text x={xs[pi]} y={Math.max(padT + 10, y(peak) - 8)} textAnchor="middle" className="fill-white text-[11px] font-semibold">{"Peak"}</text>
       )}
     </svg>
   )
@@ -203,9 +203,9 @@ export function FlowHistory({ time, q, floods, q2, q5 }: { time: string[]; q: nu
         </g>
       ))}
       <line x1={padL} x2={W - 8} y1={y(q5)} y2={y(q5)} stroke="#d4472a" strokeDasharray="5 4" />
-      <text x={W - 8} y={y(q5) - 5} textAnchor="end" className="fill-[#a8361f] text-[10px]">{`Act today · ${q5} m³/s`}</text>
+      <text x={W - 8} y={y(q5) - 5} textAnchor="end" className="fill-[#a8361f] text-[10px]">{"Act today"}</text>
       <line x1={padL} x2={W - 8} y1={y(q2)} y2={y(q2)} stroke="#6f5539" strokeOpacity={0.6} strokeDasharray="2 4" />
-      <text x={W - 8} y={y(q2) - 5} textAnchor="end" className="fill-[#525e56] text-[10px]">{`Watch · ${q2} m³/s`}</text>
+      <text x={W - 8} y={y(q2) - 5} textAnchor="end" className="fill-[#525e56] text-[10px]">{"Watch"}</text>
       <path d={linePath(time.map(x), q.map(y))} fill="none" stroke="#3c6fae" strokeWidth={1.2} strokeLinejoin="round" />
       {floods.map((f) => (
         <g key={f.start}>

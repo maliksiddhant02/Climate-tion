@@ -136,7 +136,6 @@ export default function App() {
 
 function Home({ farm }: { farm: Farm }) {
   const r = farm.replayRun
-  const m = farm.meta
   return (
     <>
       <FloodValley>
@@ -146,7 +145,7 @@ function Home({ farm }: { farm: Farm }) {
           </h1>
           <div className="mt-5 grid gap-4 border-t border-white/25 pt-4 md:mt-8 md:grid-cols-12 md:items-end md:gap-6 md:pt-5">
             <p className="text-white/80 md:col-span-6 md:text-lg">
-              This is the real lower Richmond floodplain in NSW, 30 m at a time. Scroll, and the river rises to its February 2022 peak.
+              This is the real lower Richmond floodplain in NSW, mapped in 30-metre squares. Scroll, and the river rises to its February 2022 peak.
             </p>
             <div className="flex flex-wrap gap-3 md:col-span-6 md:justify-end">
               <a href="#/live" className={cn(btn, "bg-white text-ink hover:bg-paper")}>
@@ -186,13 +185,13 @@ function Home({ farm }: { farm: Farm }) {
       <section className="bg-ink text-white">
         <div className={cn(WRAP, "grid gap-10 py-20 md:grid-cols-12 md:items-end md:py-28")}>
           <p className="font-display text-[clamp(4rem,13vw,13rem)] leading-[0.85] text-cane md:col-span-8">
-            {m ? m.river.eventPeak.toLocaleString("en-AU") : "3,326"}
-            <span className="ml-3 align-top text-[0.28em] tracking-normal text-white/70">m³/s</span>
+            14.4
+            <span className="ml-3 align-top text-[0.28em] tracking-normal text-white/70">metres</span>
           </p>
           <div className="md:col-span-4">
             <p className="text-lg leading-relaxed text-white/80">
-              The Richmond River near Woodburn on 28 February 2022, after {r ? `${r.peak.total.toFixed(0)} mm of rain in three days` : "days of heavy rain"}.
-              Lismore hit 14.4 m, its highest flood on record. Woodburn and the Broadwater sugar mill went under.
+              The river at Lismore on 28 February 2022, its highest flood on record, after {r ? `${r.peak.total.toFixed(0)} mm of rain in three days` : "days of heavy rain"}.
+              Downstream, the towns of Woodburn and Broadwater, and the Broadwater sugar mill, went under.
             </p>
             <a href="#/live?replay" className="mt-6 inline-flex items-center gap-2 text-white hover:text-cane">
               Replay it on the map <ArrowRight className="size-4" aria-hidden />
@@ -209,7 +208,7 @@ function Home({ farm }: { farm: Farm }) {
             {[
               ["COP31 target", "Climate action education for all by 2035"],
               ["How", "Each alert ends with one line on why heavy rain is getting more common here, tied to rain the grower can see"],
-              ["Where", "Northern Rivers cane country, NSW. Australia leads COP31's negotiations; this is what delivery looks like on a farm"],
+              ["Where", "Northern Rivers cane country, NSW. Australia is leading the COP31 talks, and this is climate action you can see on a farm"],
             ].map(([k, v]) => (
               <div key={k} className="grid grid-cols-[7rem_1fr] border-t border-rule pt-4">
                 <dt className="text-sm text-muted-foreground">{k}</dt>
@@ -253,17 +252,16 @@ function How() {
 }
 
 function Why() {
-  const up = Math.round((DECADES.now / DECADES.then - 1) * 100)
   return (
     <section className={cn(WRAP, "py-16")}>
-      <h1 className="max-w-5xl font-display text-5xl leading-[0.95] md:text-7xl">Heavy-rain days on the lower Richmond are up {up}%.</h1>
+      <h1 className="max-w-5xl font-display text-5xl leading-[0.95] md:text-7xl">Very heavy rain days have nearly tripled on the lower Richmond.</h1>
       <p className="mt-4 text-muted-foreground">
-        Days a year with 50 mm+ rain at Woodburn: {DECADES.then.toFixed(1)} in the 1990s, {DECADES.now.toFixed(1)} in 2016–25. Small numbers, so it's context, not proof. Every alert ends with this why.
+        Days a year with 50 mm or more of rain at Woodburn: about {Math.round(DECADES.then)} in the 1990s, about {Math.round(DECADES.now)} in 2016–25. These are small numbers, so treat it as a sign, not proof. Every alert ends with a line like this.
       </p>
       <div className="mt-12 max-w-5xl rounded-3xl border border-rule bg-card p-6">
         <HeavyRainChart />
       </div>
-      <p className="mt-4 text-sm text-muted-foreground">ERA5 reanalysis via Open-Meteo. Context for farmers, not proof of a trend.</p>
+      <p className="mt-4 text-sm text-muted-foreground">Source: ERA5, the European long-term weather record, via Open-Meteo.</p>
     </section>
   )
 }
@@ -334,15 +332,15 @@ function Proof({ farm }: { farm: Farm }) {
               </p>
             </div>
             <p className="text-sm text-muted-foreground">
-              Honest caveat: we tuned the river-level curve on this same image, so the overlap is a best fit, not a blind test. The record below is the
-              independent check.
+              One honest caveat: we used this same image to set the model up, so the overlap is a best fit rather than a blind test. The flood record below
+              is the independent check.
             </p>
           </div>
         </div>
       )}
 
       <figure className="mt-16 rounded-3xl border border-rule bg-card p-6">
-        <p className="text-sm text-muted-foreground">Richmond River flow near Woodburn (GloFAS, weekly peak, m³/s). Red dots are floods on record.</p>
+        <p className="text-sm text-muted-foreground">How much water the Richmond River carried near Woodburn, week by week, from the European flood-forecast system (GloFAS). Red dots are floods on record.</p>
         <div className="mt-4">{history && m ? <FlowHistory time={history.time} q={history.q} floods={m.record} q2={m.river.q2} q5={m.river.q5} /> : <div className="h-64" />}</div>
         <figcaption className="mt-3 text-sm text-muted-foreground">
           The tallest spikes in the river record are the floods people remember. That is the signal Draki forecasts.{" "}
@@ -361,7 +359,7 @@ function Proof({ farm }: { farm: Farm }) {
             <tr className="border-b border-rule">
               <th className="py-3 pr-4 font-normal">When</th>
               <th className="py-3 pr-4 font-normal">What happened</th>
-              <th className="py-3 pr-4 text-right font-normal">River peak</th>
+              <th className="py-3 pr-4 text-right font-normal">River flow at its peak</th>
               <th className="py-3 font-normal">Draki river alert</th>
             </tr>
           </thead>
@@ -385,8 +383,8 @@ function Proof({ farm }: { farm: Farm }) {
       {m && (
         <p className="mt-4 max-w-3xl text-sm text-muted-foreground">
           {m.unmatchedAlarms.length === 0
-            ? "Every time the river crossed the Act line since 2009, there was a recorded flood. No false alarms in the record."
-            : `The river also crossed the Act line ${m.unmatchedAlarms.length} times with no flood we could find a record of (${m.unmatchedAlarms.map(monthYear).join(", ")}).`}
+            ? "River flow is in cubic metres of water a second (m³/s); one cubic metre is 1,000 litres. Every time the river reached the Act today level since 2009, a flood was recorded. No false alarms."
+            : `The river also reached the Act today level ${m.unmatchedAlarms.length} times with no flood we could find a record of (${m.unmatchedAlarms.map(monthYear).join(", ")}).`}
         </p>
       )}
 
@@ -395,10 +393,12 @@ function Proof({ farm }: { farm: Farm }) {
         The lower Richmond floods when the river overtops its banks. For every 30 m square of a field we know how high it sits above the river. When the
         forecast river flow pushes the water higher than that, the square floods. Heavy local rain can also pool in the low spots.
       </p>
-      <dl className="mt-8 grid gap-x-10 gap-y-4 sm:grid-cols-3">
+      <details className="mt-8">
+        <summary className="text-leaf hover:underline">Technical details</summary>
+      <dl className="mt-6 grid gap-x-10 gap-y-4 sm:grid-cols-3">
         {[
-          ["River stays in its banks up to", m ? `${m.river.q2.toLocaleString("en-AU")} m³/s (2-year flood)` : "–"],
-          ["Act today from", m ? `${m.river.q5.toLocaleString("en-AU")} m³/s (5-year flood)` : "–"],
+          ["River bursts its banks above", m ? `${m.river.q2.toLocaleString("en-AU")} m³/s (a flood that comes about every 2 years)` : "–"],
+          ["Act today from", m ? `${m.river.q5.toLocaleString("en-AU")} m³/s (about every 5 years)` : "–"],
           ["River level above normal", m ? `${m.river.h0} m + ${m.river.k} × (√flow − √${m.river.q2})` : "–"],
           ["Tuned on", "Sentinel-1 flood map, 2 March 2022"],
           ["Counts as flooded", `${KNOBS.floodedDepth} m deep`],
@@ -413,10 +413,11 @@ function Proof({ farm }: { farm: Farm }) {
           </div>
         ))}
       </dl>
+      </details>
       <p className="mt-8 max-w-3xl text-sm text-muted-foreground">
-        Limits we know about: the elevation model measures the top of crops and roofs, not bare ground; height above the river is measured in a straight
-        line, not along how water actually flows; and the river level comes from a global model, not the local gauge. NSW's 1 m LiDAR (ELVIS) and the
-        BoM's river gauges are both public, and they are the next upgrade.
+        What would make it better: our height map includes the tops of crops and roofs, not just the ground, and our river figures come from a global
+        model, not the local river gauges. NSW publishes a far sharper height map (1-metre laser survey) and the Bureau of Meteorology runs river
+        gauges here. Plugging both in is the next step.
       </p>
     </section>
   )
