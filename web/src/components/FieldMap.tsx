@@ -4,13 +4,36 @@ import { createRoot } from "react-dom/client"
 import L from "leaflet"
 import { CircleMarker, ImageOverlay, MapContainer, Marker, ZoomControl, Polygon, Polyline, Rectangle, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet"
 import { KNOBS, type Cell, type LatLng } from "@/lib/flood"
-import { loadRelief, RELIEF_STOPS, type Relief } from "@/lib/relief"
+import { drawRelief, EXAGGERATION, RELIEF_GRADIENT } from "@/lib/relief"
 import { cn } from "@/lib/utils"
 
 // MapLibre (~280 kB gzipped) only downloads when someone presses 3D.
 const Terrain3D = lazy(() => import("./Terrain3D"))
 const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services"
-const MAX_RELIEF = RELIEF_STOPS[RELIEF_STOPS.length - 1][0]
+
+// Ground-height tiles, drawn in the browser at 2× for sharp screens (see lib/relief).
+class ReliefLayer extends L.GridLayer {
+  createTile(coords: L.Coords, done: L.DoneCallback) {
+    const tile = document.createElement("canvas")
+    drawRelief(tile, coords.z, coords.x, coords.y, 512).then(
+      () => done(undefined, tile),
+      (e) => done(e, tile),
+    )
+    return tile
+  }
+}
+
+function Relief() {
+  const map = useMap()
+  useEffect(() => {
+    const layer = new ReliefLayer({ maxZoom: 19, zIndex: 1, attribution: "Ground height: AWS Terrain Tiles (Mapzen)" })
+    layer.addTo(map)
+    return () => {
+      layer.remove()
+    }
+  }, [map])
+  return null
+}
 
 const M_PER_DEG = 111_320
 
@@ -98,10 +121,6 @@ export function FieldMap(props: {
   // Ground height is the default: it shows where the land dips, which is where water goes first.
   const [base, setBase] = useState<"ground" | "satellite">("ground")
   const [tilt, setTilt] = useState(false)
-  const [relief, setRelief] = useState<Relief>()
-  useEffect(() => {
-    loadRelief().then(setRelief)
-  }, [])
   const ground = base === "ground"
   // No 3D while the farmer is tapping corners or placing things: taps need the flat map.
   const canTilt = !onMapClick
@@ -111,7 +130,7 @@ export function FieldMap(props: {
       <div className="relative min-h-0 flex-1">
       {tilt && canTilt ? (
         <Suspense fallback={<div className="grid h-full place-items-center bg-ink text-sm text-white/70">Loading 3D…</div>}>
-          <Terrain3D poly={poly} shapes={shapes} cells={cells} stepM={stepM} pins={pins} base={base} relief={relief} />
+          <Terrain3D poly={poly} shapes={shapes} cells={cells} stepM={stepM} pins={pins} base={base} />
         </Suspense>
       ) : (
     // One-finger drag on a phone should scroll the page, not get stuck panning the map. Pinch still zooms.
@@ -119,14 +138,13 @@ export function FieldMap(props: {
       <ZoomControl position="topright" />
       {ground ? (
         <>
-          <TileLayer url={`${ESRI}/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}`} attribution="Hillshade © Esri" maxZoom={18} maxNativeZoom={16} />
-          {relief && <ImageOverlay url={relief.url} bounds={relief.bounds} opacity={0.95} />}
-          <TileLayer url={`${ESRI}/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}`} maxZoom={18} opacity={0.6} />
+          <Relief />
+          <TileLayer url={`${ESRI}/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}`} maxZoom={18} opacity={0.6} zIndex={2} />
         </>
       ) : (
         <TileLayer url={`${ESRI}/World_Imagery/MapServer/tile/{z}/{y}/{x}`} attribution="Imagery © Esri, Maxar, Earthstar Geographics" maxZoom={18} />
       )}
-      <TileLayer url={`${ESRI}/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}`} maxZoom={18} attribution="Ground height: Copernicus DEM · Land: ESA WorldCover · River: GloFAS" />
+      <TileLayer url={`${ESRI}/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}`} maxZoom={18} zIndex={3} attribution="Labels © Esri · Flood model: Copernicus DEM, ESA WorldCover, GloFAS" />
       {overlay && <ImageOverlay url={overlay.url} bounds={overlay.bounds} opacity={0.85} />}
       <Fit poly={poly} />
       <Fly to={flyTo} zoom={flyZoom} />
@@ -186,8 +204,8 @@ export function FieldMap(props: {
         {ground && (
           <span className="flex items-center gap-2">
             Low
-            <i className="inline-block h-2.5 w-24 rounded-full" style={{ background: `linear-gradient(to right, ${RELIEF_STOPS.map(([h, c]) => `${c} ${(100 * h) / MAX_RELIEF}%`).join(", ")})` }} title={`Ground height, 0 to ${MAX_RELIEF} m+`} />
-            High{tilt && canTilt ? " · heights ×6" : ""}
+            <i className="inline-block h-2.5 w-24 rounded-full" style={{ background: RELIEF_GRADIENT }} title="Ground height: dark is low ground, which floods first" />
+            High{tilt && canTilt ? ` · heights ×${EXAGGERATION}` : ""}
           </span>
         )}
         {legend}

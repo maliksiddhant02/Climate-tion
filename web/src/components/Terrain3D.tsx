@@ -5,19 +5,36 @@ import "maplibre-gl/dist/maplibre-gl.css"
 // Hand MapLibre its worker as a Vite-bundled file; its own lookup breaks under Vite's dependency pre-bundling.
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url"
 maplibregl.setWorkerUrl(workerUrl)
+
+// The same ground-height tiles as the flat map, served to MapLibre through a relief:// protocol.
+const png = (canvas: HTMLCanvasElement) =>
+  new Promise<Blob>((ok, fail) => canvas.toBlob((b) => (b ? ok(b) : fail(new Error("tile"))), "image/png")).then((b) => b.arrayBuffer())
+const zxy = (url: string) => url.replace(/^\w+:\/\//, "").split("/").map(Number)
+maplibregl.addProtocol("relief", async ({ url }) => {
+  const [z, x, y] = zxy(url)
+  const canvas = document.createElement("canvas")
+  await drawRelief(canvas, z, x, y, 512)
+  return { data: await png(canvas) }
+})
+// And the terrain shape from the same smoothed heights, so a single bad height can't become a spike.
+maplibregl.addProtocol("terrain", async ({ url }) => {
+  const [z, x, y] = zxy(url)
+  const canvas = document.createElement("canvas")
+  await drawTerrarium(canvas, z, x, y)
+  return { data: await png(canvas) }
+})
 import { KNOBS, type Cell, type LatLng } from "@/lib/flood"
-import type { Relief } from "@/lib/relief"
+import { drawRelief, drawTerrarium, EXAGGERATION } from "@/lib/relief"
 import type { Pin, Shape } from "./FieldMap"
 
 // The tilted view, loaded only when someone presses 3D (MapLibre GL is ~280 kB gzipped; Leaflet can't tilt).
 // Terrain: AWS Terrain Tiles (open data, Terrarium encoding). The floodplain's few metres of relief are invisible at
 // true scale, so heights are exaggerated (EXAGGERATION, stated on screen).
 
-export const EXAGGERATION = 6
 const M_PER_DEG = 111_320
 const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services"
 
-type Props = { poly: LatLng[]; shapes?: Shape[]; cells: Cell[]; stepM: number; pins?: Pin[]; base: "ground" | "satellite"; relief?: Relief }
+type Props = { poly: LatLng[]; shapes?: Shape[]; cells: Cell[]; stepM: number; pins?: Pin[]; base: "ground" | "satellite" }
 
 const ring = (poly: LatLng[]) => [[...poly, poly[0]].map(([lat, lng]) => [lng, lat])]
 
@@ -54,7 +71,7 @@ export default function Terrain3D(props: Props) {
   const markers = useRef<maplibregl.Marker[]>([])
 
   useEffect(() => {
-    const { poly, relief } = props
+    const { poly } = props
     const lats = poly.map((p) => p[0])
     const lngs = poly.map((p) => p[1])
     const m = new maplibregl.Map({
@@ -69,32 +86,20 @@ export default function Terrain3D(props: Props) {
         version: 8,
         sources: {
           sat: { type: "raster", tiles: [`${ESRI}/World_Imagery/MapServer/tile/{z}/{y}/{x}`], tileSize: 256, maxzoom: 18, attribution: "Imagery © Esri, Maxar" },
-          shade: { type: "raster", tiles: [`${ESRI}/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}`], tileSize: 256, maxzoom: 16, attribution: "Hillshade © Esri" },
+          relief: { type: "raster", tiles: ["relief://{z}/{x}/{y}"], tileSize: 256, maxzoom: 18, attribution: "Ground height: AWS Terrain Tiles (Mapzen)" },
           dem: {
             type: "raster-dem",
-            tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+            tiles: ["terrain://{z}/{x}/{y}"],
             encoding: "terrarium",
             tileSize: 256,
-            maxzoom: 15,
+            // Same consistent z12 surface the ground-height colours use; z13–15 show survey seams here (see lib/relief).
+            maxzoom: 12,
             attribution: "Terrain: AWS Terrain Tiles (Mapzen)",
           },
-          ...(relief && {
-            relief: {
-              type: "image",
-              url: relief.url,
-              coordinates: [
-                [relief.bounds[0][1], relief.bounds[1][0]],
-                [relief.bounds[1][1], relief.bounds[1][0]],
-                [relief.bounds[1][1], relief.bounds[0][0]],
-                [relief.bounds[0][1], relief.bounds[0][0]],
-              ],
-            },
-          }),
           farm: { type: "geojson", data: features(props) },
         },
         layers: [
-          { id: "shade", type: "raster", source: "shade" },
-          ...(relief ? [{ id: "relief", type: "raster" as const, source: "relief", paint: { "raster-opacity": 0.95 } }] : []),
+          { id: "relief", type: "raster", source: "relief" },
           { id: "sat", type: "raster", source: "sat" },
           { id: "paddocks", type: "fill", source: "farm", filter: ["==", ["get", "kind"], "paddock"], paint: { "fill-color": ["get", "color"], "fill-opacity": 0.25 } },
           { id: "paddock-lines", type: "line", source: "farm", filter: ["==", ["get", "kind"], "paddock"], paint: { "line-color": ["get", "color"], "line-width": 2.5 } },
@@ -116,8 +121,7 @@ export default function Terrain3D(props: Props) {
     const apply = () => {
       const ground = props.base === "ground"
       m.setLayoutProperty("sat", "visibility", ground ? "none" : "visible")
-      m.setLayoutProperty("shade", "visibility", ground ? "visible" : "none")
-      if (m.getLayer("relief")) m.setLayoutProperty("relief", "visibility", ground ? "visible" : "none")
+      m.setLayoutProperty("relief", "visibility", ground ? "visible" : "none")
       ;(m.getSource("farm") as GeoJSONSource).setData(features(props))
       markers.current.forEach((x) => x.remove())
       markers.current = [
