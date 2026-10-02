@@ -563,16 +563,22 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
       <div className="mt-6 grid gap-6 lg:grid-cols-12">
         <div className="relative overflow-hidden rounded-3xl border border-rule lg:col-span-7 lg:row-span-2">
           <div className="h-[460px] lg:h-full lg:min-h-[600px]">
-            <FieldMap poly={profile.boundary} cells={cells ?? []} stepM={stepM} shapes={shapes} pins={pins} wetOnly runKey={scenario} flyTo={focus} flyZoom={17} />
+            <FieldMap poly={profile.boundary} cells={cells ?? []} stepM={stepM} shapes={shapes} pins={pins} wetOnly
+              runKey={scenario}
+              flyTo={focus}
+              flyZoom={17}
+              legend={
+                <>
+                  <span className="flex items-center gap-2">
+                    <i className="size-3 rounded-sm bg-flood" /> Under water
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <i className="size-3 rounded-full bg-flood ring-2 ring-white" /> Move this
+                  </span>
+                </>
+              }
+            />
           </div>
-          <p className="absolute bottom-3 left-3 z-[1000] flex gap-4 rounded-full bg-ink/85 px-4 py-2 text-sm text-white">
-            <span className="flex items-center gap-2">
-              <i className="size-3 rounded-sm bg-flood" /> Under water
-            </span>
-            <span className="flex items-center gap-2">
-              <i className="size-3 rounded-full bg-flood ring-2 ring-white" /> Move this
-            </span>
-          </p>
         </div>
 
         <div className={cn(card, "lg:col-span-5")}>

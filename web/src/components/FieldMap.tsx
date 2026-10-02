@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type ComponentType } from "react"
+import { lazy, Suspense, useEffect, useState, type ComponentType, type ReactNode } from "react"
 import { flushSync } from "react-dom"
 import { createRoot } from "react-dom/client"
 import L from "leaflet"
@@ -88,8 +88,10 @@ export function FieldMap(props: {
   flyZoom?: number
   /** Let one finger pan on phones too (setup needs it to reach your farm). */
   drag?: boolean
+  /** Swatches for what's drawn on the map; shown in the bar under it. */
+  legend?: ReactNode
 }) {
-  const { poly, cells, stepM, high, draft, onMapClick, runKey = "", overlay, shapes, pins, wetOnly, noOutline, flyTo, flyZoom = 16, drag } = props
+  const { poly, cells, stepM, high, draft, onMapClick, runKey = "", overlay, shapes, pins, wetOnly, noOutline, flyTo, flyZoom = 16, drag, legend } = props
   const half = stepM / 2 / M_PER_DEG
   const maxDepth = Math.max(0, ...cells.map((c) => c.depth))
   const cos = Math.cos((poly[0][0] * Math.PI) / 180)
@@ -105,7 +107,8 @@ export function FieldMap(props: {
   const canTilt = !onMapClick
   const seg = (on: boolean) => cn("press px-3 py-1.5 text-sm", on ? "bg-white text-ink" : "text-white/80 hover:text-white")
   return (
-    <div className="relative h-full w-full">
+    <div className="flex h-full w-full flex-col">
+      <div className="relative min-h-0 flex-1">
       {tilt && canTilt ? (
         <Suspense fallback={<div className="grid h-full place-items-center bg-ink text-sm text-white/70">Loading 3D…</div>}>
           <Terrain3D poly={poly} shapes={shapes} cells={cells} stepM={stepM} pins={pins} base={base} relief={relief} />
@@ -163,18 +166,11 @@ export function FieldMap(props: {
     </MapContainer>
       )}
 
-      <div className="absolute right-3 bottom-7 z-[1000] flex flex-col items-end gap-2">
-        {ground && (
-          <div className="rounded-xl bg-ink/85 px-3 py-2 text-xs text-white">
-            <p>Ground height{tilt && canTilt ? " (heights ×6)" : ""}</p>
-            <div className="mt-1 h-2 w-36 rounded-full" style={{ background: `linear-gradient(to right, ${RELIEF_STOPS.map(([h, c]) => `${c} ${(100 * h) / MAX_RELIEF}%`).join(", ")})` }} />
-            <p className="mt-0.5 flex justify-between text-white/70">
-              <span>0 m · floods first</span>
-              <span>{MAX_RELIEF} m+</span>
-            </p>
-          </div>
-        )}
-        <div className="flex overflow-hidden rounded-full bg-ink/85" role="group" aria-label="Map view">
+      </div>
+
+      {/* The bar under the map: view switch, then what the colours mean. Never covers the map, at any width. */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 bg-ink px-3 py-2.5 text-sm text-white">
+        <div className="flex overflow-hidden rounded-full bg-white/10" role="group" aria-label="Map view">
           <button onClick={() => setBase("ground")} aria-pressed={ground} className={seg(ground)}>
             Ground height
           </button>
@@ -187,6 +183,14 @@ export function FieldMap(props: {
             </button>
           )}
         </div>
+        {ground && (
+          <span className="flex items-center gap-2">
+            Low
+            <i className="inline-block h-2.5 w-24 rounded-full" style={{ background: `linear-gradient(to right, ${RELIEF_STOPS.map(([h, c]) => `${c} ${(100 * h) / MAX_RELIEF}%`).join(", ")})` }} title={`Ground height, 0 to ${MAX_RELIEF} m+`} />
+            High{tilt && canTilt ? " · heights ×6" : ""}
+          </span>
+        )}
+        {legend}
       </div>
     </div>
   )

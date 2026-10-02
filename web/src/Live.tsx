@@ -330,6 +330,19 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
                     : undefined
                 }
                 onMapClick={draft ? (p) => setDraft([...draft, p]) : undefined}
+                legend={
+                  r &&
+                  !draft && (
+                    <>
+                      <span className="flex items-center gap-2">
+                        <i className="size-3 rounded-sm bg-flood" /> Under water
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <i className="size-3 rounded-sm bg-rain-soft" /> {satellite ? "Satellite: under water, 2 Mar 2022" : "Shallow water"}
+                      </span>
+                    </>
+                  )
+                }
               />
             </div>
             <div className="absolute inset-x-3 top-3 z-[1000] flex flex-wrap gap-2 pr-12">
@@ -371,16 +384,6 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
                 </p>
               )}
             </div>
-            {r && !draft && (
-              <div className="absolute bottom-3 left-3 z-[1000] flex gap-4 rounded-full bg-ink/80 px-4 py-2 text-sm backdrop-blur">
-                <span className="flex items-center gap-2">
-                  <i className="size-3 rounded-sm bg-flood" /> Under water
-                </span>
-                <span className="flex items-center gap-2">
-                  <i className="size-3 rounded-sm bg-rain-soft" /> {satellite ? "Satellite: under water, 2 Mar 2022" : "Shallow water"}
-                </span>
-              </div>
-            )}
           </div>
 
           <RiskCard key={mode} r={r} now={hour !== undefined} live={mode === "live"} onReplay={mode === "live" ? () => setMode("replay") : undefined} />
