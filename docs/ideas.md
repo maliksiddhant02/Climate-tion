@@ -8,22 +8,39 @@ These ideas were scored with [hackathon-idea-evaluator](../.claude/skills/hackat
 
 | # | Idea (track) | N | F | S | I | D | Fit | /60 | Weighted |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | **Bill→Retrofit**: upload an energy bill, AI reads it, compares the building's energy use per m² to the NABERS benchmark (Australia's building energy rating) and suggests retrofits to cut it 25% (Buildings) | 6 | 8 | 8 | 7 | 9 | 9 | 47 | **8.1** |
-| 2 | **Greenwash Checker**: paste a climate claim or ad, it flags greenwashing tactics against the EU's green-claims rules and cites sources (Awareness) | 6 | 8 | 8 | 6 | 9 | 9 | 46 | **8.1** |
-| 3 | **Island Microgrid Sizer**: click a Pacific village on a map to size a solar and battery system that replaces diesel, using free NASA solar data (Electrification) | 5 | 8 | 6 | 7 | 8 | 10 | 44 | **8.0** |
-| 4 | **Renter Energy Score**: rate your rental's energy use and auto-write a retrofit request to your landlord (Buildings) | 6 | 8 | 7 | 6 | 7 | 9 | 43 | 7.7 |
-| 5 | **Pacific Farm Advisor**: SMS or WhatsApp seasonal climate advice in Fijian, Samoan or Tongan (Awareness) | 7 | 6 | 7 | 8 | 7 | 10 | 45 | 7.6 |
-| 6 | **Plug-in Timer**: live grid carbon intensity tells you when to charge an EV or run appliances (Electrification) | 4 | 9 | 8 | 5 | 8 | 8 | 42 | 7.5 |
-| 7 | **Heat Refuge Map**: weather-forecast heat alerts plus a route to the nearest cool public space (Buildings) | 6 | 7 | 7 | 7 | 8 | 8 | 43 | 7.3 |
-| 8 | **Plug Swap**: plans the order to swap gas appliances for electric, with rebates and payback (Electrification) | 4 | 8 | 7 | 6 | 7 | 9 | 41 | 7.3 |
-| 9 | **Repair-not-Replace**: photo of a broken item gives a diagnosis, nearby repair cafés and the materials saved (Industrialisation) | 6 | 7 | 7 | 6 | 8 | 8 | 42 | 7.3 |
-| 10 | **My Suburb in 2035**: enter an address to see projected heat and flood risk plus local actions (Awareness) | 5 | 7 | 8 | 5 | 9 | 8 | 42 | 7.3 |
-| 11 | **NDC Explainer**: each country's climate plan in plain language, measured against the 2035 targets (Awareness) | 4 | 9 | 8 | 4 | 7 | 8 | 40 | 7.3 |
-| 12 | **Industrial Symbiosis**: matches one factory's waste to another factory's inputs (Industrialisation) | 6 | 6 | 7 | 6 | 7 | 9 | 41 | 7.1 |
-| 13 | **Cyclone-Ready Check**: AI checks a photo of a Pacific home's roof tie-downs (Buildings) | 7 | 5 | 6 | 7 | 7 | 9 | 41 | 7.0 |
-| 14 | **Snap-to-Sort**: photo of an item tells you which council bin it goes in (Waste) | 4 | 7 | 7 | 5 | 9 | 7 | 39 | 6.8 |
-| 15 | **Landfill Methane Estimator**: methane estimates for landfills from satellite data and the standard IPCC waste model (Waste) | 6 | 5 | 6 | 6 | 6 | 8 | 37 | 6.3 |
-| 16 | **Food Rescue Matcher**: connects cafés' surplus food with charities (Waste) | 3 | 6 | 6 | 6 | 6 | 8 | 35 | 6.0 |
+| 1 | **Bill→Retrofit** (Buildings) | 6 | 8 | 8 | 7 | 9 | 9 | 47 | **8.1** |
+| 2 | **Greenwash Checker** (Awareness) | 6 | 8 | 8 | 6 | 9 | 9 | 46 | **8.1** |
+| 3 | **Island Microgrid Sizer** (Electrification) | 5 | 8 | 6 | 7 | 8 | 10 | 44 | **8.0** |
+| 4 | **Renter Energy Score** (Buildings) | 6 | 8 | 7 | 6 | 7 | 9 | 43 | 7.7 |
+| 5 | **Pacific Farm Advisor** (Awareness) | 7 | 6 | 7 | 8 | 7 | 10 | 45 | 7.6 |
+| 6 | **Plug-in Timer** (Electrification) | 4 | 9 | 8 | 5 | 8 | 8 | 42 | 7.5 |
+| 7 | **Heat Refuge Map** (Buildings) | 6 | 7 | 7 | 7 | 8 | 8 | 43 | 7.3 |
+| 8 | **Plug Swap** (Electrification) | 4 | 8 | 7 | 6 | 7 | 9 | 41 | 7.3 |
+| 9 | **Repair-not-Replace** (Industrialisation) | 6 | 7 | 7 | 6 | 8 | 8 | 42 | 7.3 |
+| 10 | **My Suburb in 2035** (Awareness) | 5 | 7 | 8 | 5 | 9 | 8 | 42 | 7.3 |
+| 11 | **NDC Explainer** (Awareness) | 4 | 9 | 8 | 4 | 7 | 8 | 40 | 7.3 |
+| 12 | **Industrial Symbiosis** (Industrialisation) | 6 | 6 | 7 | 6 | 7 | 9 | 41 | 7.1 |
+| 13 | **Cyclone-Ready Check** (Buildings) | 7 | 5 | 6 | 7 | 7 | 9 | 41 | 7.0 |
+| 14 | **Snap-to-Sort** (Waste) | 4 | 7 | 7 | 5 | 9 | 7 | 39 | 6.8 |
+| 15 | **Landfill Methane Estimator** (Waste) | 6 | 5 | 6 | 6 | 6 | 8 | 37 | 6.3 |
+| 16 | **Food Rescue Matcher** (Waste) | 3 | 6 | 6 | 6 | 6 | 8 | 35 | 6.0 |
+
+- **1. Bill→Retrofit:** upload an energy bill, AI reads it, compares the building's energy use per m² to the NABERS benchmark (Australia's building energy rating) and suggests retrofits to cut it 25%
+- **2. Greenwash Checker:** paste a climate claim or ad, it flags greenwashing tactics against the EU's green-claims rules and cites sources
+- **3. Island Microgrid Sizer:** click a Pacific village on a map to size a solar and battery system that replaces diesel, using free NASA solar data
+- **4. Renter Energy Score:** rate your rental's energy use and auto-write a retrofit request to your landlord
+- **5. Pacific Farm Advisor:** SMS or WhatsApp seasonal climate advice in Fijian, Samoan or Tongan
+- **6. Plug-in Timer:** live grid carbon intensity tells you when to charge an EV or run appliances
+- **7. Heat Refuge Map:** weather-forecast heat alerts plus a route to the nearest cool public space
+- **8. Plug Swap:** plans the order to swap gas appliances for electric, with rebates and payback
+- **9. Repair-not-Replace:** photo of a broken item gives a diagnosis, nearby repair cafés and the materials saved
+- **10. My Suburb in 2035:** enter an address to see projected heat and flood risk plus local actions
+- **11. NDC Explainer:** each country's climate plan in plain language, measured against the 2035 targets
+- **12. Industrial Symbiosis:** matches one factory's waste to another factory's inputs
+- **13. Cyclone-Ready Check:** AI checks a photo of a Pacific home's roof tie-downs
+- **14. Snap-to-Sort:** photo of an item tells you which council bin it goes in
+- **15. Landfill Methane Estimator:** methane estimates for landfills from satellite data and the standard IPCC waste model
+- **16. Food Rescue Matcher:** connects cafés' surplus food with charities
 
 **Abandon:** #14, #15 and #16. They score under 40, already exist (Recycle Mate, OzHarvest), or need data we can't get in time.
 
@@ -31,9 +48,13 @@ These ideas were scored with [hackathon-idea-evaluator](../.claude/skills/hackat
 
 | # | Idea (track) | N | F | S | I | D | Fit | /60 | Weighted |
 |---|---|---|---|---|---|---|---|---|---|
-| 17 | **FarmShield**: hyper-local farm weather plus elevation data gives field-level flood and frost risk and today's actions (Awareness: climate-resilient farming) | 6 | 7 | 7 | 7 | 8 | 9 | 44 | **7.6** |
-| 18 | **EcoRoute**: compares the emissions of each route and transport mode, nudges "6 min later, −42% CO₂", with an impact dashboard | 3 | 9 | 8 | 4 | 8 | 5 | 37 | 6.4 |
-| 19 | **EchoEarth**: 3D/360° scans of places at risk from climate change, explorable in AR/VR | 4 | 6 | 6 | 4 | 8 | 5 | 33 | 5.7 |
+| 17 | **FarmShield** (Awareness) | 6 | 7 | 7 | 7 | 8 | 9 | 44 | **7.6** |
+| 18 | **EcoRoute** (no clear track) | 3 | 9 | 8 | 4 | 8 | 5 | 37 | 6.4 |
+| 19 | **EchoEarth** (no clear track) | 4 | 6 | 6 | 4 | 8 | 5 | 33 | 5.7 |
+
+- **17. FarmShield:** hyper-local farm weather plus elevation data gives field-level flood and frost risk and today's actions (climate-resilient farming)
+- **18. EcoRoute:** compares the emissions of each route and transport mode, nudges "6 min later, −42% CO₂", with an impact dashboard
+- **19. EchoEarth:** 3D/360° scans of places at risk from climate change, explorable in AR/VR
 
 **FarmShield: Pivot, then build.** It's a solid idea.
 - **Fit:** the guide names climate-resilient farming under the Awareness track.
