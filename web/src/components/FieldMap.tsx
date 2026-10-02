@@ -15,11 +15,11 @@ function Fit({ poly }: { poly: LatLng[] }) {
   return null
 }
 
-function Fly({ to }: { to?: LatLng }) {
+function Fly({ to, zoom }: { to?: LatLng; zoom: number }) {
   const map = useMap()
   useEffect(() => {
-    if (to) map.setView(to, 16)
-  }, [map, to])
+    if (to) map.setView(to, zoom)
+  }, [map, to, zoom])
   return null
 }
 
@@ -76,12 +76,13 @@ export function FieldMap(props: {
   wetOnly?: boolean
   /** Hide the field outline (e.g. while the farmer is still marking it). */
   noOutline?: boolean
-  /** Jump the map here (e.g. a searched address). */
+  /** Jump the map here (e.g. a searched address, or a tapped item). Pass a new array to jump again. */
   flyTo?: LatLng
+  flyZoom?: number
   /** Let one finger pan on phones too (setup needs it to reach your farm). */
   drag?: boolean
 }) {
-  const { poly, cells, stepM, high, draft, onMapClick, runKey = "", overlay, shapes, pins, wetOnly, noOutline, flyTo, drag } = props
+  const { poly, cells, stepM, high, draft, onMapClick, runKey = "", overlay, shapes, pins, wetOnly, noOutline, flyTo, flyZoom = 16, drag } = props
   const half = stepM / 2 / M_PER_DEG
   const maxDepth = Math.max(0, ...cells.map((c) => c.depth))
   const cos = Math.cos((poly[0][0] * Math.PI) / 180)
@@ -96,7 +97,7 @@ export function FieldMap(props: {
       />
       {overlay && <ImageOverlay url={overlay.url} bounds={overlay.bounds} opacity={0.85} />}
       <Fit poly={poly} />
-      <Fly to={flyTo} />
+      <Fly to={flyTo} zoom={flyZoom} />
       <Clicks onClick={onMapClick} />
       {shapes?.map((s) => (
         <Polygon key={s.id} positions={s.poly} pathOptions={{ color: s.color, weight: 2, fillColor: s.color, fillOpacity: 0.4 }}>

@@ -53,8 +53,10 @@ export const valuePerHa = (p: Paddock) => p.valuePerHa ?? CROPS[p.crop].valuePer
 export function paddockRisk(p: Paddock, cells: Cell[], stepM: number) {
   const cellHa = (stepM * stepM) / 10_000
   const inside = cells.filter((c) => inPolygon([c.lat, c.lng], p.poly))
-  const floodedHa = inside.filter((c) => c.depth >= KNOBS.floodedDepth).length * cellHa
-  return { ha: areaHa(p.poly), floodedHa, atRisk: floodedHa * valuePerHa(p), maxDepth: Math.max(0, ...inside.map((c) => c.depth)) }
+  const ha = areaHa(p.poly)
+  // Cells are 30 m squares that can spill past the paddock edge; never report more water than paddock.
+  const floodedHa = Math.min(ha, inside.filter((c) => c.depth >= KNOBS.floodedDepth).length * cellHa)
+  return { ha, floodedHa, atRisk: floodedHa * valuePerHa(p), maxDepth: Math.max(0, ...inside.map((c) => c.depth)) }
 }
 
 /** Water depth where an item sits: the model cell it's in, or undefined if it's off the marked farm. */
@@ -98,3 +100,10 @@ export function loadProfile(): Profile | undefined {
   }
 }
 export const saveProfile = (p?: Profile) => (p ? localStorage.setItem(KEY, JSON.stringify(p)) : localStorage.removeItem(KEY))
+
+/** Highest dry ground on the farm, if there's enough of it (≥ 0.5 ha) to park machinery and hold stock. */
+export function safeGround(cells: Cell[], stepM: number): Cell | undefined {
+  const dry = cells.filter((c) => c.depth < KNOBS.floodedDepth)
+  if (dry.length * ((stepM * stepM) / 10_000) < 0.5) return undefined
+  return dry.reduce((a, c) => ((c.hand ?? c.elev) > (a.hand ?? a.elev) ? c : a))
+}

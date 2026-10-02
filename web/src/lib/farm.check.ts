@@ -1,6 +1,6 @@
 // Run: node src/lib/farm.check.ts
 import assert from "node:assert/strict"
-import { areaHa, itemDepth, paddockRisk, readyDate, type Paddock } from "./farm.ts"
+import { areaHa, itemDepth, paddockRisk, readyDate, safeGround, type Paddock } from "./farm.ts"
 import type { Cell, LatLng } from "./flood.ts"
 
 // 100 m × 100 m square at the equator is 1 ha.
@@ -26,5 +26,13 @@ assert.equal(itemDepth({ id: "t", kind: "tractor", at: [d * 10, d * 10] }, cells
 
 // Cane planted Jan 2025 matures Jan 2027, waits for the mill to open in June.
 assert.equal(readyDate({ ...cane, planted: "2025-01" })?.getMonth(), 5)
+
+// Flooded area never exceeds the paddock, even when edge cells spill over.
+assert.ok(paddockRisk(cane, [...Array(8)].map(() => ({ lat: d / 2, lng: d / 2, elev: 0, depth: 1 })), 50).floodedHa <= 1.01)
+
+// One dry 30 m square is not safe ground; seven are (0.63 ha).
+const wet = (n: number, depth: number): Cell[] => [...Array(n)].map((_, i) => ({ lat: i, lng: 0, elev: i, depth }))
+assert.equal(safeGround([...wet(20, 1), ...wet(1, 0)], 30), undefined)
+assert.ok(safeGround([...wet(20, 1), ...wet(7, 0)], 30))
 
 console.log("farm model: ok")

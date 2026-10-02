@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react"
 import { AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight, Beef, Check, Droplets, FlaskConical, Fuel, House, MapPin, Pencil, Tractor, Trash2, Truck, Undo2, Warehouse } from "lucide-react"
 import { FieldMap, iconSvg, type Pin } from "@/components/FieldMap"
+import { wx } from "@/components/weather"
 import { aud, DEMO, type Farm } from "@/Live"
-import { areaHa, CROPS, fuelYear, itemDepth, ITEMS, loadProfile, paddockRisk, readyDate, saveProfile as save, uid, valuePerHa, type CropId, type ItemId, type Paddock, type Profile } from "@/lib/farm"
+import { areaHa, CROPS, fuelYear, itemDepth, ITEMS, loadProfile, paddockRisk, readyDate, safeGround, saveProfile as save, uid, valuePerHa, type CropId, type ItemId, type Paddock, type Profile } from "@/lib/farm"
 import { gridInPolygon, KNOBS, riverDepths, riverStage, type Cell, type LatLng } from "@/lib/flood"
 import { BASE } from "@/lib/region"
 import { cn } from "@/lib/utils"
@@ -446,6 +447,7 @@ const SCENARIO: Record<Scenario, string> = { week: "This week", common: "A commo
 
 function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Profile; onEdit: (step: number) => void; onReset: () => void }) {
   const [scenario, setScenario] = useState<Scenario>("week")
+  const [focus, setFocus] = useState<LatLng>()
   const [season, setSeason] = useState<{ latest: { phase: string }; allMeanRain: number; phases: Record<string, { meanRain: number }> }>()
   useEffect(() => {
     fetch(`${BASE}/season.json`).then((r) => r.json()).then(setSeason).catch(() => undefined)
@@ -470,9 +472,8 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
   const paddocks = profile.paddocks.map((p) => ({ p, ...paddockRisk(p, cells ?? [], stepM) }))
   const atRisk = paddocks.reduce((s, x) => s + x.atRisk, 0)
   const shed = items.find((x) => (x.it.kind === "shed" || x.it.kind === "house") && x.depth !== undefined && !isWet(x.depth))
-  // The highest dry square on the farm (height above the river where we have it), pinned as Safe ground.
-  const dry = (cells ?? []).filter((c) => !isWet(c.depth))
-  const high = dry.length ? dry.reduce((a, c) => ((c.hand ?? c.elev) > (a.hand ?? a.elev) ? c : a)) : undefined
+  // The highest dry ground on the farm, pinned as Safe ground (only if there's enough of it to use).
+  const high = cells ? safeGround(cells, stepM) : undefined
   const safePlace = shed ? `your ${ITEMS[shed.it.kind].label.toLowerCase()}, which stays dry` : high ? "the safe ground on your map" : "higher ground off the floodplain"
   const ha = areaHa(profile.boundary)
   const name = profile.name.trim()
@@ -523,7 +524,10 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
         </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap gap-2" role="tablist">
+      <Week farm={farm} />
+
+      <h2 className="mt-12 text-2xl">What would a flood do to your farm?</h2>
+      <div className="mt-4 flex flex-wrap gap-2" role="tablist">
         {(Object.keys(SCENARIO) as Scenario[]).map((k) => (
           <button key={k} role="tab" aria-selected={scenario === k} onClick={() => setScenario(k)} className={cn(chip, scenario === k ? "border-ink bg-ink text-paper" : "border-rule hover:bg-paper-2")}>
             {SCENARIO[k]}
@@ -559,7 +563,7 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
       <div className="mt-6 grid gap-6 lg:grid-cols-12">
         <div className="relative overflow-hidden rounded-3xl border border-rule lg:col-span-7 lg:row-span-2">
           <div className="h-[460px] lg:h-full lg:min-h-[600px]">
-            <FieldMap poly={profile.boundary} cells={cells ?? []} stepM={stepM} shapes={shapes} pins={pins} wetOnly runKey={scenario} />
+            <FieldMap poly={profile.boundary} cells={cells ?? []} stepM={stepM} shapes={shapes} pins={pins} wetOnly runKey={scenario} flyTo={focus} flyZoom={17} />
           </div>
           <p className="absolute bottom-3 left-3 z-[1000] flex gap-4 rounded-full bg-ink/85 px-4 py-2 text-sm text-white">
             <span className="flex items-center gap-2">
@@ -580,7 +584,8 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
               const w = isWet(depth)
               const deep = depth === undefined ? "" : depth >= 2 ? "2 m+" : `${depth.toFixed(1)} m`
               return (
-                <li key={it.id} className="flex items-center gap-3 py-3">
+                <li key={it.id}>
+                  <button onClick={() => setFocus([...it.at])} title="Show on the map" className="press flex w-full items-center gap-3 rounded-xl py-3 text-left hover:bg-paper-2">
                   <span className={cn("grid size-9 shrink-0 place-items-center rounded-full", w ? "bg-flood text-white" : "bg-paper-2 text-leaf")}>
                     <I className="size-4" aria-hidden />
                   </span>
@@ -591,6 +596,7 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
                   <span className={cn("text-right text-sm", w ? "font-medium text-flood" : "text-muted-foreground")}>
                     {depth === undefined ? "off your farm" : w ? `${ITEMS[it.kind].prep ? "floods" : "move it"} · ${deep}` : "stays dry"}
                   </span>
+                  </button>
                 </li>
               )
             })}
@@ -604,7 +610,7 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
             {paddocks.map(({ p, ha, floodedHa, atRisk }) => {
               const d = readyDate(p)
               return (
-                <li key={p.id} className="grid grid-cols-[auto_1fr_auto] items-baseline gap-x-3 py-3">
+                <li key={p.id} onClick={() => setFocus(centre(p.poly))} title="Show on the map" className="grid cursor-pointer grid-cols-[auto_1fr_auto] items-baseline gap-x-3 rounded-xl py-3 hover:bg-paper-2">
                   <i className="inline-block size-3 rounded-full" style={{ background: CROPS[p.crop].color }} />
                   <span>
                     {CROPS[p.crop].label} · {ha.toFixed(1)} ha
@@ -622,6 +628,11 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
           </ul>
         </div>
 
+        <div className={cn(card, "lg:col-span-7")}>
+          <h2 className="text-2xl">Your year</h2>
+          <Timeline paddocks={profile.paddocks} onEdit={() => onEdit(1)} />
+        </div>
+
         <div className="rounded-3xl bg-ink p-6 text-white lg:col-span-5">
           <h2 className="text-2xl">Your texts</h2>
           <p className="mt-1 text-sm text-white/60">{profile.phone ? `To ${profile.phone}` : "Any phone, no app"} · {SCENARIO[scenario].toLowerCase()}</p>
@@ -634,9 +645,9 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
           </ol>
         </div>
 
-        <div className={cn(card, "lg:col-span-7")}>
-          <h2 className="text-2xl">The rest of the year</h2>
-          <ul className="mt-4 divide-y divide-rule">
+        <div className={cn(card, "lg:col-span-12")}>
+          <h2 className="text-2xl">Worth knowing</h2>
+          <ul className="mt-4 grid gap-x-10 md:grid-cols-2 [&>li]:border-t [&>li]:border-rule">
             {season && (
               <li className="py-3">
                 <span className="font-medium">{season.latest.phase === "elnino" ? "El Niño is under way." : "No El Niño this season."}</span>{" "}
@@ -669,6 +680,113 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
         </div>
       </div>
     </section>
+  )
+}
+
+const centre = (poly: LatLng[]): LatLng => [poly.reduce((a, p) => a + p[0], 0) / poly.length, poly.reduce((a, p) => a + p[1], 0) / poly.length]
+
+/** This week's weather at the farm: what a grower checks every day. */
+function Week({ farm }: { farm: Farm }) {
+  const r = farm.liveRun
+  const day = (iso: string, i: number) => (i === 0 ? "Today" : new Date(iso).toLocaleDateString("en-AU", { weekday: "short" }))
+  return (
+    <div className="mt-8">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-2xl">This week at your farm</h2>
+        {r?.river && (
+          <p className="text-muted-foreground">
+            Richmond River: {r.river.stage > 0 ? `${r.river.stage.toFixed(1)} m above normal` : "in its banks"}
+            {r.river.odds ? ` · ${r.river.odds.flood} of ${r.river.odds.n} forecasts flood your farm` : ""}
+          </p>
+        )}
+      </div>
+      <div className="-mx-6 mt-4 flex snap-x gap-3 overflow-x-auto px-6 pb-1 sm:mx-0 sm:grid sm:grid-cols-7 sm:overflow-visible sm:px-0">
+        {r
+          ? r.w.daily.time.map((t, i) => {
+              const { Icon, label } = wx(r.w.daily.code[i])
+              const rain = r.w.daily.rain[i]
+              return (
+                <div key={t} className={cn("min-w-[6.5rem] shrink-0 snap-start rounded-3xl border p-4 sm:min-w-0", rain >= 10 ? "border-rain-soft bg-rain-soft/40" : "border-rule bg-card")}>
+                  <p className="text-sm text-muted-foreground">{day(t, i)}</p>
+                  <Icon className="my-3 size-7 text-ink" aria-label={label} />
+                  <p className="text-2xl font-semibold">
+                    {rain.toFixed(0)}
+                    <span className="text-sm font-normal"> mm</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {Math.round(r.w.daily.temp[i])}°{r.w.daily.prob ? ` · ${r.w.daily.prob[i]}% rain` : ""}
+                  </p>
+                </div>
+              )
+            })
+          : [...Array(7)].map((_, i) => <div key={i} className="h-36 min-w-[6.5rem] rounded-3xl bg-paper-2 sm:min-w-0" />)}
+      </div>
+    </div>
+  )
+}
+
+/** Planting to harvest for each paddock over the next two years, with the mill's crushing season shaded. */
+function Timeline({ paddocks, onEdit }: { paddocks: Paddock[]; onEdit: () => void }) {
+  const start = new Date()
+  start.setDate(1)
+  const MONTHS = 24
+  const at = (d: Date) => ((d.getFullYear() - start.getFullYear()) * 12 + d.getMonth() - start.getMonth() + (d.getDate() - 1) / 30) / MONTHS
+  const clamp = (x: number) => Math.min(1, Math.max(0, x))
+  const months = [...Array(MONTHS)].map((_, i) => new Date(start.getFullYear(), start.getMonth() + i, 1))
+  const rows = paddocks.map((p) => ({ p, ready: readyDate(p), planted: p.planted ? new Date(`${p.planted}-01T00:00:00`) : undefined })).filter((r) => r.ready && r.planted)
+  if (!rows.length)
+    return (
+      <p className="mt-4 text-muted-foreground">
+        Add when you planted to see your harvests here.{" "}
+        <button onClick={onEdit} className="text-leaf underline">
+          Add planting months
+        </button>
+      </p>
+    )
+  const crush = paddocks.some((p) => p.crop === "cane")
+  return (
+    <div className="mt-6">
+      <div className="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-3">
+        <span />
+        <div className="relative h-5 text-sm text-muted-foreground">
+          {months.map((m, i) =>
+            i === 0 || m.getMonth() === 0 ? (
+              <span key={i} className="absolute whitespace-nowrap" style={{ left: `${(100 * i) / MONTHS}%` }}>
+                {i === 0 ? "Now" : m.getFullYear()}
+              </span>
+            ) : null,
+          )}
+        </div>
+        {rows.map(({ p, ready, planted }) => {
+          const a = clamp(at(planted!))
+          const b = clamp(at(ready!))
+          return [
+            <span key={`${p.id}l`} className="flex items-center gap-2 text-sm">
+              <i className="inline-block size-3 shrink-0 rounded-full" style={{ background: CROPS[p.crop].color }} />
+              {CROPS[p.crop].label}
+            </span>,
+            <div key={`${p.id}b`} className="relative h-8 rounded-full bg-paper-2">
+              {crush &&
+                p.crop === "cane" &&
+                months.map((m, i) =>
+                  m.getMonth() >= 5 ? <span key={i} className="absolute inset-y-0 bg-cane/15" style={{ left: `${(100 * i) / MONTHS}%`, width: `${100 / MONTHS}%` }} /> : null,
+                )}
+              <span className="absolute inset-y-1.5 rounded-full" style={{ left: `${100 * a}%`, width: `${100 * Math.max(0.01, b - a)}%`, background: CROPS[p.crop].color }} />
+              {at(ready!) <= 1 && (
+                <span className="absolute top-1/2 -translate-y-1/2 pl-2 text-sm whitespace-nowrap" style={{ left: `${100 * b}%`, transform: b > 0.75 ? "translate(-100%, -50%)" : undefined, paddingRight: b > 0.75 ? "0.5rem" : undefined }}>
+                  Ready {ready!.toLocaleDateString("en-AU", { month: "short", year: "numeric" })}
+                </span>
+              )}
+            </div>,
+          ]
+        })}
+      </div>
+      {crush && (
+        <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+          <i className="inline-block h-3 w-5 rounded-sm bg-cane/15" /> Mill crushing season (June to December)
+        </p>
+      )}
+    </div>
   )
 }
 
