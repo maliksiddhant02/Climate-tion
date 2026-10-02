@@ -173,7 +173,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
     setPoly(draft)
     setDraft(undefined)
   }
-  const pill = "rounded-full bg-ink/80 px-4 py-2 text-sm backdrop-blur hover:bg-ink"
+  const pill = "press rounded-full bg-ink/80 px-4 py-2 text-sm backdrop-blur hover:bg-ink"
 
   return (
     <section className="bg-ink text-white">
@@ -185,10 +185,10 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
           </div>
           <Tabs value={mode} onValueChange={(v) => setMode(v as "live" | "replay")}>
             <TabsList className="h-11 rounded-full bg-white/[0.07] p-1">
-              <TabsTrigger value="live" className="rounded-full px-4 text-white/60 data-active:bg-white data-active:text-ink">
+              <TabsTrigger value="live" className="press rounded-full px-4 text-white/60 data-active:bg-white data-active:text-ink">
                 This week
               </TabsTrigger>
-              <TabsTrigger value="replay" className="rounded-full px-4 text-white/60 data-active:bg-white data-active:text-ink">
+              <TabsTrigger value="replay" className="press rounded-full px-4 text-white/60 data-active:bg-white data-active:text-ink">
                 {REPLAY.name}, 2022
               </TabsTrigger>
             </TabsList>
@@ -199,11 +199,11 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
           <div role="alert" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-flood/40 bg-flood/10 px-4 py-3 text-sm">
             <p>{error}</p>
             <div className="flex gap-2">
-              <button onClick={retry} className="rounded-full bg-white px-4 py-2 text-sm font-medium text-ink hover:bg-paper">
+              <button onClick={retry} className="press rounded-full bg-white px-4 py-2 text-sm font-medium text-ink hover:bg-paper">
                 Try again
               </button>
               {!isDemo && (
-                <button onClick={() => setPoly(DEMO)} className="rounded-full border border-white/25 px-4 py-2 text-sm hover:bg-white/10">
+                <button onClick={() => setPoly(DEMO)} className="press rounded-full border border-white/25 px-4 py-2 text-sm hover:bg-white/10">
                   Back to demo
                 </button>
               )}
@@ -220,6 +220,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
                 stepM={elev?.stepM ?? 30}
                 high={r && r.cells.length > 1 && r.a.high.depth < KNOBS.floodedDepth ? r.a.high : undefined}
                 draft={draft}
+                runKey={mode}
                 onMapClick={draft ? (p) => setDraft([...draft, p]) : undefined}
               />
             </div>
@@ -241,7 +242,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
                   <button onClick={cancelDraft} className={pill}>
                     Cancel
                   </button>
-                  <button onClick={finishDraft} disabled={draft.length < 3} className="rounded-full bg-cane px-4 py-2 text-sm font-medium text-ink disabled:opacity-40">
+                  <button onClick={finishDraft} disabled={draft.length < 3} className="press rounded-full bg-cane px-4 py-2 text-sm font-medium text-ink disabled:opacity-40">
                     Done
                   </button>
                 </>
@@ -269,7 +270,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
             )}
           </div>
 
-          <RiskCard r={r} live={mode === "live"} onReplay={mode === "live" ? () => setMode("replay") : undefined} />
+          <RiskCard key={mode} r={r} live={mode === "live"} onReplay={mode === "live" ? () => setMode("replay") : undefined} />
 
           <div className={cn(card, "lg:col-span-5")}>
             <div className="flex items-baseline justify-between">
@@ -300,7 +301,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
               <Tabs value={lang} onValueChange={(v) => setLang(v as string)}>
                 <TabsList className="h-9 rounded-full bg-white/[0.07] p-0.5">
                   {[["en", "English"], ["fj", "iTaukei"], ["hi", "Hindi"]].map(([v, l]) => (
-                    <TabsTrigger key={v} value={v} className="rounded-full px-3 text-sm text-white/60 data-active:bg-white data-active:text-ink">
+                    <TabsTrigger key={v} value={v} className="press rounded-full px-3 text-sm text-white/60 data-active:bg-white data-active:text-ink">
                       {l}
                     </TabsTrigger>
                   ))}
@@ -338,7 +339,7 @@ function RiskCard({ r, live, onReplay }: { r?: Run; live: boolean; onReplay?: ()
   const a: Assessment | undefined = r?.a
   const river = r?.river
   return (
-    <div className="flex flex-col justify-between rounded-3xl bg-paper p-6 text-ink lg:col-span-5">
+    <div className="swap flex flex-col justify-between rounded-3xl bg-paper p-6 text-ink lg:col-span-5">
       <div className="flex items-start justify-between">
         <p className="text-sm text-muted-foreground">Likely under water</p>
         {a && <StatusPill level={a.level} />}

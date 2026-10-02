@@ -18,6 +18,9 @@ function Clicks({ onClick }: { onClick?: (p: LatLng) => void }) {
   return null
 }
 
+// Bucket a wet cell by depth so the deepest (lowest) ground fills first when the map animates.
+const riseClass = (c: Cell, maxDepth: number) => (c.depth > 0 ? `rise rise-${Math.min(9, Math.floor((1 - c.depth / (maxDepth || 1)) * 10))}` : undefined)
+
 function cellStyle(c: Cell) {
   if (c.depth >= KNOBS.floodedDepth)
     return { fillColor: "#d4472a", fillOpacity: 0.35 + Math.min(c.depth, 2) * 0.2, color: "#d4472a", weight: 0 }
@@ -32,9 +35,12 @@ export function FieldMap(props: {
   high?: Cell
   draft?: LatLng[]
   onMapClick?: (p: LatLng) => void
+  /** Changing this replays the water-rising animation (e.g. switching This week / Cody). */
+  runKey?: string
 }) {
-  const { poly, cells, stepM, high, draft, onMapClick } = props
+  const { poly, cells, stepM, high, draft, onMapClick, runKey = "" } = props
   const half = stepM / 2 / M_PER_DEG
+  const maxDepth = Math.max(0, ...cells.map((c) => c.depth))
   const cos = Math.cos((poly[0][0] * Math.PI) / 180)
   return (
     // One-finger drag on a phone should scroll the page, not get stuck panning the map. Pinch still zooms.
@@ -50,11 +56,11 @@ export function FieldMap(props: {
       {!draft &&
         cells.map((c) => (
           <Rectangle
-            key={`${c.lat},${c.lng}`}
+            key={`${runKey}:${c.lat},${c.lng}`}
             bounds={[[c.lat - half, c.lng - half / cos], [c.lat + half, c.lng + half / cos]]}
-            pathOptions={cellStyle(c)}
+            pathOptions={{ ...cellStyle(c), className: riseClass(c, maxDepth) }}
           >
-            <Tooltip sticky>{`${c.elev.toFixed(0)} m above sea level${c.depth > 0.01 ? ` · ~${c.depth.toFixed(1)} m of water` : ""}`}</Tooltip>
+            <Tooltip sticky>{`${c.hand !== undefined ? `${c.hand.toFixed(1)} m above the river` : `${c.elev.toFixed(0)} m above sea level`}${c.depth > 0.01 ? ` · ~${c.depth.toFixed(1)} m of water` : ""}`}</Tooltip>
           </Rectangle>
         ))}
       {!draft && <Polygon positions={poly} pathOptions={{ color: "#d4a72c", weight: 2, fill: false }} />}

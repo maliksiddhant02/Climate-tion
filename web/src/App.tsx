@@ -41,7 +41,7 @@ function Logo() {
   )
 }
 
-const btn = "inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-medium transition-colors"
+const btn = "press inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-medium"
 
 export default function App() {
   const route = useRoute()
@@ -91,7 +91,7 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="flex-1">
+      <main key={page} className="page-enter flex-1">
         {page === "how" ? (
           <How />
         ) : page === "live" ? (
@@ -123,7 +123,7 @@ function Home({ farm }: { farm: Farm }) {
       <section className="relative isolate flex min-h-[min(80svh,760px)] items-end overflow-hidden">
         <img src="/photos/storm-field.jpg" alt="Storm clouds over a green field" className="absolute inset-0 -z-10 h-full w-full object-cover object-[center_65%]" />
         <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink/90 via-ink/40 to-ink/10" />
-        <div className="mx-auto w-full max-w-7xl px-6 pt-24 pb-14 text-white md:pb-20">
+        <div className="stagger mx-auto w-full max-w-7xl px-6 pt-24 pb-14 text-white md:pb-20">
           <h1 className="max-w-3xl font-display text-5xl leading-[1.05] lg:text-6xl">
             Know which part of your farm will <em className="text-cane">flood.</em>
           </h1>

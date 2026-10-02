@@ -273,6 +273,7 @@ A sticky paper bar with a hairline bottom border and blur holds the logo, 4 page
 ## Do's and Don'ts
 
 ### Do:
+- **Do** keep motion to Emil Kowalski's rules (`.claude/skills/animate`): `transform` and `opacity` only, `--ease-out` (cubic-bezier(0.23, 1, 0.32, 1)), UI motion under 300 ms. Press feedback is `.press` (scale 0.97, 160 ms). Pages enter with `.page-enter`; the map's flooded cells fill deepest-first (`.rise-0…9`), the one longer, explanatory moment. Reduced motion keeps the fades and drops the movement.
 - **Do** put live data and the map on ink, and explanation on paper.
 - **Do** show your working: list model inputs, data sources and caveats next to the result.
 - **Do** use local language and units: Ba, F$, cane, iTaukei, and "6 Jan" date order.
