@@ -11,7 +11,7 @@ Sources: the Participant Guide PDF and the "Climate Hacktion Library" background
 - Afterwards: Pre-COP in Fiji & Tuvalu 5–8 Oct, COP31 in Antalya, Türkiye 9–20 Nov
 
 ## Project files
-- `docs/`: the source documents (Participant Guide, Library) and **`docs/ideas.md`**, the scored idea brainstorm. The current top pick is BillShift.
+- `docs/`: the source documents (Participant Guide, Library) and **`docs/ideas.md`**, the scored idea brainstorm. The team pick is FarmShield v2 (our own idea; BillShift was dropped).
 - `.claude/skills/hackathon-idea-evaluator/`: the skill for scoring ideas, adjusted to this hackathon's judging weights.
 
 ## The challenge: "Build for 2035"

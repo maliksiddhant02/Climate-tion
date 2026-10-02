@@ -78,13 +78,64 @@ These ideas were scored with [hackathon-idea-evaluator](../.claude/skills/hackat
 - **Hardware:** drones are a hardware gap.
 - **Salvage:** a "Your street in 2035" phone 360° capture with a sea-level-rise overlay could fit the Awareness track. It would land emotionally given the Tuvalu Leaders' event, but it would still be about 40/60.
 
-## Top pick: BillShift (#1 + #8, optionally #3)
-Upload an Australian electricity or gas bill, or a Pacific diesel fuel log. The app pulls out the usage, then produces an electrification and efficiency plan with $ saved, CO₂ saved and payback. It names two 2035 targets: 35% electrification and a 25% cut in buildings' energy use per m².
+## Team pick: FarmShield v2 (improved #17)
+This is our own idea, so the team prefers it to the AI-generated ones. BillShift (#1 + #8) has been dropped.
 
-- Score: N6 F8 S8 I7 D9 Fit10, which is **48/60 and 8.4 weighted**.
-- Demo: upload a real bill live and a plan appears.
-- Biggest risk is novelty. Rewiring Australia already has a household electrification calculator.
-- To fix that, add a Pacific mode (diesel log in, solar sizing out). That takes novelty to about 7 and costs about 1 point of feasibility.
+**One-liner:** field-level flood warnings for smallholder farmers. They show exactly which part of the farm will flood, what to do today, and *why* (climate education built into every alert).
+
+**Track and target:** Climate Awareness & Education, aimed at "climate action education for all by 2035" (Library), with climate-resilient farming as the route in (Participant Guide).
+- Alignment is 30% of the score and also the tie-breaker. The Library asks us to point to the *exact* target, so the education part has to be core, not extra.
+
+### MVP scope
+1. **One place, one user, one hazard.** Pick the region the team is registered for:
+   - Fiji sugarcane smallholders (Cyclone Winston, 2016). This is the strongest fit with the Library's Pacific focus and the Fiji/Tuvalu Pre-COP.
+   - Northern Rivers, NSW (Lismore floods, 2022).
+   - Hawke's Bay, NZ (Cyclone Gabrielle, 2023).
+   - Hazard is flooding only. Frost, drought and heat go on a roadmap slide.
+2. **Field-level risk map (the core novelty).** The farmer draws their field. We combine its elevation with the rainfall forecast to show which part of the paddock floods, not a generic storm warning.
+3. **Education in every alert.** Each warning explains the *why*, e.g.:
+   - "Rain like this is now X% more common here than in 1990."
+   - "Here's why your low paddock floods."
+   - "This is what climate change means for cane in Fiji."
+4. **Rule-based actions.** A fixed playbook table per hazard × crop, e.g. "harvested cane: move off low ground", "machinery: move to the high point". The AI only puts it into plain language or translates it, and never invents farming advice.
+5. **$ at risk** per paddock, from area × crop value.
+6. **Delivery by SMS or WhatsApp,** in English plus Fijian or Hindi if we go Pacific. The map is only for setup, which handles patchy connectivity and older users.
+
+### Free data
+| Need | Source |
+|---|---|
+| Forecasts and historical weather | Open-Meteo (forecast + ERA5 archive) |
+| Elevation | ELVIS 1m LiDAR (Australia); Open-Meteo elevation API or SRTM (elsewhere) |
+| Real flood extent, for validation | Copernicus Sentinel-1 radar (EU data, sees through cloud) |
+
+### Validation (Build quality is 30%)
+Backtest against a real past flood:
+1. Replay the forecast from a few days before the event.
+2. Show the predicted flood zones next to the Sentinel-1 image of where it actually flooded.
+
+The headline we want is something like "would have warned 3 days early; 4 of the 5 flagged paddocks went under."
+
+### Pitch hooks from the Library
+- **COP31 is about delivery.** This turns climate knowledge into action on the farm today.
+- **Pacific-led solutions and the Blue Pacific,** with the Fiji/Tuvalu Pre-COP straight after the hackathon.
+- **Scale and finance:** "Built to scale through the EU–Pacific Green Blue Alliance" (Team Europe has committed €650m+ to the Pacific). The challenge asks for solutions that make climate action easier to finance.
+- **Optional second scenario:** saltwater getting into taro and pulaka pits in Tuvalu or Kiribati. The EU has formally named the sea-level threat to small island states.
+
+### Cut from MVP
+Crop prices, forums, pesticides, "what to grow", and scraping news or government notices.
+
+### 2-minute demo
+| Time | Content |
+|---|---|
+| 0:00–0:20 | The problem, with a real flood photo |
+| 0:20–0:50 | The farmer draws their field |
+| 0:50–1:20 | The storm comes in, the low spots light up red, and the $ at risk appears |
+| 1:20–1:40 | The SMS alert arrives with three actions and a "why this is happening" line |
+| 1:40–2:00 | The backtest next to the satellite image, plus the 2035 target |
+
+**Re-score:** N7 F7 S7 I8 D9 Fit10, which is **48/60 and about 8.3 weighted**. That's the best on the list.
+
+**Open question:** which region is the team registered for? That decides which flood to backtest.
 
 ## Runner-up: Greenwash Checker (#2)
 It's the safest build and fits the EU climate-disinformation material in the brief. The catch is that judges may see it as a ChatGPT wrapper.
