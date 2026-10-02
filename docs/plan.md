@@ -5,7 +5,23 @@
 
 **Goal:** every number in the demo comes from real data, and section 05 shows the model checked against a real satellite flood map.
 
-## Where we are
+## Status (Fri 2 Oct, evening)
+
+Done and pushed:
+- **River model (P0-1):** HAND from 30 m Copernicus GLO-30. River level from GloFAS, anchored on the 2-year flood and Ba Town flooding in Cody.
+- **Sharper elevation (P0-2):** shipped as static 30 m grids instead of Terrarium tiles. Simpler, and no runtime API.
+- **Validation (P0-3):** changed approach. Sentinel-1 passes come every 12 days, and Ba's floods drain within a day or two, so the radar caught **0 ha** of water 2.5 days after Cody. We validate against **recorded Ba floods** instead: 4 of 4 major floods trigger "Act today"; 5 of 7 recorded floods trigger Act or Watch; 4 river alarms since 2009 have no record found.
+- **Land and cane value (P1-4):** ESA WorldCover land cover; cited cane value (46.4 t/ha × F$57.40/t).
+- **Forecast odds (P1-5):** the GloFAS 50-member ensemble gives flood odds in live mode.
+- **Bulletproof demo (P1-6):** the Cody replay and all Ba grids ship in `web/public/data/ba/`.
+
+Not done:
+- P2-7, the per-field "why" line.
+- P2-8, real SMS. This needs a Twilio account, which is the team's call.
+- Native-speaker translations.
+- An extension officer's review of the playbook.
+
+## Where we were (original plan below)
 
 | Piece | Today | Real? |
 |---|---|---|

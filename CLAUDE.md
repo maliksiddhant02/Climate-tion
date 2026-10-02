@@ -14,7 +14,8 @@ Sources: the Participant Guide PDF and the "Climate Hacktion Library" background
 - `docs/`: the source documents (Participant Guide, Library) and **`docs/ideas.md`**, the scored idea brainstorm. The team pick is FarmShield v2, now named **Draki** (Fijian for "weather"). BillShift was dropped.
 - `.claude/skills/hackathon-idea-evaluator/`: the skill for scoring ideas, adjusted to this hackathon's judging weights.
 - `web/`: the Draki site (Vite + React + Tailwind v4 + Leaflet). Run `npm install` then `npm run dev` inside `web/`. The flood model is in `web/src/lib/flood.ts`, with its check in `node web/src/lib/flood.check.ts`. Data comes from Open-Meteo (cached in localStorage).
-- `docs/plan.md`: the real-data build plan (river model, sharper elevation, Sentinel-1 validation), split across the team with a timeline.
+- `scripts/build_ba_data.py`: builds the Ba floodplain data into `web/public/data/ba/` (30 m elevation, height above river, land cover, Cody replay, flood-record check). Python venv in `scripts/.venv` (gitignored); see README.
+- `docs/plan.md`: the real-data build plan and its status (river model, sharper elevation, Sentinel-1 validation), split across the team with a timeline.
 - `web/DESIGN.md`: the visual system ("The Field Almanac"). Read it before any UI work.
 
 ## The challenge: "Build for 2035"

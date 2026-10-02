@@ -336,7 +336,7 @@ function Proof({ farm }: { farm: Farm }) {
           ["River level above normal", m ? `${m.river.h0} m + ${m.river.k} × (√flow − √${m.river.q2})` : "–"],
           ["Tuned on", "Ba Town's streets flooding in Cody"],
           ["Counts as flooded", `${KNOBS.floodedDepth} m deep`],
-          ["Cane value", `${fjd(KNOBS.caneValuePerHa)}/ha`],
+          ["Cane value", `${fjd(KNOBS.caneValuePerHa)}/ha (46.4 t × F$57.40)`],
           ["Elevation", "Copernicus GLO-30, 30 m"],
           ["Land cover", "ESA WorldCover, 10 m"],
           ["River flow", "GloFAS v4, 1984–today"],

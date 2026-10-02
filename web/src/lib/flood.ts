@@ -17,8 +17,11 @@ export const KNOBS = {
   absorbedMm: 60,
   /** Water deeper than this (m) counts as "under water" for cane and machinery. */
   floodedDepth: 0.15,
-  /** Cane value per hectare, F$. ~45 t/ha × F$85/t. Assumption, check against FSC / SRIF figures. */
-  caneValuePerHa: 45 * 85,
+  /**
+   * Cane value per hectare, F$: Fiji's 2025 average yield, 46.4 t/ha (Fiji Sun, "FSC records lowest cane production
+   * in 2025"), × FSC's 2026 forecast cane price, F$57.40/t (Fijivillage, "FSC confirms $42 per tonne delivery cane price").
+   */
+  caneValuePerHa: 46.4 * 57.4,
 }
 
 export function inPolygon([lat, lng]: LatLng, poly: LatLng[]): boolean {

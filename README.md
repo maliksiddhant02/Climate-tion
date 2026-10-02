@@ -45,6 +45,7 @@ scripts/.venv/Scripts/python scripts/build_ba_data.py
 | Sentinel-1A RTC radar (Copernicus, via Microsoft Planetary Computer) | Checking for flood water after Cyclone Cody | Copernicus Sentinel data terms |
 | Python: numpy, scipy, rasterio, pystac-client, planetary-computer, requests | Building the Ba data files | BSD / MIT / Apache-2.0 |
 | Flood records: Ba Town Council, ReliefWeb, FloodList, Wikipedia, McAneney et al. 2017 | Dates of recorded Ba floods for validation | Cited on the Validation page |
+| Cane yield and price: Fiji Sun (2025 yield), Fijivillage (FSC 2026 forecast price) | Cane value at risk | Cited in `web/src/lib/flood.ts` |
 | Esri World Imagery | Satellite basemap | Esri terms, attribution shown on map |
 | React, Vite, TypeScript, Tailwind CSS | App | MIT |
 | shadcn/ui (Base UI), lucide-react, `cn` | UI components, icons | MIT / ISC |
@@ -60,7 +61,7 @@ scripts/.venv/Scripts/python scripts/build_ba_data.py
 - [x] River model (GloFAS + height above river), 30 m elevation, land cover
 - [x] Validation against recorded Ba floods; Sentinel-1 check
 - [x] River forecast ensemble → flood probability
-- [ ] Cited cane yield and price (currently 45 t/ha × F$85/t, an assumption)
+- [x] Cited cane value: 46.4 t/ha (2025 average, Fiji Sun) × F$57.40/t (FSC 2026 forecast price, Fijivillage)
 - [ ] Real SMS sending
 - [ ] iTaukei / Fiji Hindi text, reviewed by native speakers
 - [ ] Playbook review by an extension officer / SRIF
