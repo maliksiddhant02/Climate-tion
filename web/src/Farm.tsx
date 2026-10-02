@@ -1,396 +1,627 @@
 import { useEffect, useMemo, useState } from "react"
-import { ArrowRight, ArrowUpRight, Check } from "lucide-react"
-import type { Farm } from "@/Live"
-import { aud, depthLabel } from "@/Live"
+import { AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight, Beef, Check, Droplets, FlaskConical, Fuel, House, Pencil, Tractor, Trash2, Truck, Undo2, Warehouse } from "lucide-react"
+import { FieldMap, type Pin } from "@/components/FieldMap"
+import { aud, DEMO, type Farm } from "@/Live"
+import { areaHa, CROPS, fuelYear, itemDepth, ITEMS, loadProfile, paddockRisk, readyDate, saveProfile as save, uid, valuePerHa, type CropId, type ItemId, type Paddock, type Profile } from "@/lib/farm"
+import { gridInPolygon, KNOBS, riverDepths, riverStage, type Cell, type LatLng } from "@/lib/flood"
 import { BASE } from "@/lib/region"
 import { cn } from "@/lib/utils"
 
-// "My farm": the whole season for one Northern Rivers cane block, so a grower hears from Draki every week, not just when it floods.
-// Every number is either computed from the shipped data or cited next to where it's defined.
-
 const WRAP = "mx-auto w-full max-w-[1600px] px-6 md:px-10"
 const card = "rounded-3xl border border-rule bg-card p-6"
+const btn = "press inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-medium disabled:opacity-40"
+const chip = "press inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm"
 
-// Cane, NSW DPI: two-year cane yields of 105–150 t/ha (2023–24, we use 125), one-year cane roughly half that;
-// 2024 average cane price A$55/t. Mills crush from late June to December (Sunshine Sugar).
-const CROP = {
-  twoYear: { label: "Two-year cane", months: 24, yield: 125 },
-  oneYear: { label: "One-year cane", months: 12, yield: 62 },
-} as const
-const PRICE_T = 55
-const MILL = { open: 5, close: 11 } // month index: June to December
-
-// Fuel: national average pump prices, October 2026 (AIP / dailyfuels). CO₂ per litre burned: US EPA emission factors.
-const FUEL = { petrol: { price: 2.26, co2: 2.31 }, diesel: { price: 2.62, co2: 2.68 } }
-type Tool = { id: string; name: string; fuel: "petrol" | "diesel"; lph: number; hours: number; swap?: string }
-// Litres per hour are typical figures for farm-size machines; every one is shown and editable on the page.
-const TOOLS: Tool[] = [
-  { id: "pump", name: "Water pump (irrigation)", fuel: "diesel", lph: 0.8, hours: 300, swap: "Solar water pump" },
-  { id: "saw", name: "Chainsaw", fuel: "petrol", lph: 0.7, hours: 60, swap: "Battery chainsaw" },
-  { id: "cutter", name: "Brush cutter", fuel: "petrol", lph: 0.5, hours: 120, swap: "Battery brush cutter" },
-  { id: "sprayer", name: "Motorised sprayer", fuel: "petrol", lph: 0.6, hours: 80, swap: "Battery knapsack sprayer" },
-  { id: "genset", name: "Generator", fuel: "petrol", lph: 0.8, hours: 200, swap: "Solar panels + battery" },
-  { id: "tractor", name: "Tractor", fuel: "diesel", lph: 6, hours: 250 },
-]
-
-type Phase = "elnino" | "lanina" | "neutral"
-type Season = {
-  latest: { season: string; year: number; oni: number; phase: Phase }
-  allMeanRain: number
-  phases: Record<Phase, { seasons: number; meanRain: number; floodSeasons: number }>
-  seasons: { season: string; rain: number; oni: number; phase: Phase; actFlood: boolean }[]
+export const ICON: Record<ItemId, Pin["Icon"]> = {
+  tractor: Tractor,
+  harvester: Tractor,
+  truck: Truck,
+  pump: Droplets,
+  fuel: Fuel,
+  chem: FlaskConical,
+  shed: Warehouse,
+  house: House,
+  cattle: Beef,
 }
 
-const month = (d: Date) => d.toLocaleDateString("en-AU", { month: "long", year: "numeric" })
-const t = (n: number) => `${Math.round(n).toLocaleString("en-AU")} tonnes`
-// NOAA names its 3-month seasons by initials (JJA = June–August).
-const SEASON_NAME: Record<string, string> = { DJF: "December–February", JFM: "January–March", FMA: "February–April", MAM: "March–May", AMJ: "April–June", MJJ: "May–July", JJA: "June–August", JAS: "July–September", ASO: "August–October", SON: "September–November", OND: "October–December", NDJ: "November–January" }
-const pct = (a: number, b: number) => Math.round((1 - a / b) * 100)
 
-/** When cut cane can reach the mill: once it's mature, and only while the mill is crushing. */
-function readyDate(start: string, months: number) {
-  const d = new Date(`${start}-01T00:00:00`)
-  d.setMonth(d.getMonth() + months)
-  if (d.getMonth() < MILL.open) d.setMonth(MILL.open)
-  if (d.getMonth() > MILL.close) d.setFullYear(d.getFullYear() + 1, MILL.open)
-  return d
+// The example farm: the 40 ha demo block near Broadwater, split into cane, soybeans and pasture, with the usual kit.
+const [[n, w], , [s, e]] = DEMO
+const mid = (a: number, b: number, t = 0.5) => a + (b - a) * t
+const EXAMPLE: Profile = {
+  name: "Example",
+  phone: "",
+  done: true,
+  boundary: DEMO,
+  paddocks: [
+    { id: "p1", crop: "cane", planted: "2025-09", poly: [[n, w], [n, mid(w, e)], [s, mid(w, e)], [s, w]] },
+    { id: "p2", crop: "soy", planted: "2026-11", poly: [[n, mid(w, e)], [n, e], [mid(n, s), e], [mid(n, s), mid(w, e)]] },
+    { id: "p3", crop: "pasture", valuePerHa: 1500, poly: [[mid(n, s), mid(w, e)], [mid(n, s), e], [s, e], [s, mid(w, e)]] },
+  ],
+  items: [
+    { id: "i1", kind: "tractor", at: [mid(n, s, 0.2), mid(w, e, 0.3)] },
+    { id: "i2", kind: "pump", at: [mid(n, s, 0.85), mid(w, e, 0.1)], hours: 300 },
+    { id: "i3", kind: "fuel", at: [mid(n, s, 0.25), mid(w, e, 0.38)] },
+    { id: "i4", kind: "chem", at: [mid(n, s, 0.8), mid(w, e, 0.55)] },
+    { id: "i5", kind: "shed", at: [mid(n, s, 0.15), mid(w, e, 0.42)] },
+    { id: "i6", kind: "cattle", at: [mid(n, s, 0.75), mid(w, e, 0.8)] },
+  ],
 }
 
-const PHASE: Record<Phase, { label: string; color: string }> = {
-  elnino: { label: "El Niño", color: "#d4a72c" },
-  neutral: { label: "Neutral", color: "#cdc3ad" },
-  lanina: { label: "La Niña", color: "#3c6fae" },
-}
-
-/** Yearly rain at Woodburn since 1991, coloured by El Niño / La Niña. Light surface. */
-function SeasonChart({ s }: { s: Season }) {
-  const W = 760, H = 220, padL = 40, padB = 26, padT = 12
-  const max = Math.max(...s.seasons.map((x) => x.rain)) * 1.08
-  const slot = (W - padL) / s.seasons.length
-  const y = (v: number) => padT + (H - padB - padT) * (1 - v / max)
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={`Yearly rain at Woodburn. El Niño years average ${s.phases.elnino.meanRain} mm, La Niña ${s.phases.lanina.meanRain} mm.`}>
-      {[0, 500, 1000, 1500, 2000].filter((v) => v < max).map((v) => (
-        <g key={v}>
-          <line x1={padL} x2={W} y1={y(v)} y2={y(v)} stroke="#d9d0bd" />
-          <text x={padL - 6} y={y(v) + 3} textAnchor="end" className="fill-[#525e56] text-[10px] tabular-nums">{v}</text>
-        </g>
-      ))}
-      {s.seasons.map((x, i) => (
-        <rect key={x.season} x={padL + i * slot + 1.5} y={y(x.rain)} width={slot - 3} height={y(0) - y(x.rain)} rx={2} fill={PHASE[x.phase].color}>
-          <title>{`${x.season}: ${x.rain} mm, ${PHASE[x.phase].label} (spring ONI ${x.oni})${x.actFlood ? ", Act-level flood" : ""}`}</title>
-        </rect>
-      ))}
-      <line x1={padL} x2={W} y1={y(s.allMeanRain)} y2={y(s.allMeanRain)} stroke="#13211a" strokeDasharray="4 4" />
-      <text x={W} y={y(s.allMeanRain) - 5} textAnchor="end" className="fill-ink text-[10px]">{`Average ${s.allMeanRain.toLocaleString("en-AU")} mm`}</text>
-      {s.seasons.map((x, i) =>
-        ["1991", "2000", "2010", "2022", "2025"].includes(x.season) ? (
-          <text key={x.season} x={padL + i * slot + slot / 2} y={H - 8} textAnchor="middle" className="fill-[#525e56] text-[10px]">{x.season}</text>
-        ) : null,
-      )}
-    </svg>
-  )
-}
+const EMPTY: Profile = { boundary: [], paddocks: [], items: [], name: "", phone: "", done: false }
+const STEPS = ["Your farm", "Crops", "Equipment", "Your details"]
+const monthYear = (d: Date) => d.toLocaleDateString("en-AU", { month: "long", year: "numeric" })
 
 export function FarmPage({ farm }: { farm: Farm }) {
-  const r = farm.replayRun // the February 2022 replay: what a record flood does to this field
-  const now = farm.liveRun
-  const [crop, setCrop] = useState<keyof typeof CROP>("twoYear")
-  const [start, setStart] = useState("2025-09")
-  const [tools, setTools] = useState<Record<string, { on: boolean; hours: number; lph: number }>>(() =>
-    Object.fromEntries(TOOLS.map((x) => [x.id, { on: x.id === "pump" || x.id === "saw" || x.id === "tractor", hours: x.hours, lph: x.lph }])),
-  )
-  const [season, setSeason] = useState<Season>()
+  // #/farm?example opens the filled-in example farm (for demos and judges).
+  const [profile, setProfileState] = useState<Profile | undefined>(() => (location.hash.includes("example") ? EXAMPLE : loadProfile()))
+  const [step, setStep] = useState(0)
+  const setProfile = (p?: Profile) => {
+    setProfileState(p)
+    save(p)
+  }
+  // The flood model always runs on the farm the grower marked.
   useEffect(() => {
-    fetch(`${BASE}/season.json`).then((r) => r.json()).then(setSeason).catch(() => undefined)
-  }, [])
+    if (profile && profile.boundary.length >= 3 && JSON.stringify(profile.boundary) !== JSON.stringify(farm.poly)) farm.setPoly(profile.boundary)
+  }, [profile?.boundary]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Cane only grows on farmland squares (WorldCover grass/cropland), not on the house or the trees.
-  const cellHa = farm.elev ? farm.elev.stepM ** 2 / 10_000 : 0
-  const caneHa = r ? r.cells.filter((c) => c.land === undefined || c.land === 30 || c.land === 40).length * cellHa : 0
-  const tonnes = caneHa * CROP[crop].yield
-  const value = tonnes * PRICE_T
-  const ready = readyDate(start, CROP[crop].months)
-  const elNinoNow = season?.latest.phase === "elnino"
-  const driest = season ? season.seasons.reduce((a, b) => (b.rain < a.rain ? b : a)) : undefined
-  const floodShare = (p: Phase) => (season ? `${season.phases[p].floodSeasons} of ${season.phases[p].seasons}` : "–")
-
-  const toolRows = useMemo(
-    () =>
-      TOOLS.filter((x) => tools[x.id].on).map((x) => {
-        const litres = tools[x.id].lph * tools[x.id].hours
-        return { ...x, litres, cost: litres * FUEL[x.fuel].price, co2: litres * FUEL[x.fuel].co2 }
-      }),
-    [tools],
+  if (!profile) return <Intro onStart={() => (setProfile(EMPTY), setStep(0))} onExample={() => setProfile(EXAMPLE)} />
+  if (!profile.done)
+    return <Setup profile={profile} setProfile={setProfile} step={step} setStep={setStep} onExample={() => setProfile(EXAMPLE)} />
+  return (
+    <Dashboard
+      farm={farm}
+      profile={profile}
+      onEdit={(i) => (setProfile({ ...profile, done: false }), setStep(i))}
+      onReset={() => setProfile(undefined)}
+    />
   )
-  const swappable = toolRows.filter((x) => x.swap)
-  const saved = { litres: swappable.reduce((s, x) => s + x.litres, 0), cost: swappable.reduce((s, x) => s + x.cost, 0), co2: swappable.reduce((s, x) => s + x.co2, 0) }
+}
 
-  const texts: { when: string; from: "draki" | "farmer"; body: string }[] = [
-    {
-      when: "Spring, before the wet season",
-      from: "draki",
-      body: season
-        ? `Draki: ${elNinoNow ? "El Niño is under way" : `${PHASE[season.latest.phase].label} conditions`}. In El Niño years this part of the Richmond gets about ${pct(season.phases.elnino.meanRain, season.allMeanRain)}% less rain. Keep your trash blanket on the ground to hold soil moisture.`
-        : "…",
-    },
-    {
-      when: "Every week",
-      from: "draki",
-      body: now ? `Draki: ${now.peak.total.toFixed(0)} mm of rain in the next 3 days, Richmond River ${now.river && now.river.stage > 0 ? "rising" : "in its banks"}. ${now.a.level === "clear" ? "No flooding expected on your block." : "Flood watch for your low ground."}` : "…",
-    },
-    {
-      when: "When a flood is coming",
-      from: "draki",
-      body: r
-        ? `Draki: FLOOD RISK HIGH. The Richmond River is rising, about ${Math.round(r.river?.stage ?? 0)} m above normal. Your low ground could sit under ${depthLabel(r.a.maxDepth)} of water. 1. Move the harvester and haul-outs to the high ground. 2. Shift fertiliser and fuel off the low side. Reply 1 if your block floods, 2 if it stays dry.`
-        : "…",
-    },
-    { when: "", from: "farmer", body: "1" },
-    { when: "", from: "draki", body: "Draki: Thanks. Your mill's cane adviser knows your block flooded. Your flood report (date, hectares, depth) is ready for your insurer or a disaster grant claim." },
-    { when: "Before the crush", from: "draki", body: `Draki: Your block is ready from ${month(ready)}. Expect about ${t(tonnes)} of cane, ${aud(value)} at A$${PRICE_T} a tonne.` },
-  ]
+function Intro({ onStart, onExample }: { onStart: () => void; onExample: () => void }) {
+  return (
+    <section className={cn(WRAP, "grid gap-12 py-16 lg:grid-cols-2 lg:items-center")}>
+      <div>
+        <h1 className="font-display text-5xl uppercase md:text-7xl">Set up your farm</h1>
+        <p className="mt-6 max-w-xl text-lg text-muted-foreground">Four short steps on a map. Then Draki tells you what floods, what to move, and when your crops are ready.</p>
+        <ol className="mt-10 max-w-xl">
+          {["Mark your farm on the map", "Show what you grow, and where", "Place your tractor, pump and sheds", "Add your name and mobile"].map((t, i) => (
+            <li key={t} className="flex items-center gap-5 border-t border-rule py-4 text-lg">
+              <span className="font-display text-3xl text-leaf">{i + 1}</span>
+              {t}
+            </li>
+          ))}
+        </ol>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <button onClick={onStart} className={cn(btn, "bg-ink text-paper hover:bg-ink-2")}>
+            Start <ArrowRight className="size-4" aria-hidden />
+          </button>
+          <button onClick={onExample} className={cn(btn, "border border-rule hover:bg-paper-2")}>
+            See an example farm
+          </button>
+        </div>
+        <p className="mt-4 text-sm text-muted-foreground">Everything you enter stays on this device.</p>
+      </div>
+      <img src="/photos/cane-harvest.jpg" alt="Cane harvester beside a tall sugarcane crop" className="aspect-[4/3] w-full rounded-3xl object-cover" />
+    </section>
+  )
+}
+
+// ---------------------------------------------------------------- Setup
+
+function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step: number; setStep: (n: number) => void; onExample: () => void }) {
+  const { profile, setProfile, step, setStep, onExample } = props
+  const [draft, setDraft] = useState<LatLng[]>([])
+  const [crop, setCrop] = useState<CropId>()
+  const [kind, setKind] = useState<ItemId>()
+  const [error, setError] = useState<string>()
+  const update = (patch: Partial<Profile>) => setProfile({ ...profile, ...patch })
+  const go = (n: number) => {
+    setDraft([])
+    setCrop(undefined)
+    setKind(undefined)
+    setError(undefined)
+    setStep(n)
+  }
+  // Keep the map still while the grower taps: frame the farm once it exists, otherwise the lower Richmond demo area.
+  const view = profile.boundary.length >= 3 ? profile.boundary : DEMO
+
+  const onMapClick = (p: LatLng) => {
+    setError(undefined)
+    if (step === 0 || (step === 1 && crop)) setDraft([...draft, p])
+    if (step === 2 && kind) {
+      const spec = ITEMS[kind]
+      update({ items: [...profile.items, { id: uid(), kind, at: p, hours: spec.hours }] })
+    }
+  }
+
+  const finishBoundary = () => {
+    if (gridInPolygon(draft).points.length < 4) return setError("That's too small to read. Mark an area at least 100 m across.")
+    update({ boundary: draft, paddocks: [] })
+    go(1)
+  }
+  const finishPaddock = (poly = draft) => {
+    if (!crop || poly.length < 3) return
+    update({ paddocks: [...profile.paddocks, { id: uid(), crop, poly, planted: CROPS[crop].months ? new Date().toISOString().slice(0, 7) : undefined }] })
+    setDraft([])
+    setCrop(undefined)
+  }
+
+  const drawing = step === 0 || (step === 1 && !!crop)
+  const shapes = profile.paddocks.map((p) => ({ id: p.id, poly: p.poly, color: CROPS[p.crop].color, label: `${CROPS[p.crop].label} · ${areaHa(p.poly).toFixed(1)} ha` }))
+  const pins: Pin[] = profile.items.map((it) => ({ id: it.id, at: it.at, Icon: ICON[it.kind], label: ITEMS[it.kind].label }))
+  const hint =
+    step === 0
+      ? draft.length < 3
+        ? `Tap each corner of your farm. ${draft.length} of at least 3.`
+        : `${areaHa(draft).toFixed(1)} hectares. Tap more corners, or press Done.`
+      : step === 1
+        ? crop
+          ? `Tap the corners of your ${CROPS[crop].label.toLowerCase()} paddock.`
+          : "Pick a crop, then tap its paddock on the map."
+        : step === 2
+          ? kind
+            ? `Tap where your ${ITEMS[kind].label.toLowerCase()} usually sits.`
+            : "Pick something, then tap where it usually sits."
+          : ""
 
   return (
-    <section className={cn(WRAP, "py-16")}>
-      <h1 className="font-display text-5xl uppercase md:text-7xl">My farm</h1>
-      <p className="mt-4 max-w-3xl text-lg text-muted-foreground">
-        One cane block through a whole season: what it will earn, what the weather could take, and what to change. A grower gets all of this as texts.
-        This page is for whoever sets it up with them: a mill cane adviser, a co-op, or a family member.
-      </p>
+    <section className={cn(WRAP, "py-10")}>
+      <ol className="flex flex-wrap gap-2">
+        {STEPS.map((t, i) => (
+          <li key={t}>
+            <button
+              onClick={() => i < step && go(i)}
+              disabled={i > step}
+              className={cn(chip, i === step ? "border-ink bg-ink text-paper" : i < step ? "border-leaf text-leaf" : "border-rule text-muted-foreground")}
+            >
+              {i < step ? <Check className="size-4" aria-hidden /> : <span>{i + 1}</span>}
+              {t}
+            </button>
+          </li>
+        ))}
+      </ol>
 
-      <div className="mt-10 flex flex-wrap items-end gap-6 rounded-3xl border border-rule bg-paper-2 p-5">
-        <div>
-          <p className="text-sm text-muted-foreground">Field</p>
-          <p className="text-lg">{r ? `${r.a.areaHa.toFixed(1)} hectares on the lower Richmond` : "Loading…"}</p>
-          <p className="text-sm text-muted-foreground">1 hectare = 100 m × 100 m</p>
-          <a href="#/live" className="text-sm text-leaf hover:underline">
-            Change the field on the map
-          </a>
-        </div>
-        <label className="grid gap-1 text-sm">
-          <span className="text-muted-foreground">Crop</span>
-          <select value={crop} onChange={(e) => setCrop(e.target.value as keyof typeof CROP)} className="rounded-full border border-rule bg-card px-4 py-2 text-base">
-            {Object.entries(CROP).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="grid gap-1 text-sm">
-          <span className="text-muted-foreground">Planted or last harvested</span>
-          <input type="month" value={start} onChange={(e) => e.target.value && setStart(e.target.value)} className="rounded-full border border-rule bg-card px-4 py-2 text-base" />
-        </label>
-      </div>
-
-      <div className="mt-6 grid gap-4 lg:grid-cols-12">
-        {/* 1. Harvest and money */}
-        <div className={cn(card, "lg:col-span-7")}>
-          <h2 className="text-2xl">Harvest and money</h2>
-          <div className="mt-6 grid gap-6 sm:grid-cols-3">
-            <div>
-              <p className="text-sm text-muted-foreground">Ready to cut</p>
-              <p className="mt-1 text-3xl font-semibold">{ready.toLocaleDateString("en-AU", { month: "short", year: "numeric" })}</p>
-              <p className="mt-1 text-sm text-muted-foreground">Mills crush June to December</p>
+      <div className="mt-6 grid gap-6 lg:grid-cols-12">
+        {step < 3 && (
+          <div className="relative overflow-hidden rounded-3xl border border-rule lg:col-span-7">
+            <div className="h-[460px] lg:h-[620px]">
+              <FieldMap
+                poly={view}
+                cells={[]}
+                stepM={30}
+                draft={drawing ? draft : undefined}
+                noOutline={step === 0}
+                shapes={step > 0 ? shapes : undefined}
+                pins={step === 2 ? pins : undefined}
+                onMapClick={drawing || kind ? onMapClick : undefined}
+              />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Expected harvest</p>
-              <p className="mt-1 text-3xl font-semibold">{r ? t(tonnes) : "–"}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {caneHa.toFixed(1)} hectares of cane × {CROP[crop].yield} tonnes per hectare
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Worth</p>
-              <p className="mt-1 text-3xl font-semibold">{r ? aud(value) : "–"}</p>
-              <p className="mt-1 text-sm text-muted-foreground">at A${PRICE_T} a tonne, the 2024 NSW average</p>
-            </div>
+            {hint && <p className="absolute top-3 left-3 z-[1000] max-w-[80%] rounded-full bg-ink/85 px-4 py-2 text-sm text-white">{hint}</p>}
           </div>
-          <h3 className="mt-8 text-sm text-muted-foreground">What the weather could take</h3>
-          <ul className="mt-2 divide-y divide-rule border-y border-rule">
-            <li className="flex flex-wrap items-baseline justify-between gap-2 py-3">
-              <span>A flood like February 2022: cane under water on this block</span>
-              <span className="font-semibold text-flood">{r ? (r.a.valueAtRisk >= value * 0.95 ? `the whole crop, ${aud(r.a.valueAtRisk)}` : `${aud(r.a.valueAtRisk)} at risk`) : "–"}</span>
-            </li>
-            <li className="flex flex-wrap items-baseline justify-between gap-2 py-3">
-              <span>An El Niño year: less rain while the cane grows</span>
-              <span className="font-semibold text-flood">{season ? `about ${pct(season.phases.elnino.meanRain, season.allMeanRain)}% less rain` : "–"}</span>
-            </li>
-          </ul>
-          <p className="mt-3 text-sm text-muted-foreground">Yield uses NSW Department of Primary Industries figures for this crop type, not this block's own records. The price changes every season.</p>
-        </div>
-
-        {/* 2. This season: El Niño */}
-        <div className="rounded-3xl bg-ink p-6 text-white lg:col-span-5">
-          <h2 className="text-2xl">This season</h2>
-          {season ? (
-            <>
-              <p className="mt-6 font-display text-4xl leading-none text-cane">{elNinoNow ? "El Niño is under way" : `${PHASE[season.latest.phase].label} conditions`}</p>
-              <p className="mt-3 text-white/70">
-                The US weather agency NOAA tracks El Niño through ocean temperatures in the Pacific. Its index is {season.latest.oni > 0 ? "+" : ""}
-                {season.latest.oni.toFixed(1)} for {SEASON_NAME[season.latest.season] ?? season.latest.season} {season.latest.year}; anything above +0.5 counts as El Niño.
-              </p>
-              <p className="mt-6 text-lg leading-snug">
-                In El Niño years Woodburn averages <strong>{season.phases.elnino.meanRain.toLocaleString("en-AU")} mm</strong> of rain, against{" "}
-                {season.phases.lanina.meanRain.toLocaleString("en-AU")} mm in La Niña years. Floods go the other way: the river reached flood-alert level in {floodShare("lanina")}{" "}
-                La Niña years and {floodShare("elnino")} El Niño years.
-              </p>
-              {driest && (
-                <p className="mt-3 text-white/70">
-                  The driest year since 1991 was {driest.season}, with {driest.rain.toLocaleString("en-AU")} mm ({PHASE[driest.phase].label}). Not every El Niño is dry, so
-                  Draki watches the actual rain all season.
-                </p>
-              )}
-              <h3 className="mt-6 text-sm text-white/60">What to do this season</h3>
-              <ul className="mt-2 space-y-2">
-                {[
-                  "Keep the trash blanket from harvest on the ground. It holds water in the soil.",
-                  "Check pumps and irrigation before the dry months.",
-                  "Ask your mill's cane adviser about drought-tolerant varieties before replanting.",
-                ].map((x) => (
-                  <li key={x} className="flex gap-3">
-                    <Check className="mt-1 size-4 shrink-0 text-cane" aria-hidden />
-                    {x}
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <p className="mt-6 text-white/60">Loading the season outlook…</p>
-          )}
-        </div>
-
-        {season && (
-          <figure className={cn(card, "lg:col-span-12")}>
-            <div className="flex flex-wrap items-baseline justify-between gap-4">
-              <p className="text-sm text-muted-foreground">Rain at Woodburn, every year since 1991</p>
-              <p className="flex flex-wrap gap-4 text-sm">
-                {(["elnino", "neutral", "lanina"] as const).map((p) => (
-                  <span key={p} className="flex items-center gap-2">
-                    <i className="inline-block size-3 rounded-sm" style={{ background: PHASE[p].color }} />
-                    {PHASE[p].label}: {season.phases[p].meanRain.toLocaleString("en-AU")} mm average
-                  </span>
-                ))}
-              </p>
-            </div>
-            <div className="mt-4">
-              <SeasonChart s={season} />
-            </div>
-            <figcaption className="mt-3 text-sm text-muted-foreground">
-              Rain records for Woodburn (ERA5). Each year is coloured by whether the Pacific was in El Niño or La Niña that spring, when they're strongest.
-            </figcaption>
-          </figure>
         )}
 
-        {/* 3. Flood risk */}
-        <div className={cn(card, "lg:col-span-5")}>
-          <h2 className="text-2xl">Flood risk</h2>
-          <dl className="mt-6 space-y-4">
-            <div>
-              <dt className="text-sm text-muted-foreground">This week</dt>
-              <dd className="text-lg">{now ? (now.a.level === "clear" ? "No flooding expected" : `${now.a.floodedHa.toFixed(1)} hectares could go under`) : "–"}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-muted-foreground">In a flood like February 2022</dt>
-              <dd className="text-lg">{r ? `${r.a.floodedHa.toFixed(1)} of ${r.a.areaHa.toFixed(1)} hectares under water, ${aud(r.a.valueAtRisk)} of cane` : "–"}</dd>
-            </div>
-          </dl>
-          <a href="#/live?replay" className="mt-6 inline-flex items-center gap-2 font-medium text-leaf hover:underline">
-            Watch the 2022 flood replay <ArrowRight className="size-4" aria-hidden />
-          </a>
-        </div>
+        <div className={cn("flex flex-col", step < 3 ? "lg:col-span-5" : "lg:col-span-6")}>
+          {step === 0 && (
+            <>
+              <h1 className="font-display text-5xl uppercase">Mark your farm</h1>
+              <p className="mt-3 text-muted-foreground">Zoom to your farm, then tap each corner of its boundary.</p>
+              <DrawButtons draft={draft} setDraft={setDraft} onDone={finishBoundary} />
+              {error && <p role="alert" className="mt-4 rounded-xl bg-flood px-4 py-2 text-sm text-white">{error}</p>}
+              <button onClick={onExample} className="mt-auto pt-8 text-left text-sm text-leaf hover:underline">
+                Or skip this and see an example farm
+              </button>
+            </>
+          )}
 
-        {/* 4. Equipment */}
-        <div className={cn(card, "lg:col-span-7")}>
-          <h2 className="text-2xl">Switch your equipment</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Tick what you use. Fuel at national average pump prices, October 2026. Hours and litres per hour are typical; change them to yours.</p>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[34rem] text-left text-sm">
-              <thead className="text-muted-foreground">
-                <tr className="border-b border-rule">
-                  <th className="py-2 pr-3 font-normal">Tool</th>
-                  <th className="py-2 pr-3 font-normal">Hours / year</th>
-                  <th className="py-2 pr-3 font-normal">Litres / hour</th>
-                  <th className="py-2 pr-3 text-right font-normal">Fuel / year</th>
-                  <th className="py-2 font-normal">Switch to</th>
-                </tr>
-              </thead>
-              <tbody>
-                {TOOLS.map((x) => {
-                  const s = tools[x.id]
-                  const set = (patch: Partial<typeof s>) => setTools({ ...tools, [x.id]: { ...s, ...patch } })
-                  const litres = s.lph * s.hours
+          {step === 1 && (
+            <>
+              <h1 className="font-display text-5xl uppercase">What do you grow?</h1>
+              <p className="mt-3 text-muted-foreground">Pick a crop, then tap out its paddock. Add as many as you have.</p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {(Object.keys(CROPS) as CropId[]).map((c) => (
+                  <button key={c} onClick={() => (setCrop(c), setDraft([]))} className={cn(chip, crop === c ? "border-ink bg-ink text-paper" : "border-rule hover:bg-paper-2")}>
+                    <i className="inline-block size-3 rounded-full" style={{ background: CROPS[c].color }} />
+                    {CROPS[c].label}
+                  </button>
+                ))}
+              </div>
+              {crop && (
+                <div className="mt-4 rounded-2xl bg-paper-2 p-4">
+                  <DrawButtons draft={draft} setDraft={setDraft} onDone={() => finishPaddock()} />
+                  {profile.paddocks.length === 0 && (
+                    <button onClick={() => finishPaddock(profile.boundary)} className="mt-3 text-sm text-leaf hover:underline">
+                      My whole farm is {CROPS[crop].label.toLowerCase()}
+                    </button>
+                  )}
+                </div>
+              )}
+              <CropBar profile={profile} />
+              <PaddockList profile={profile} update={update} />
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <h1 className="font-display text-5xl uppercase">What's on your farm?</h1>
+              <p className="mt-3 text-muted-foreground">Place the things a flood could reach. Draki tells you which ones to move.</p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {(Object.keys(ITEMS) as ItemId[]).map((k) => {
+                  const I = ICON[k]
                   return (
-                    <tr key={x.id} className={cn("border-b border-rule", !s.on && "text-muted-foreground")}>
-                      <td className="py-2 pr-3">
-                        <label className="flex items-center gap-2">
-                          <input type="checkbox" checked={s.on} onChange={(e) => set({ on: e.target.checked })} className="size-4 accent-leaf" />
-                          {x.name} <span className="text-muted-foreground">({x.fuel})</span>
-                        </label>
-                      </td>
-                      <td className="py-2 pr-3">
-                        <input type="number" min={0} value={s.hours} disabled={!s.on} onChange={(e) => set({ hours: Math.max(0, +e.target.value) })} aria-label={`${x.name} hours per year`} className="w-20 rounded-lg border border-rule bg-paper px-2 py-1 tabular-nums" />
-                      </td>
-                      <td className="py-2 pr-3">
-                        <input type="number" min={0} step={0.1} value={s.lph} disabled={!s.on} onChange={(e) => set({ lph: Math.max(0, +e.target.value) })} aria-label={`${x.name} litres per hour`} className="w-20 rounded-lg border border-rule bg-paper px-2 py-1 tabular-nums" />
-                      </td>
-                      <td className="py-2 pr-3 text-right tabular-nums">{s.on ? `${Math.round(litres)} L · ${aud(litres * FUEL[x.fuel].price)}` : "–"}</td>
-                      <td className="py-2">{x.swap ?? <span className="text-muted-foreground">No practical electric option yet. Keep it tuned.</span>}</td>
-                    </tr>
+                    <button key={k} onClick={() => setKind(kind === k ? undefined : k)} className={cn(chip, kind === k ? "border-ink bg-ink text-paper" : "border-rule hover:bg-paper-2")}>
+                      <I className="size-4" aria-hidden />
+                      {ITEMS[k].label}
+                    </button>
                   )
                 })}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-4 text-lg">
-            Switching the ticked tools saves about <strong>{Math.round(saved.litres).toLocaleString("en-AU")} L of fuel</strong>, <strong>{aud(saved.cost)}</strong> and{" "}
-            <strong>{(saved.co2 / 1000).toFixed(1)} t of CO₂</strong> a year.
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground">Fuel savings only: the cost of the new tools, batteries and panels isn't included. CO₂: 2.31 kg per litre of petrol, 2.68 kg per litre of diesel (US EPA).</p>
-        </div>
+              </div>
+              <ul className="mt-6 divide-y divide-rule border-y border-rule">
+                {profile.items.length === 0 && <li className="py-3 text-muted-foreground">Nothing placed yet.</li>}
+                {profile.items.map((it) => {
+                  const I = ICON[it.kind]
+                  return (
+                    <li key={it.id} className="flex items-center gap-3 py-3">
+                      <I className="size-5 text-leaf" aria-hidden />
+                      <span className="flex-1">{ITEMS[it.kind].label}</span>
+                      {ITEMS[it.kind].lph && (
+                        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <input
+                            type="number"
+                            min={0}
+                            value={it.hours ?? 0}
+                            onChange={(e) => update({ items: profile.items.map((x) => (x.id === it.id ? { ...x, hours: Math.max(0, +e.target.value) } : x)) })}
+                            className="w-20 rounded-lg border border-rule bg-paper px-2 py-1 text-ink tabular-nums"
+                          />
+                          hours a year
+                        </label>
+                      )}
+                      <button onClick={() => update({ items: profile.items.filter((x) => x.id !== it.id) })} aria-label={`Remove ${ITEMS[it.kind].label}`} className="press p-1 text-muted-foreground hover:text-flood">
+                        <Trash2 className="size-4" />
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
+          )}
 
-        {/* The texts */}
-        <div className="rounded-3xl bg-ink p-6 text-white lg:col-span-5">
-          <h2 className="text-2xl">The texts this farm gets</h2>
-          <p className="mt-2 text-sm text-white/60">An example season. No app needed: any phone, and replies are one number.</p>
-          <ol className="mt-5 space-y-3">
-            {texts.map((m, i) => (
-              <li key={i} className={cn("flex flex-col", m.from === "farmer" ? "items-end" : "items-start")}>
-                {m.when && <span className="mb-1 text-xs text-white/60">{m.when}</span>}
-                <p className={cn("max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed", m.from === "farmer" ? "rounded-br-sm bg-cane text-ink" : "rounded-tl-sm bg-white/10 text-white/90")}>{m.body}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
+          {step === 3 && (
+            <>
+              <h1 className="font-display text-5xl uppercase">Your details</h1>
+              <p className="mt-3 text-muted-foreground">So the texts know who they're for.</p>
+              <label className="mt-8 grid gap-2">
+                <span className="text-sm text-muted-foreground">Your name</span>
+                <input value={profile.name} onChange={(e) => update({ name: e.target.value })} autoComplete="given-name" className="rounded-2xl border border-rule bg-card px-4 py-3 text-lg" />
+              </label>
+              <label className="mt-5 grid gap-2">
+                <span className="text-sm text-muted-foreground">Mobile number</span>
+                <input value={profile.phone} onChange={(e) => update({ phone: e.target.value })} type="tel" autoComplete="tel" placeholder="04xx xxx xxx" className="rounded-2xl border border-rule bg-card px-4 py-3 text-lg" />
+              </label>
+              <p className="mt-3 text-sm text-muted-foreground">This is a demo: no texts are sent, and nothing leaves this device.</p>
+            </>
+          )}
 
-        {/* Help to claim */}
-        <div className={cn(card, "lg:col-span-7")}>
-          <h2 className="text-2xl">Help you can claim</h2>
-          <ul className="mt-4 divide-y divide-rule border-y border-rule">
-            {[
-              [
-                "Special Disaster Grants for primary producers",
-                "After the 2022 floods, NSW and the Commonwealth offered grants of up to A$75,000 through the NSW Rural Assistance Authority (Disaster Recovery Funding Arrangements) for clean-up, repairs and restoring fields.",
-                "https://www.nsw.gov.au/sites/default/files/2023-01/Special-Disaster-Assistance-AGRN-1025-Primary-Producer-Grant-Guidelines-V1.1-November.pdf",
-              ],
-              [
-                "Disaster assistance for the 2022 floods",
-                "The Australian Government's register of what was available for the Northern Rivers floods, and the model for what opens after the next one.",
-                "https://www.disasterassist.gov.au/Pages/disasters/current-disasters/New-South-Wales/nth-nsw-floods-22-february-2022.aspx",
-              ],
-            ].map(([h, p, href]) => (
-              <li key={h} className="py-4">
-                <a href={href} target="_blank" rel="noreferrer" className="font-medium text-leaf hover:underline">
-                  {h} <ArrowUpRight className="inline size-4" aria-hidden />
-                </a>
-                <p className="mt-1 text-muted-foreground">{p}</p>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-3 text-sm text-muted-foreground">After a flood, Draki's report for the block (date, hectares, depth, sources) is the evidence a claim needs.</p>
+          {step > 0 && (
+            <div className="mt-8 flex justify-between gap-3 pt-4">
+              <button onClick={() => go(step - 1)} className={cn(btn, "border border-rule hover:bg-paper-2")}>
+                <ArrowLeft className="size-4" aria-hidden /> Back
+              </button>
+              {step < 3 ? (
+                <button onClick={() => go(step + 1)} disabled={step === 1 && profile.paddocks.length === 0} className={cn(btn, "bg-ink text-paper hover:bg-ink-2")}>
+                  Next <ArrowRight className="size-4" aria-hidden />
+                </button>
+              ) : (
+                <button onClick={() => setProfile({ ...profile, done: true })} className={cn(btn, "bg-cane text-ink hover:bg-[#e2b84a]")}>
+                  See my farm <ArrowRight className="size-4" aria-hidden />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </section>
   )
 }
+
+function DrawButtons({ draft, setDraft, onDone }: { draft: LatLng[]; setDraft: (d: LatLng[]) => void; onDone: () => void }) {
+  return (
+    <div className="mt-5 flex flex-wrap gap-2">
+      <button onClick={() => setDraft(draft.slice(0, -1))} disabled={!draft.length} className={cn(btn, "border border-rule hover:bg-card")}>
+        <Undo2 className="size-4" aria-hidden /> Undo
+      </button>
+      <button onClick={() => setDraft([])} disabled={!draft.length} className={cn(btn, "border border-rule hover:bg-card")}>
+        Start over
+      </button>
+      <button onClick={onDone} disabled={draft.length < 3} className={cn(btn, "bg-cane text-ink hover:bg-[#e2b84a]")}>
+        <Check className="size-4" aria-hidden /> Done
+      </button>
+    </div>
+  )
+}
+
+/** How the farm splits by crop, as one bar. */
+function CropBar({ profile }: { profile: Profile }) {
+  const total = areaHa(profile.boundary)
+  const by = new Map<CropId, number>()
+  for (const p of profile.paddocks) by.set(p.crop, (by.get(p.crop) ?? 0) + areaHa(p.poly))
+  const marked = [...by.values()].reduce((a, b) => a + b, 0)
+  if (!total) return null
+  return (
+    <div className="mt-6">
+      <div className="flex h-4 gap-0.5 overflow-hidden rounded-full bg-paper-2">
+        {[...by].map(([c, ha]) => (
+          <div key={c} style={{ width: `${(100 * ha) / Math.max(total, marked)}%`, background: CROPS[c].color }} title={`${CROPS[c].label}: ${ha.toFixed(1)} ha`} />
+        ))}
+      </div>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {marked ? `${marked.toFixed(1)} of ${total.toFixed(1)} hectares marked` : `${total.toFixed(1)} hectares, none marked yet`}
+      </p>
+    </div>
+  )
+}
+
+function PaddockList({ profile, update }: { profile: Profile; update: (p: Partial<Profile>) => void }) {
+  const set = (id: string, patch: Partial<Paddock>) => update({ paddocks: profile.paddocks.map((p) => (p.id === id ? { ...p, ...patch } : p)) })
+  return (
+    <ul className="mt-4 divide-y divide-rule border-y border-rule">
+      {profile.paddocks.map((p) => (
+        <li key={p.id} className="grid gap-3 py-4">
+          <div className="flex items-center gap-3">
+            <i className="inline-block size-3 rounded-full" style={{ background: CROPS[p.crop].color }} />
+            <span className="flex-1">
+              {CROPS[p.crop].label} · {areaHa(p.poly).toFixed(1)} ha
+            </span>
+            <button onClick={() => update({ paddocks: profile.paddocks.filter((x) => x.id !== p.id) })} aria-label="Remove paddock" className="press p-1 text-muted-foreground hover:text-flood">
+              <Trash2 className="size-4" />
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-4 pl-6 text-sm text-muted-foreground">
+            {CROPS[p.crop].months && (
+              <label className="flex items-center gap-2">
+                Planted
+                <input type="month" value={p.planted ?? ""} onChange={(e) => set(p.id, { planted: e.target.value })} className="rounded-lg border border-rule bg-paper px-2 py-1 text-ink" />
+              </label>
+            )}
+            <label className="flex items-center gap-2">
+              Worth A$
+              <input
+                type="number"
+                min={0}
+                step={100}
+                value={p.valuePerHa ?? CROPS[p.crop].valuePerHa ?? ""}
+                placeholder="?"
+                onChange={(e) => set(p.id, { valuePerHa: e.target.value === "" ? undefined : Math.max(0, +e.target.value) })}
+                className="w-24 rounded-lg border border-rule bg-paper px-2 py-1 text-ink tabular-nums"
+              />
+              per hectare
+            </label>
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+// ---------------------------------------------------------------- Dashboard
+
+type Scenario = "week" | "common" | "2022"
+const SCENARIO: Record<Scenario, string> = { week: "This week", common: "A common flood", "2022": "A flood like 2022" }
+
+function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Profile; onEdit: (step: number) => void; onReset: () => void }) {
+  const [scenario, setScenario] = useState<Scenario>("week")
+  const [season, setSeason] = useState<{ latest: { phase: string }; allMeanRain: number; phases: Record<string, { meanRain: number }> }>()
+  useEffect(() => {
+    fetch(`${BASE}/season.json`).then((r) => r.json()).then(setSeason).catch(() => undefined)
+  }, [])
+
+  const { elev, meta } = farm
+  const stepM = elev?.stepM ?? 30
+  // "A common flood": the river at its about-once-in-5-years level, the point where Draki says Act today.
+  const common = useMemo<Cell[] | undefined>(() => {
+    if (!elev?.hand || !meta) return undefined
+    const d = riverDepths(elev.hand, riverStage(meta.river.q5, meta.river))
+    return elev.points.map(([lat, lng], i) => ({ lat, lng, elev: elev.e[i], depth: d[i], hand: elev.hand?.[i] }))
+  }, [elev, meta])
+  const cells = scenario === "week" ? farm.liveRun?.cells : scenario === "2022" ? farm.replayRun?.cells : common
+  const loading = !cells
+
+  const items = profile.items.map((it) => ({ it, depth: cells ? itemDepth(it, cells, stepM) : undefined }))
+  const wet = items.filter((x) => (x.depth ?? 0) >= KNOBS.floodedDepth)
+  const paddocks = profile.paddocks.map((p) => ({ p, ...paddockRisk(p, cells ?? [], stepM) }))
+  const atRisk = paddocks.reduce((s, x) => s + x.atRisk, 0)
+  const shed = items.find((x) => (x.it.kind === "shed" || x.it.kind === "house") && (x.depth ?? 0) < KNOBS.floodedDepth)
+  const allWet = cells && cells.length > 0 && cells.every((c) => c.depth >= KNOBS.floodedDepth)
+  const safePlace = allWet ? "higher ground off the floodplain" : shed ? `your ${ITEMS[shed.it.kind].label.toLowerCase()} (it stays dry)` : "the high ground on the map"
+  const ha = areaHa(profile.boundary)
+  const name = profile.name.trim()
+
+  const pins: Pin[] = items.map(({ it, depth }) => ({
+    id: it.id,
+    at: it.at,
+    Icon: ICON[it.kind],
+    label: `${ITEMS[it.kind].label}${depth !== undefined && depth >= KNOBS.floodedDepth ? ` · under ${depth >= 2 ? "more than 2" : depth.toFixed(1)} m of water` : " · stays dry"}`,
+    wet: (depth ?? 0) >= KNOBS.floodedDepth,
+  }))
+  const shapes = profile.paddocks.map((p) => ({ id: p.id, poly: p.poly, color: CROPS[p.crop].color, label: CROPS[p.crop].label }))
+  const fuel = profile.items.map((it) => ({ it, f: fuelYear(it) })).filter((x) => x.f && x.f.litres > 0)
+  const cane = paddocks.filter((x) => x.p.crop === "cane")
+  const ready = profile.paddocks.map((p) => ({ p, d: readyDate(p) })).filter((x) => x.d).sort((a, b) => +a.d! - +b.d!)
+
+  const texts = [
+    wet.length
+      ? `Draki: FLOOD WARNING${name ? `, ${name}` : ""}. Move your ${list(wet.map((x) => ITEMS[x.it.kind].label.toLowerCase()))} to ${safePlace} before the river peaks.`
+      : `Draki: ${name ? `${name}, n` : "N"}othing on your farm is in the water's way. Draki keeps watching the river.`,
+    cane.length && cane[0].floodedHa > 0
+      ? `Draki: ${cane[0].floodedHa.toFixed(0)} of your ${cane[0].ha.toFixed(0)} ha of cane could go under. Hold off fertilising the low rows.`
+      : undefined,
+    ready[0] ? `Draki: your ${CROPS[ready[0].p.crop].label.toLowerCase()} (${areaHa(ready[0].p.poly).toFixed(0)} ha) is ready from ${monthYear(ready[0].d!)}.` : undefined,
+  ].filter(Boolean) as string[]
+
+  return (
+    <section className={cn(WRAP, "py-10")}>
+      <div className="flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <h1 className="font-display text-5xl uppercase md:text-6xl">{name ? `${name}'s farm` : "My farm"}</h1>
+          <p className="mt-2 text-muted-foreground">
+            {ha.toFixed(1)} hectares · {profile.paddocks.length} paddock{profile.paddocks.length === 1 ? "" : "s"} · {profile.items.length} things placed
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {STEPS.slice(0, 3).map((t, i) => (
+            <button key={t} onClick={() => onEdit(i)} className={cn(chip, "border-rule hover:bg-paper-2")}>
+              <Pencil className="size-3.5" aria-hidden /> {t}
+            </button>
+          ))}
+          <button onClick={onReset} className={cn(chip, "border-rule text-muted-foreground hover:text-flood")}>
+            Start again
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-8 flex flex-wrap gap-2" role="tablist">
+        {(Object.keys(SCENARIO) as Scenario[]).map((k) => (
+          <button key={k} role="tab" aria-selected={scenario === k} onClick={() => setScenario(k)} className={cn(chip, scenario === k ? "border-ink bg-ink text-paper" : "border-rule hover:bg-paper-2")}>
+            {SCENARIO[k]}
+          </button>
+        ))}
+      </div>
+
+      <div
+        className={cn(
+          "mt-4 flex flex-wrap items-center gap-4 rounded-3xl px-6 py-5",
+          loading ? "bg-paper-2" : wet.length || atRisk ? "bg-flood text-white" : "bg-leaf text-white",
+        )}
+      >
+        {!loading && (wet.length || atRisk ? <AlertTriangle className="size-6" aria-hidden /> : <Check className="size-6" aria-hidden />)}
+        <p className="text-2xl">
+          {loading
+            ? "Reading your farm…"
+            : wet.length
+              ? `${wet.length} thing${wet.length === 1 ? "" : "s"} to move${atRisk ? `, ${aud(atRisk)} of crops under water` : ""}`
+              : atRisk
+                ? `${aud(atRisk)} of crops under water`
+                : scenario === "week"
+                  ? "This week, nothing on your farm floods."
+                  : "Your farm stays dry."}
+        </p>
+        {scenario === "week" && !loading && !wet.length && (
+          <button onClick={() => setScenario("common")} className="ml-auto text-sm underline underline-offset-4">
+            See what a flood would do
+          </button>
+        )}
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-12">
+        <div className="relative overflow-hidden rounded-3xl border border-rule lg:col-span-7 lg:row-span-2">
+          <div className="h-[460px] lg:h-full lg:min-h-[600px]">
+            <FieldMap poly={profile.boundary} cells={cells ?? []} stepM={stepM} shapes={shapes} pins={pins} wetOnly runKey={scenario} />
+          </div>
+          <p className="absolute bottom-3 left-3 z-[1000] flex gap-4 rounded-full bg-ink/85 px-4 py-2 text-sm text-white">
+            <span className="flex items-center gap-2">
+              <i className="size-3 rounded-sm bg-flood" /> Under water
+            </span>
+            <span className="flex items-center gap-2">
+              <i className="size-3 rounded-full bg-flood ring-2 ring-white" /> Move this
+            </span>
+          </p>
+        </div>
+
+        <div className={cn(card, "lg:col-span-5")}>
+          <h2 className="text-2xl">Move before the water</h2>
+          <ul className="mt-4 divide-y divide-rule">
+            {items.length === 0 && <li className="py-3 text-muted-foreground">Place your equipment to see what to move.</li>}
+            {items.map(({ it, depth }) => {
+              const I = ICON[it.kind]
+              const isWet = (depth ?? 0) >= KNOBS.floodedDepth
+              return (
+                <li key={it.id} className="flex items-center gap-3 py-3">
+                  <span className={cn("grid size-9 place-items-center rounded-full", isWet ? "bg-flood text-white" : "bg-paper-2 text-leaf")}>
+                    <I className="size-4" aria-hidden />
+                  </span>
+                  <span className="flex-1">{ITEMS[it.kind].label}</span>
+                  <span className={cn("text-sm", isWet ? "font-medium text-flood" : "text-muted-foreground")}>
+                    {depth === undefined ? "off your farm" : isWet ? `move · ${depth >= 2 ? "2 m+" : `${depth.toFixed(1)} m`} deep` : "stays dry"}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+          {wet.length > 0 && <p className="mt-4 text-sm text-muted-foreground">Safe place: {safePlace}.</p>}
+        </div>
+
+        <div className={cn(card, "lg:col-span-5")}>
+          <h2 className="text-2xl">Your paddocks</h2>
+          <ul className="mt-4 divide-y divide-rule">
+            {paddocks.map(({ p, ha, floodedHa, atRisk }) => {
+              const d = readyDate(p)
+              return (
+                <li key={p.id} className="grid grid-cols-[auto_1fr_auto] items-baseline gap-x-3 py-3">
+                  <i className="inline-block size-3 rounded-full" style={{ background: CROPS[p.crop].color }} />
+                  <span>
+                    {CROPS[p.crop].label} · {ha.toFixed(1)} ha
+                    {d && <span className="block text-sm text-muted-foreground">Ready {monthYear(d)}</span>}
+                  </span>
+                  <span className={cn("text-right text-sm", floodedHa ? "text-flood" : "text-muted-foreground")}>
+                    {floodedHa ? `${floodedHa.toFixed(1)} ha under` : "dry"}
+                    {floodedHa > 0 && (
+                      <span className="block">{valuePerHa(p) ? aud(atRisk) : <button onClick={() => onEdit(1)} className="underline">add value</button>}</span>
+                    )}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+
+        <div className="rounded-3xl bg-ink p-6 text-white lg:col-span-5">
+          <h2 className="text-2xl">Your texts</h2>
+          <p className="mt-1 text-sm text-white/60">{profile.phone ? `To ${profile.phone}` : "Any phone, no app"} · {SCENARIO[scenario].toLowerCase()}</p>
+          <ol className="mt-4 space-y-3">
+            {texts.map((t) => (
+              <li key={t} className="max-w-[90%] rounded-2xl rounded-tl-sm bg-white/10 px-4 py-3 text-sm leading-relaxed">
+                {t}
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div className={cn(card, "lg:col-span-7")}>
+          <h2 className="text-2xl">The rest of the year</h2>
+          <ul className="mt-4 divide-y divide-rule">
+            {season && (
+              <li className="py-3">
+                <span className="font-medium">{season.latest.phase === "elnino" ? "El Niño is under way." : "No El Niño this season."}</span>{" "}
+                <span className="text-muted-foreground">
+                  {season.latest.phase === "elnino"
+                    ? `El Niño years bring about ${Math.round((1 - season.phases.elnino.meanRain / season.allMeanRain) * 100)}% less rain here. Keep the trash blanket on and check your pump.`
+                    : "Draki watches the rain all season."}
+                </span>
+              </li>
+            )}
+            {fuel.map(({ it, f }) => (
+              <li key={it.id} className="py-3">
+                <span className="font-medium">
+                  Your {ITEMS[it.kind].label.toLowerCase()} burns about {Math.round(f!.litres).toLocaleString("en-AU")} L of diesel a year ({aud(f!.cost)}).
+                </span>{" "}
+                <span className="text-muted-foreground">{f!.swap ? `Switching to ${f!.swap} saves that fuel.` : "No practical electric option yet. Keep it tuned."}</span>
+              </li>
+            ))}
+            <li className="py-3">
+              <span className="font-medium">If you flood,</span>{" "}
+              <span className="text-muted-foreground">
+                Draki's record of your farm (date, hectares, depth) backs up a{" "}
+                <a href="https://www.disasterassist.gov.au/" target="_blank" rel="noreferrer" className="text-leaf hover:underline">
+                  disaster grant <ArrowUpRight className="inline size-3.5" aria-hidden />
+                </a>{" "}
+                or insurance claim.
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+const list = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`)

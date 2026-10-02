@@ -86,3 +86,14 @@ export const fuelYear = (it: Item) => {
 }
 
 export const uid = () => Math.random().toString(36).slice(2, 9)
+
+// Saved on this device only.
+const KEY = "draki-farm-v1"
+export function loadProfile(): Profile | undefined {
+  try {
+    return JSON.parse(localStorage.getItem(KEY) ?? "null") ?? undefined
+  } catch {
+    return undefined
+  }
+}
+export const saveProfile = (p?: Profile) => (p ? localStorage.setItem(KEY, JSON.stringify(p)) : localStorage.removeItem(KEY))

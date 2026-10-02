@@ -1,4 +1,4 @@
-# Climate Hack-tion 2026: hackathon context
+\# Climate Hack-tion 2026: hackathon context
 
 This repo is **Team Pixelers'** (Peter Ma, Siddhant Malik, Adin Sreekesh) entry for **Climate Hack-tion**, an EU-funded, fully online hackathon for uni/TAFE students in Australia, NZ and the Pacific, held ahead of COP31.
 Sources: the Participant Guide PDF and the "Climate Hacktion Library" background doc (both handed over 2026-10-02).

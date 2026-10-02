@@ -14,13 +14,12 @@ const WRAP = "mx-auto w-full max-w-[1600px] px-6 md:px-10"
 
 const NAV = [
   ["farm", "My farm"],
-  ["how", "How it works"],
-  ["live", "Live demo"],
+  ["live", "2022 flood"],
   ["why", "Why now"],
-  ["proof", "Validation"],
+  ["proof", "Evidence"],
 ] as const
 
-/** Hash routing: #/how, #/live, #/live?replay … No router needed for five pages. */
+/** Hash routing: #/farm, #/live, #/live?replay … No router needed for a few pages. */
 function useRoute() {
   const get = () => location.hash.replace(/^#\/?/, "")
   const [hash, setHash] = useState(get)
@@ -95,8 +94,8 @@ export default function App() {
               </a>
             ))}
           </div>
-          <a href="#/live" className={cn(btn, "bg-cane py-2 text-ink hover:bg-[#e2b84a]")}>
-            Try it
+          <a href="#/farm" className={cn(btn, "bg-cane py-2 text-ink hover:bg-[#e2b84a]")}>
+            Set up my farm
           </a>
         </div>
         <div className="flex gap-1 overflow-x-auto px-4 pb-3 md:hidden">
@@ -109,9 +108,7 @@ export default function App() {
       </nav>
 
       <main key={page} className="page-enter flex-1">
-        {page === "how" ? (
-          <How />
-        ) : page === "live" ? (
+        {page === "live" ? (
           <LivePage farm={farm} mode={mode} setMode={chooseMode} />
         ) : page === "why" ? (
           <Why />
@@ -148,11 +145,11 @@ function Home({ farm }: { farm: Farm }) {
               This is the real lower Richmond floodplain in NSW, mapped in 30-metre squares. Scroll, and the river rises to its February 2022 peak.
             </p>
             <div className="flex flex-wrap gap-3 md:col-span-6 md:justify-end">
-              <a href="#/live" className={cn(btn, "bg-white text-ink hover:bg-paper")}>
-                Open live demo <ArrowRight className="size-4" aria-hidden />
+              <a href="#/farm" className={cn(btn, "bg-white text-ink hover:bg-paper")}>
+                Set up my farm <ArrowRight className="size-4" aria-hidden />
               </a>
-              <a href="#/how" className={cn(btn, "border border-white/30 text-white hover:bg-white/10")}>
-                How it works
+              <a href="#/live?replay" className={cn(btn, "border border-white/30 text-white hover:bg-white/10")}>
+                Watch the 2022 flood
               </a>
             </div>
           </div>
@@ -169,8 +166,8 @@ function Home({ farm }: { farm: Farm }) {
               A flood warning for the whole Richmond valley can't tell a grower that the bottom of their block goes under first. Draki works it out for
               one field: how high each 30 m of ground sits above the river, how high the river is forecast to rise, and what to move before it does.
             </p>
-            <a href="#/how" className="mt-8 inline-flex items-center gap-2 font-medium text-leaf hover:underline">
-              How the model works <ArrowRight className="size-4" aria-hidden />
+            <a href="#/farm" className="mt-8 inline-flex items-center gap-2 font-medium text-leaf hover:underline">
+              Mark your farm and see it <ArrowRight className="size-4" aria-hidden />
             </a>
           </div>
           <figure className="md:col-span-6 md:col-start-7 md:-mt-4">
@@ -222,34 +219,6 @@ function Home({ farm }: { farm: Farm }) {
   )
 }
 
-function How() {
-  return (
-    <section className={cn(WRAP, "grid gap-12 py-16 lg:grid-cols-2")}>
-      <div>
-        <h1 className="font-display text-5xl uppercase md:text-7xl">How it works</h1>
-        <ol className="mt-12">
-          {[
-            ["Mark your field", "Tap its corners on a satellite map. Once."],
-            ["We match land to river and rain", "We know how high every part of the field sits above the river. River and rain forecasts say how high the water will go."],
-            ["You get a text", "What to move, where to park, and why it's happening."],
-          ].map(([h, p], i) => (
-            <li key={h} className="grid grid-cols-[3.5rem_1fr] border-t border-rule py-8">
-              <span className="font-display text-5xl leading-none text-leaf">{i + 1}</span>
-              <div>
-                <h2 className="text-2xl">{h}</h2>
-                <p className="mt-2 text-muted-foreground">{p}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-        <a href="#/live" className={cn(btn, "bg-ink text-paper hover:bg-ink-2")}>
-          Try it on a field <ArrowRight className="size-4" aria-hidden />
-        </a>
-      </div>
-      <img src="/photos/cane-harvest.jpg" alt="Cane harvester beside a tall sugarcane crop" className="h-full min-h-80 w-full rounded-3xl object-cover" />
-    </section>
-  )
-}
 
 function Why() {
   return (

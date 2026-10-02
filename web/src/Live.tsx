@@ -7,6 +7,7 @@ import { getEventReplay, getElevations, getFlowForecast, getWeather, REPLAY, wea
 import { assess, floodDepths, gridInPolygon, KNOBS, levelFor, maxRolling, PLAYBOOK, riverDepths, riverStage, type Assessment, type Cell, type LatLng, type Level, type River } from "@/lib/flood"
 import { BASE, covers, loadRegion, sample, type Meta } from "@/lib/region"
 import { cn } from "@/lib/utils"
+import { loadProfile } from "@/lib/farm"
 
 // Demo block: ~40 ha of farmland near Broadwater mill on the lower Richmond, picked by scripts/build_region.py (meta.json demo).
 export const DEMO: LatLng[] = [[-29.00167, 153.39944], [-29.00167, 153.40556], [-29.00778, 153.40556], [-29.00778, 153.39944]]
@@ -68,7 +69,11 @@ type Run = NonNullable<ReturnType<typeof run>>
 
 /** All data for the field. Lives in App so switching pages never refetches. */
 export function useFarm() {
-  const [poly, setPoly] = useState<LatLng[]>(DEMO)
+  // Start on the farm the grower marked in My farm, if they have one.
+  const [poly, setPoly] = useState<LatLng[]>(() => {
+    const b = loadProfile()?.boundary
+    return b && b.length >= 3 ? b : DEMO
+  })
   const [live, setLive] = useState<Weather>()
   const [replay, setReplay] = useState<Weather>()
   const [liveFlow, setLiveFlow] = useState<Flow>()
