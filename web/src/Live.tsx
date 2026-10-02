@@ -88,7 +88,7 @@ function smsText({ a, peak, w }: Run, replay: boolean, demo: boolean) {
       ? `Up to ${peak.total.toFixed(0)} mm of rain in 3 days. Your field should drain fine.`
       : `${peak.total.toFixed(0)} mm of rain in 72 h. Your low ground could sit under ~${a.maxDepth.toFixed(1)} m of water. About ${a.floodedHa.toFixed(0)} ha of cane, ${fjd(a.valueAtRisk)}.`
   return [
-    `FarmShield · ${demo ? "Ba block" : "your field"}${replay ? " (replay)" : ""}`,
+    `Draki · ${demo ? "Ba block" : "your field"}${replay ? " (replay)" : ""}`,
     head,
     body,
     PLAYBOOK[a.level].map((t, i) => `${i + 1}. ${t}`).join("\n"),

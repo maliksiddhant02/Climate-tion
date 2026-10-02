@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-10-02T06:12:12+00:00",
-  "title": "Design System: FarmShield",
+  "title": "Design System: Draki",
   "extensions": {
     "colorMeta": {
       "ink": {
@@ -374,13 +374,13 @@
       "kind": "custom",
       "refersTo": "sms-mock",
       "description": "Signature: the exact text the farmer receives.",
-      "html": "<div class=\"ds-dark\"><div class=\"ds-phone\"><div class=\"ds-screen\"><p class=\"ds-hdr\">FarmShield · +679 SMS</p><p class=\"ds-msg\">FLOOD RISK HIGH from Sat 8 Jan\n\n1. Move cut cane, fertiliser and seed off the low corner today.\n\nWhy: Ba now gets more 50 mm+ rain days than in the 1990s.</p></div></div></div>",
+      "html": "<div class=\"ds-dark\"><div class=\"ds-phone\"><div class=\"ds-screen\"><p class=\"ds-hdr\">Draki · +679 SMS</p><p class=\"ds-msg\">FLOOD RISK HIGH from Sat 8 Jan\n\n1. Move cut cane, fertiliser and seed off the low corner today.\n\nWhy: Ba now gets more 50 mm+ rain days than in the 1990s.</p></div></div></div>",
       "css": ".ds-dark{background:#13211a;padding:24px}.ds-phone{max-width:300px;background:#0d1712;border:1px solid rgba(255,255,255,.15);border-radius:2rem;padding:12px}.ds-screen{background:#16241c;border-radius:1.5rem;padding:16px}.ds-hdr{margin:0;text-align:center;font:400 11px 'Geist Mono Variable',monospace;color:rgba(255,255,255,.6)}.ds-msg{margin:12px 0 0;background:rgba(255,255,255,.1);border-radius:1rem 1rem 1rem 1rem;border-top-left-radius:4px;padding:14px;font:400 13px/1.6 'Geist Variable',sans-serif;color:rgba(255,255,255,.9);white-space:pre-line}"
     }
   ],
   "narrative": {
     "northStar": "The Field Almanac",
-    "overview": "FarmShield should read like a farmer's almanac that learned to read the weather forecast. Serif headlines and warm paper surfaces give it the weight of a printed reference. The data is set in plain sans figures and mono labels, so every number looks measured, not marketed. The tone is calm, honest and local: it reassures before it alarms, it shows its working, and it speaks in Ba, F$, iTaukei and cane, never in generic \"smart farming\" language.",
+    "overview": "Draki should read like a farmer's almanac that learned to read the weather forecast. Serif headlines and warm paper surfaces give it the weight of a printed reference. The data is set in plain sans figures and mono labels, so every number looks measured, not marketed. The tone is calm, honest and local: it reassures before it alarms, it shows its working, and it speaks in Ba, F$, iTaukei and cane, never in generic \"smart farming\" language.",
     "keyCharacteristics": [
       "Fraunces display serif with cane-gold italic emphasis on the one phrase that matters (\"your farm\", \"bottom third\").",
       "Paper and ink as the only two grounds; leaf green as a single closing band.",

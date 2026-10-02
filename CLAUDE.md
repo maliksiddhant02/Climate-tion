@@ -11,9 +11,9 @@ Sources: the Participant Guide PDF and the "Climate Hacktion Library" background
 - Afterwards: Pre-COP in Fiji & Tuvalu 5–8 Oct, COP31 in Antalya, Türkiye 9–20 Nov
 
 ## Project files
-- `docs/`: the source documents (Participant Guide, Library) and **`docs/ideas.md`**, the scored idea brainstorm. The team pick is FarmShield v2 (our own idea; BillShift was dropped).
+- `docs/`: the source documents (Participant Guide, Library) and **`docs/ideas.md`**, the scored idea brainstorm. The team pick is FarmShield v2, now named **Draki** (Fijian for "weather"). BillShift was dropped.
 - `.claude/skills/hackathon-idea-evaluator/`: the skill for scoring ideas, adjusted to this hackathon's judging weights.
-- `web/`: the FarmShield site (Vite + React + Tailwind v4 + Leaflet). Run `npm install` then `npm run dev` inside `web/`. The flood model is in `web/src/lib/flood.ts`, with its check in `node web/src/lib/flood.check.ts`. Data comes from Open-Meteo (cached in localStorage).
+- `web/`: the Draki site (Vite + React + Tailwind v4 + Leaflet). Run `npm install` then `npm run dev` inside `web/`. The flood model is in `web/src/lib/flood.ts`, with its check in `node web/src/lib/flood.check.ts`. Data comes from Open-Meteo (cached in localStorage).
 - `web/DESIGN.md`: the visual system ("The Field Almanac"). Read it before any UI work.
 
 ## The challenge: "Build for 2035"

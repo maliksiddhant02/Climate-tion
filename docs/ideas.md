@@ -78,7 +78,7 @@ These ideas were scored with [hackathon-idea-evaluator](../.claude/skills/hackat
 - **Hardware:** drones are a hardware gap.
 - **Salvage:** a "Your street in 2035" phone 360° capture with a sea-level-rise overlay could fit the Awareness track. It would land emotionally given the Tuvalu Leaders' event, but it would still be about 40/60.
 
-## Team pick: FarmShield v2 (improved #17)
+## Team pick: FarmShield v2 (improved #17), now named Draki
 This is our own idea, so the team prefers it to the AI-generated ones. BillShift (#1 + #8) has been dropped.
 
 **One-liner:** field-level flood warnings for smallholder farmers. They show exactly which part of the farm will flood, what to do today, and *why* (climate education built into every alert).

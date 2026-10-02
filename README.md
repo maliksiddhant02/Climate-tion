@@ -1,6 +1,8 @@
-# FarmShield
+# Draki
 
-Field-level flood warnings for cane growers on the Ba River floodplain, Fiji. FarmShield lays the week's rain forecast over the shape of a farm, shows which part goes under, and texts the farmer three actions plus one line on *why* storms are getting heavier.
+Field-level flood warnings for cane growers on the Ba River floodplain, Fiji. Draki lays the week's rain forecast over the shape of a farm, shows which part goes under, and texts the farmer three actions plus one line on *why* storms are getting heavier.
+
+*Draki* is Fijian for "weather". Native-speaker check pending.
 
 **Climate Hack-tion 2026 · Track:** Climate Awareness & Education (2035 target: climate action education for all), through climate-resilient farming.
 

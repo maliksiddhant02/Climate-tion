@@ -37,7 +37,7 @@ function Logo() {
         <path d="M8 14c3-2.2 5.5-2.2 8 0s5 2.2 8 0" fill="none" stroke="#d4a72c" strokeWidth={1.8} strokeLinecap="round" />
         <path d="M9 19c2.5-1.8 4.6-1.8 7 0s4.5 1.8 7 0" fill="none" stroke="#5a8fd8" strokeWidth={1.8} strokeLinecap="round" />
       </svg>
-      <span className="font-display text-2xl">FarmShield</span>
+      <span className="font-display text-2xl">Draki</span>
     </a>
   )
 }
@@ -256,7 +256,7 @@ function Proof({ farm }: { farm: Farm }) {
       <p className="mt-4 text-muted-foreground">Next: compare the Cyclone Cody replay with Sentinel-1 satellite flood maps.</p>
       <div className="mt-12 grid gap-4 md:grid-cols-2">
         <div className="rounded-3xl border border-rule bg-card p-6">
-          <p className="text-sm text-muted-foreground">Predicted by FarmShield</p>
+          <p className="text-sm text-muted-foreground">Predicted by Draki</p>
           <p className="mt-4 text-5xl font-semibold">{r ? `${r.a.floodedHa.toFixed(1)} ha` : "–"}</p>
           <p className="mt-2 text-muted-foreground">of {r?.a.areaHa.toFixed(1) ?? "–"} ha under water</p>
           <a href="#/live?replay" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-leaf hover:underline">

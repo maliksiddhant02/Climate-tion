@@ -1,5 +1,5 @@
 ---
-name: FarmShield
+name: Draki
 description: Field-level flood alerts for cane farmers on the Ba floodplain, Fiji.
 colors:
   ink: "#13211a"
@@ -101,13 +101,13 @@ components:
     padding: "24px"
 ---
 
-# Design System: FarmShield
+# Design System: Draki
 
 ## Overview
 
 **Creative North Star: "The Field Almanac"**
 
-FarmShield should read like a farmer's almanac that learned to read the weather forecast. Serif headlines and warm paper surfaces give it the weight of a printed reference. Everything else, numbers included, is set in one plain sans, so every figure looks measured, not marketed. The tone is calm, honest and local: it reassures before it alarms, it shows its working, and it speaks in Ba, F$, iTaukei and cane, never in generic "smart farming" language.
+Draki should read like a farmer's almanac that learned to read the weather forecast. Serif headlines and warm paper surfaces give it the weight of a printed reference. Everything else, numbers included, is set in one plain sans, so every figure looks measured, not marketed. The tone is calm, honest and local: it reassures before it alarms, it shows its working, and it speaks in Ba, F$, iTaukei and cane, never in generic "smart farming" language.
 
 The page alternates between two grounds. **Paper** sections (paper and paper-2) carry the story and the explanation. **Ink** sections (the hero, the live field, the footer) carry live data and the map, like a night-time weather desk. A single **leaf** band carries the COP31 commitment. Colour is drawn from the place: cane gold, leaf green, rain blue, silt brown. Flood red is held back for the one thing that is actually dangerous.
 
@@ -198,7 +198,7 @@ Chart text inside SVG is a fixed 10px viewBox size that scales with the chart.
 
 ## Elevation & Depth
 
-FarmShield is flat. There are no box-shadows anywhere. Depth comes from three things:
+Draki is flat. There are no box-shadows anywhere. Depth comes from three things:
 1. **The ground switch:** paper ↔ ink.
 2. **Translucent white layers on ink:** `white/[0.04]` for cards, `white/[0.07]` for tab tracks, `white/10–15` for borders.
 3. **Backdrop blur:** only where a surface floats over imagery or the map, i.e. the map chips and the sticky nav.

@@ -1,4 +1,4 @@
-// FarmShield flood model. Pure functions, no imports, so `node src/lib/flood.check.ts` can run it.
+// Draki flood model. Pure functions, no imports, so `node src/lib/flood.check.ts` can run it.
 
 export type LatLng = [number, number]
 
