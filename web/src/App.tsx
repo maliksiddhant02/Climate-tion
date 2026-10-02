@@ -124,7 +124,7 @@ export default function App() {
       <footer className="border-t border-rule">
         <div className={cn(WRAP, "flex flex-wrap justify-between gap-4 py-8 text-sm text-muted-foreground")}>
           <p>Team Pixelers · Peter Ma, Siddhant Malik, Adin Sreekesh · Climate Hack-tion 2026</p>
-          <p>Data: Copernicus (DEM, Sentinel-1, GloFAS, ERA5), ESA WorldCover, Open-Meteo, Esri · Photos: Unsplash (Troy Olson, insung yoon, Christine Walker)</p>
+          <p>Data: Copernicus (DEM, Sentinel-1, GloFAS, ERA5), ESA WorldCover, Open-Meteo, Esri, OpenStreetMap · Photos: Unsplash (Troy Olson, insung yoon, Christine Walker)</p>
         </div>
       </footer>
     </div>

@@ -22,15 +22,16 @@ export const CROPS: Record<CropId, { label: string; color: string; valuePerHa?: 
 
 // Fuel use: typical farm-size machines (editable on the page). Prices: national average pump prices, Oct 2026 (AIP).
 const DIESEL = 2.62
-export const ITEMS: Record<ItemId, { label: string; lph?: number; hours?: number; swap?: string }> = {
+// `prep`: what to do for things that can't be driven away (NSW SES flood advice: secure tanks so they can't float off).
+export const ITEMS: Record<ItemId, { label: string; lph?: number; hours?: number; swap?: string; prep?: string }> = {
   tractor: { label: "Tractor", lph: 6, hours: 250 },
   harvester: { label: "Harvester" },
   truck: { label: "Truck / haul-out" },
   pump: { label: "Water pump", lph: 0.8, hours: 300, swap: "a solar pump" },
-  fuel: { label: "Fuel tank" },
+  fuel: { label: "Fuel tank", prep: "tie it down so it can't float off" },
   chem: { label: "Fertiliser & chemicals" },
-  shed: { label: "Shed" },
-  house: { label: "House" },
+  shed: { label: "Shed", prep: "lift what's inside off the floor" },
+  house: { label: "House", prep: "move valuables up high" },
   cattle: { label: "Cattle" },
 }
 

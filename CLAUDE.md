@@ -21,7 +21,7 @@ Sources: the Participant Guide PDF and the "Climate Hacktion Library" background
   - the flood-record check and the demo field.
 
   `scripts/build_season_data.py` writes the El Niño data. The Python venv is in `scripts/.venv` (gitignored); see README.
-- `web/src/Farm.tsx` (`#/farm`): the year-round "My farm" companion (harvest and money, El Niño season outlook via `scripts/build_season_data.py`, flood risk, equipment electrification, the season of texts, help to claim). It answers "why would a farmer use this all year?": growers only get texts, and extension officers use the site.
+- `web/src/Farm.tsx` (`#/farm`): "My farm", the grower's own tool. A 4-step setup on the map (mark the boundary, draw paddocks by crop, place equipment and sheds, name and mobile), saved in localStorage, then a personal dashboard: what each item and paddock does in this week / a common (5-year) flood / a 2022-size flood, what to move or prep, harvest dates, fuel, and the texts they'd get. `#/farm?example` opens a filled-in example farm. Farm logic is in `web/src/lib/farm.ts` (check: `node web/src/lib/farm.check.ts`). The saved boundary also drives the 2022 flood page.
 - `docs/plan.md`: the real-data build plan and its status (river model, sharper elevation, Sentinel-1 validation), split across the team with a timeline.
 - `web/DESIGN.md`: the visual system ("The Field Almanac"). Read it before any UI work.
 

@@ -61,14 +61,17 @@ scripts/.venv/Scripts/python scripts/build_season_data.py          # El Nino / L
 | Sentinel-1A RTC radar (Copernicus, via Microsoft Planetary Computer) | The observed 2 March 2022 flood map used to calibrate and check the model | Copernicus Sentinel data terms |
 | Python: numpy, scipy, rasterio, pystac-client, planetary-computer, requests | Building the data files | BSD / MIT / Apache-2.0 |
 | Flood records: Lismore City Council, ABC, FloodList, Richmond Valley Council, AIDR Knowledge Hub, Australian Severe Weather archive | Dates of recorded floods for validation | Cited on the Validation page |
-| Cane yield and price: NSW DPI (two-year cane 105–150 t/ha; 2024 average A$55/t); Sunshine Sugar (crushing season) | Cane value at risk, harvest timing | Cited in `web/src/lib/flood.ts` and `web/src/Farm.tsx` |
+| Cane yield and price: NSW DPI (two-year cane 105–150 t/ha; 2024 average A$55/t); Sunshine Sugar (crushing season) | Cane value at risk, harvest timing | Cited in `web/src/lib/flood.ts` and `web/src/lib/farm.ts` |
 | NOAA CPC Oceanic Niño Index (ONI) | El Niño / La Niña phase, now and for every season since 1991 | US Government public domain |
-| Australian average pump prices, October 2026 (AIP / dailyfuels); US EPA CO₂ emission factors | Equipment fuel cost and CO₂ | Cited in `web/src/Farm.tsx` |
-| NSW Special Disaster Assistance grant guidelines (2022); disasterassist.gov.au | Help to claim | Linked on the My farm page |
+| Australian average pump prices, October 2026 (AIP / dailyfuels); US EPA CO₂ emission factors | Equipment fuel cost | Cited in `web/src/lib/farm.ts` |
+| disasterassist.gov.au | Help to claim after a flood | Linked on the My farm page |
+| NSW SES flood advice | "Tie fuel tanks down so they can't float off" and similar prep for fixed farm items | Cited in `web/src/lib/farm.ts` |
+| OpenStreetMap Nominatim search | "Find your farm" box in My farm setup | ODbL, © OpenStreetMap contributors, light-use policy |
 | Esri World Imagery | Satellite basemap | Esri terms, attribution shown on map |
 | React, Vite, TypeScript, Tailwind CSS | App | MIT |
 | shadcn/ui (Base UI), lucide-react, `cn` | UI components, icons | MIT / ISC |
 | Leaflet, react-leaflet | Map | BSD-2 / Hippocratic-2.1 |
+| Playwright (playwright-core, driving local Chrome) | Clicking through the site to test it; not shipped | Apache-2.0 |
 | Fontsource: Archivo | Typography | SIL OFL |
 | Unsplash photos: Troy Olson (storm over field), insung yoon (flooded farmland), Christine Walker (cane harvest) | Imagery, credited on page | Unsplash License |
 | Claude Code (Anthropic, Claude Opus) | AI coding assistant: scaffolding, model code, page build | Disclosed per hackathon rules |

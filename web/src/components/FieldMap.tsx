@@ -1,5 +1,6 @@
 import { useEffect, type ComponentType } from "react"
-import { renderToStaticMarkup } from "react-dom/server"
+import { flushSync } from "react-dom"
+import { createRoot } from "react-dom/client"
 import L from "leaflet"
 import { CircleMarker, ImageOverlay, MapContainer, Marker, ZoomControl, Polygon, Polyline, Rectangle, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet"
 import { KNOBS, type Cell, type LatLng } from "@/lib/flood"
@@ -11,6 +12,14 @@ function Fit({ poly }: { poly: LatLng[] }) {
   useEffect(() => {
     map.fitBounds(poly, { padding: [40, 40] })
   }, [map, poly])
+  return null
+}
+
+function Fly({ to }: { to?: LatLng }) {
+  const map = useMap()
+  useEffect(() => {
+    if (to) map.setView(to, 16)
+  }, [map, to])
   return null
 }
 
@@ -29,17 +38,25 @@ function cellStyle(c: Cell) {
   return { fillOpacity: 0, color: "#ffffff", opacity: 0.18, weight: 1 }
 }
 
-/** A farm item on the map: an icon in a round chip, red when it would sit in water. */
-export type Pin = { id: string; at: LatLng; Icon: ComponentType<{ className?: string }>; label: string; wet?: boolean }
+/** A farm item on the map: an icon in a round chip, red when it would sit in water. `svg` comes from iconSvg. */
+export type Pin = { id: string; at: LatLng; svg: string; label: string; wet?: boolean }
 export type Shape = { id: string; poly: LatLng[]; color: string; label: string }
 
-const pinIcon = ({ Icon, wet }: Pin) =>
-  L.divIcon({
-    className: "",
-    iconSize: [34, 34],
-    iconAnchor: [17, 17],
-    html: `<div class="farm-pin${wet ? " farm-pin-wet" : ""}">${renderToStaticMarkup(<Icon className="size-[18px]" />)}</div>`,
-  })
+/**
+ * An icon's SVG markup, rendered with the React client already on the page (react-dom/server would add ~60 kB gzipped).
+ * Call at module load, never during a render: React can't flush a second root mid-render.
+ */
+export function iconSvg(Icon: ComponentType<{ className?: string }>) {
+  const el = document.createElement("div")
+  const root = createRoot(el)
+  flushSync(() => root.render(<Icon className="size-[18px]" />))
+  const svg = el.innerHTML
+  root.unmount()
+  return svg
+}
+
+const pinIcon = ({ svg, wet }: Pin) =>
+  L.divIcon({ className: "", iconSize: [34, 34], iconAnchor: [17, 17], html: `<div class="farm-pin${wet ? " farm-pin-wet" : ""}">${svg}</div>` })
 
 export function FieldMap(props: {
   poly: LatLng[]
@@ -59,14 +76,18 @@ export function FieldMap(props: {
   wetOnly?: boolean
   /** Hide the field outline (e.g. while the farmer is still marking it). */
   noOutline?: boolean
+  /** Jump the map here (e.g. a searched address). */
+  flyTo?: LatLng
+  /** Let one finger pan on phones too (setup needs it to reach your farm). */
+  drag?: boolean
 }) {
-  const { poly, cells, stepM, high, draft, onMapClick, runKey = "", overlay, shapes, pins, wetOnly, noOutline } = props
+  const { poly, cells, stepM, high, draft, onMapClick, runKey = "", overlay, shapes, pins, wetOnly, noOutline, flyTo, drag } = props
   const half = stepM / 2 / M_PER_DEG
   const maxDepth = Math.max(0, ...cells.map((c) => c.depth))
   const cos = Math.cos((poly[0][0] * Math.PI) / 180)
   return (
     // One-finger drag on a phone should scroll the page, not get stuck panning the map. Pinch still zooms.
-    <MapContainer center={poly[0]} zoom={15} scrollWheelZoom={false} dragging={!L.Browser.mobile} zoomControl={false} className="h-full w-full">
+    <MapContainer center={poly[0]} zoom={15} scrollWheelZoom={false} dragging={drag || !L.Browser.mobile} zoomControl={false} className="h-full w-full">
       <ZoomControl position="topright" />
       <TileLayer
         url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
@@ -75,10 +96,11 @@ export function FieldMap(props: {
       />
       {overlay && <ImageOverlay url={overlay.url} bounds={overlay.bounds} opacity={0.85} />}
       <Fit poly={poly} />
+      <Fly to={flyTo} />
       <Clicks onClick={onMapClick} />
       {shapes?.map((s) => (
         <Polygon key={s.id} positions={s.poly} pathOptions={{ color: s.color, weight: 2, fillColor: s.color, fillOpacity: 0.4 }}>
-          <Tooltip permanent direction="center" className="farm-label">
+          <Tooltip permanent direction="center" className="farm-label" pane="shadowPane">
             {s.label}
           </Tooltip>
         </Polygon>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
-import { AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight, Beef, Check, Droplets, FlaskConical, Fuel, House, Pencil, Tractor, Trash2, Truck, Undo2, Warehouse } from "lucide-react"
-import { FieldMap, type Pin } from "@/components/FieldMap"
+import { AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight, Beef, Check, Droplets, FlaskConical, Fuel, House, MapPin, Pencil, Tractor, Trash2, Truck, Undo2, Warehouse } from "lucide-react"
+import { FieldMap, iconSvg, type Pin } from "@/components/FieldMap"
 import { aud, DEMO, type Farm } from "@/Live"
 import { areaHa, CROPS, fuelYear, itemDepth, ITEMS, loadProfile, paddockRisk, readyDate, saveProfile as save, uid, valuePerHa, type CropId, type ItemId, type Paddock, type Profile } from "@/lib/farm"
 import { gridInPolygon, KNOBS, riverDepths, riverStage, type Cell, type LatLng } from "@/lib/flood"
@@ -12,7 +12,7 @@ const card = "rounded-3xl border border-rule bg-card p-6"
 const btn = "press inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-medium disabled:opacity-40"
 const chip = "press inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm"
 
-export const ICON: Record<ItemId, Pin["Icon"]> = {
+export const ICON: Record<ItemId, typeof Tractor> = {
   tractor: Tractor,
   harvester: Tractor,
   truck: Truck,
@@ -23,20 +23,23 @@ export const ICON: Record<ItemId, Pin["Icon"]> = {
   house: House,
   cattle: Beef,
 }
+// Map pin markup, rendered once at load (see iconSvg).
+const SVG = Object.fromEntries(Object.entries(ICON).map(([k, I]) => [k, iconSvg(I)])) as Record<ItemId, string>
+const SAFE_SVG = iconSvg(MapPin)
 
 
 // The example farm: the 40 ha demo block near Broadwater, split into cane, soybeans and pasture, with the usual kit.
 const [[n, w], , [s, e]] = DEMO
 const mid = (a: number, b: number, t = 0.5) => a + (b - a) * t
 const EXAMPLE: Profile = {
-  name: "Example",
+  name: "",
   phone: "",
   done: true,
   boundary: DEMO,
   paddocks: [
     { id: "p1", crop: "cane", planted: "2025-09", poly: [[n, w], [n, mid(w, e)], [s, mid(w, e)], [s, w]] },
     { id: "p2", crop: "soy", planted: "2026-11", poly: [[n, mid(w, e)], [n, e], [mid(n, s), e], [mid(n, s), mid(w, e)]] },
-    { id: "p3", crop: "pasture", valuePerHa: 1500, poly: [[mid(n, s), mid(w, e)], [mid(n, s), e], [s, e], [s, mid(w, e)]] },
+    { id: "p3", crop: "pasture", poly: [[mid(n, s), mid(w, e)], [mid(n, s), e], [s, e], [s, mid(w, e)]] },
   ],
   items: [
     { id: "i1", kind: "tractor", at: [mid(n, s, 0.2), mid(w, e, 0.3)] },
@@ -115,6 +118,7 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
   const [crop, setCrop] = useState<CropId>()
   const [kind, setKind] = useState<ItemId>()
   const [error, setError] = useState<string>()
+  const [flyTo, setFlyTo] = useState<LatLng>()
   const update = (patch: Partial<Profile>) => setProfile({ ...profile, ...patch })
   const go = (n: number) => {
     setDraft([])
@@ -149,7 +153,7 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
 
   const drawing = step === 0 || (step === 1 && !!crop)
   const shapes = profile.paddocks.map((p) => ({ id: p.id, poly: p.poly, color: CROPS[p.crop].color, label: `${CROPS[p.crop].label} · ${areaHa(p.poly).toFixed(1)} ha` }))
-  const pins: Pin[] = profile.items.map((it) => ({ id: it.id, at: it.at, Icon: ICON[it.kind], label: ITEMS[it.kind].label }))
+  const pins: Pin[] = profile.items.map((it) => ({ id: it.id, at: it.at, svg: SVG[it.kind], label: ITEMS[it.kind].label }))
   const hint =
     step === 0
       ? draft.length < 3
@@ -195,6 +199,8 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
                 shapes={step > 0 ? shapes : undefined}
                 pins={step === 2 ? pins : undefined}
                 onMapClick={drawing || kind ? onMapClick : undefined}
+                flyTo={flyTo}
+                drag
               />
             </div>
             {hint && <p className="absolute top-3 left-3 z-[1000] max-w-[80%] rounded-full bg-ink/85 px-4 py-2 text-sm text-white">{hint}</p>}
@@ -205,7 +211,8 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
           {step === 0 && (
             <>
               <h1 className="font-display text-5xl uppercase">Mark your farm</h1>
-              <p className="mt-3 text-muted-foreground">Zoom to your farm, then tap each corner of its boundary.</p>
+              <p className="mt-3 text-muted-foreground">Find your farm, then tap each corner of its boundary.</p>
+              <Find onFound={setFlyTo} />
               <DrawButtons draft={draft} setDraft={setDraft} onDone={finishBoundary} />
               {error && <p role="alert" className="mt-4 rounded-xl bg-flood px-4 py-2 text-sm text-white">{error}</p>}
               <button onClick={onExample} className="mt-auto pt-8 text-left text-sm text-leaf hover:underline">
@@ -324,6 +331,35 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
   )
 }
 
+/** Jump the map to a road or town. OpenStreetMap Nominatim: free, light use, attribution in the footer. */
+function Find({ onFound }: { onFound: (p: LatLng) => void }) {
+  const [q, setQ] = useState("")
+  const [msg, setMsg] = useState<string>()
+  const search = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!q.trim()) return
+    setMsg("Searching…")
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=au&q=${encodeURIComponent(q)}`)
+      const [hit] = await r.json()
+      if (!hit) return setMsg("Couldn't find that. Try a road name and town.")
+      onFound([+hit.lat, +hit.lon])
+      setMsg(undefined)
+    } catch {
+      setMsg("Search isn't working right now. Zoom the map by hand.")
+    }
+  }
+  return (
+    <form onSubmit={search} className="mt-5">
+      <div className="flex gap-2">
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Road or town, e.g. Broadwater" aria-label="Find your farm" className="min-w-0 flex-1 rounded-full border border-rule bg-card px-4 py-3" />
+        <button className={cn(btn, "bg-ink text-paper hover:bg-ink-2")}>Find</button>
+      </div>
+      {msg && <p className="mt-2 text-sm text-muted-foreground">{msg}</p>}
+    </form>
+  )
+}
+
 function DrawButtons({ draft, setDraft, onDone }: { draft: LatLng[]; setDraft: (d: LatLng[]) => void; onDone: () => void }) {
   return (
     <div className="mt-5 flex flex-wrap gap-2">
@@ -405,8 +441,8 @@ function PaddockList({ profile, update }: { profile: Profile; update: (p: Partia
 
 // ---------------------------------------------------------------- Dashboard
 
-type Scenario = "week" | "common" | "2022"
-const SCENARIO: Record<Scenario, string> = { week: "This week", common: "A common flood", "2022": "A flood like 2022" }
+type Scenario = "week" | "common" | "record"
+const SCENARIO: Record<Scenario, string> = { week: "This week", common: "A common flood", record: "A flood like 2022" }
 
 function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Profile; onEdit: (step: number) => void; onReset: () => void }) {
   const [scenario, setScenario] = useState<Scenario>("week")
@@ -423,26 +459,34 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
     const d = riverDepths(elev.hand, riverStage(meta.river.q5, meta.river))
     return elev.points.map(([lat, lng], i) => ({ lat, lng, elev: elev.e[i], depth: d[i], hand: elev.hand?.[i] }))
   }, [elev, meta])
-  const cells = scenario === "week" ? farm.liveRun?.cells : scenario === "2022" ? farm.replayRun?.cells : common
+  const cells = scenario === "week" ? farm.liveRun?.cells : scenario === "record" ? farm.replayRun?.cells : common
   const loading = !cells
 
   const items = profile.items.map((it) => ({ it, depth: cells ? itemDepth(it, cells, stepM) : undefined }))
-  const wet = items.filter((x) => (x.depth ?? 0) >= KNOBS.floodedDepth)
+  const isWet = (d?: number) => (d ?? 0) >= KNOBS.floodedDepth
+  const wet = items.filter((x) => isWet(x.depth))
+  const toMove = wet.filter((x) => !ITEMS[x.it.kind].prep)
+  const toPrep = wet.filter((x) => ITEMS[x.it.kind].prep)
   const paddocks = profile.paddocks.map((p) => ({ p, ...paddockRisk(p, cells ?? [], stepM) }))
   const atRisk = paddocks.reduce((s, x) => s + x.atRisk, 0)
-  const shed = items.find((x) => (x.it.kind === "shed" || x.it.kind === "house") && (x.depth ?? 0) < KNOBS.floodedDepth)
-  const allWet = cells && cells.length > 0 && cells.every((c) => c.depth >= KNOBS.floodedDepth)
-  const safePlace = allWet ? "higher ground off the floodplain" : shed ? `your ${ITEMS[shed.it.kind].label.toLowerCase()} (it stays dry)` : "the high ground on the map"
+  const shed = items.find((x) => (x.it.kind === "shed" || x.it.kind === "house") && x.depth !== undefined && !isWet(x.depth))
+  // The highest dry square on the farm (height above the river where we have it), pinned as Safe ground.
+  const dry = (cells ?? []).filter((c) => !isWet(c.depth))
+  const high = dry.length ? dry.reduce((a, c) => ((c.hand ?? c.elev) > (a.hand ?? a.elev) ? c : a)) : undefined
+  const safePlace = shed ? `your ${ITEMS[shed.it.kind].label.toLowerCase()}, which stays dry` : high ? "the safe ground on your map" : "higher ground off the floodplain"
   const ha = areaHa(profile.boundary)
   const name = profile.name.trim()
 
-  const pins: Pin[] = items.map(({ it, depth }) => ({
+  const pins: Pin[] = [
+    ...(wet.length && high && !shed ? [{ id: "safe", at: [high.lat, high.lng] as LatLng, svg: SAFE_SVG, label: "Safe ground: highest dry spot" }] : []),
+    ...items.map(({ it, depth }) => ({
     id: it.id,
     at: it.at,
-    Icon: ICON[it.kind],
+    svg: SVG[it.kind],
     label: `${ITEMS[it.kind].label}${depth !== undefined && depth >= KNOBS.floodedDepth ? ` · under ${depth >= 2 ? "more than 2" : depth.toFixed(1)} m of water` : " · stays dry"}`,
-    wet: (depth ?? 0) >= KNOBS.floodedDepth,
-  }))
+    wet: isWet(depth),
+  })),
+  ]
   const shapes = profile.paddocks.map((p) => ({ id: p.id, poly: p.poly, color: CROPS[p.crop].color, label: CROPS[p.crop].label }))
   const fuel = profile.items.map((it) => ({ it, f: fuelYear(it) })).filter((x) => x.f && x.f.litres > 0)
   const cane = paddocks.filter((x) => x.p.crop === "cane")
@@ -450,10 +494,10 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
 
   const texts = [
     wet.length
-      ? `Draki: FLOOD WARNING${name ? `, ${name}` : ""}. Move your ${list(wet.map((x) => ITEMS[x.it.kind].label.toLowerCase()))} to ${safePlace} before the river peaks.`
+      ? `Draki: FLOOD WARNING${name ? `, ${name}` : ""}.${toMove.length ? ` Move your ${list(toMove.map((x) => ITEMS[x.it.kind].label.toLowerCase()))} to ${safePlace} before the river peaks.` : ""}${toPrep.map((x) => ` Your ${ITEMS[x.it.kind].label.toLowerCase()} will flood: ${ITEMS[x.it.kind].prep}.`).join("")}`
       : `Draki: ${name ? `${name}, n` : "N"}othing on your farm is in the water's way. Draki keeps watching the river.`,
     cane.length && cane[0].floodedHa > 0
-      ? `Draki: ${cane[0].floodedHa.toFixed(0)} of your ${cane[0].ha.toFixed(0)} ha of cane could go under. Hold off fertilising the low rows.`
+      ? `Draki: ${cane[0].floodedHa.toFixed(1)} of your ${cane[0].ha.toFixed(1)} ha of cane could go under. Hold off fertilising the low rows.`
       : undefined,
     ready[0] ? `Draki: your ${CROPS[ready[0].p.crop].label.toLowerCase()} (${areaHa(ready[0].p.poly).toFixed(0)} ha) is ready from ${monthYear(ready[0].d!)}.` : undefined,
   ].filter(Boolean) as string[]
@@ -498,7 +542,7 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
           {loading
             ? "Reading your farm…"
             : wet.length
-              ? `${wet.length} thing${wet.length === 1 ? "" : "s"} to move${atRisk ? `, ${aud(atRisk)} of crops under water` : ""}`
+              ? `${wet.length} thing${wet.length === 1 ? "" : "s"} in the water's way${atRisk ? `, ${aud(atRisk)} of crops under water` : ""}`
               : atRisk
                 ? `${aud(atRisk)} of crops under water`
                 : scenario === "week"
@@ -528,26 +572,30 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
         </div>
 
         <div className={cn(card, "lg:col-span-5")}>
-          <h2 className="text-2xl">Move before the water</h2>
+          <h2 className="text-2xl">Before the water comes</h2>
           <ul className="mt-4 divide-y divide-rule">
             {items.length === 0 && <li className="py-3 text-muted-foreground">Place your equipment to see what to move.</li>}
             {items.map(({ it, depth }) => {
               const I = ICON[it.kind]
-              const isWet = (depth ?? 0) >= KNOBS.floodedDepth
+              const w = isWet(depth)
+              const deep = depth === undefined ? "" : depth >= 2 ? "2 m+" : `${depth.toFixed(1)} m`
               return (
                 <li key={it.id} className="flex items-center gap-3 py-3">
-                  <span className={cn("grid size-9 place-items-center rounded-full", isWet ? "bg-flood text-white" : "bg-paper-2 text-leaf")}>
+                  <span className={cn("grid size-9 shrink-0 place-items-center rounded-full", w ? "bg-flood text-white" : "bg-paper-2 text-leaf")}>
                     <I className="size-4" aria-hidden />
                   </span>
-                  <span className="flex-1">{ITEMS[it.kind].label}</span>
-                  <span className={cn("text-sm", isWet ? "font-medium text-flood" : "text-muted-foreground")}>
-                    {depth === undefined ? "off your farm" : isWet ? `move · ${depth >= 2 ? "2 m+" : `${depth.toFixed(1)} m`} deep` : "stays dry"}
+                  <span className="flex-1">
+                    {ITEMS[it.kind].label}
+                    {w && ITEMS[it.kind].prep && <span className="block text-sm text-muted-foreground">{ITEMS[it.kind].prep}</span>}
+                  </span>
+                  <span className={cn("text-right text-sm", w ? "font-medium text-flood" : "text-muted-foreground")}>
+                    {depth === undefined ? "off your farm" : w ? `${ITEMS[it.kind].prep ? "floods" : "move it"} · ${deep}` : "stays dry"}
                   </span>
                 </li>
               )
             })}
           </ul>
-          {wet.length > 0 && <p className="mt-4 text-sm text-muted-foreground">Safe place: {safePlace}.</p>}
+          {toMove.length > 0 && <p className="mt-4 text-sm text-muted-foreground">Move them to {safePlace}.</p>}
         </div>
 
         <div className={cn(card, "lg:col-span-5")}>
