@@ -1,6 +1,6 @@
 # Climate Hack-tion 2026: hackathon context
 
-This repo is our entry for **Climate Hack-tion**, an EU-funded, fully online hackathon for uni/TAFE students in Australia, NZ and the Pacific, held ahead of COP31.
+This repo is **Team Pixelers'** (Peter Ma, Siddhant Malik, Adin Sreekesh) entry for **Climate Hack-tion**, an EU-funded, fully online hackathon for uni/TAFE students in Australia, NZ and the Pacific, held ahead of COP31.
 Sources: the Participant Guide PDF and the "Climate Hacktion Library" background doc (both handed over 2026-10-02).
 
 ## Key dates (Sydney time; AEST becomes AEDT at 2am Sun 4 Oct)
@@ -13,6 +13,8 @@ Sources: the Participant Guide PDF and the "Climate Hacktion Library" background
 ## Project files
 - `docs/`: the source documents (Participant Guide, Library) and **`docs/ideas.md`**, the scored idea brainstorm. The team pick is FarmShield v2 (our own idea; BillShift was dropped).
 - `.claude/skills/hackathon-idea-evaluator/`: the skill for scoring ideas, adjusted to this hackathon's judging weights.
+- `web/`: the FarmShield site (Vite + React + Tailwind v4 + Leaflet). Run `npm install` then `npm run dev` inside `web/`. The flood model is in `web/src/lib/flood.ts`, with its check in `node web/src/lib/flood.check.ts`. Data comes from Open-Meteo (cached in localStorage).
+- `web/DESIGN.md`: the visual system ("The Field Almanac"). Read it before any UI work.
 
 ## The challenge: "Build for 2035"
 Turn **at least one** COP31 priority into a practical solution that people, communities or institutions can test and use. The aim is a convincing path from ambition to implementation, not a finished product. The ideal is something that makes climate action easier to **adopt, finance, implement or measure**.

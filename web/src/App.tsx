@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { ArrowRight } from "lucide-react"
 import { fjd, LivePage, useFarm, type Farm } from "@/Live"
 import { DECADES, HeavyRainChart } from "@/components/weather"
@@ -49,9 +49,19 @@ export default function App() {
   const page = route.split(/[/?]/)[0]
   const farm = useFarm()
   const [mode, setMode] = useState<"live" | "replay">(route.includes("replay") ? "replay" : "live")
+  // Once someone picks a tab we stop auto-switching for them.
+  const modeChosen = useRef(route.includes("replay"))
+  const chooseMode = (m: "live" | "replay") => {
+    modeChosen.current = true
+    setMode(m)
+  }
   useEffect(() => {
-    if (route.includes("replay")) setMode("replay")
+    if (route.includes("replay")) chooseMode("replay")
   }, [route])
+  // A dry week makes a dull demo: if this week is all clear, open on the Cody replay instead.
+  useEffect(() => {
+    if (farm.liveRun?.a.level === "clear" && !modeChosen.current) setMode("replay")
+  }, [farm.liveRun])
 
   return (
     <div className="flex min-h-svh flex-col bg-paper text-ink">
@@ -86,7 +96,7 @@ export default function App() {
         {page === "how" ? (
           <How />
         ) : page === "live" ? (
-          <LivePage farm={farm} mode={mode} setMode={setMode} />
+          <LivePage farm={farm} mode={mode} setMode={chooseMode} />
         ) : page === "why" ? (
           <Why />
         ) : page === "proof" ? (
@@ -98,7 +108,7 @@ export default function App() {
 
       <footer className="border-t border-rule">
         <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-4 px-6 py-8 text-sm text-muted-foreground">
-          <p>Built at Climate Hack-tion 2026</p>
+          <p>Team Pixelers · Peter Ma, Siddhant Malik, Adin Sreekesh · Climate Hack-tion 2026</p>
           <p>Data: Open-Meteo, Copernicus, Esri · Photos: Unsplash (Troy Olson, insung yoon, Christine Walker)</p>
         </div>
       </footer>
@@ -152,7 +162,7 @@ function Home() {
           {[
             [DECADES.now.toFixed(1), `heavy-rain days a year in Ba, up from ${DECADES.then.toFixed(1)}`],
             ["450+ mm", "in 72 hours during Cyclone Cody, 2022"],
-            ["2035", "COP31 target: climate education for all"],
+            ["2035", "COP31 target: climate action education for all"],
           ].map(([v, l]) => (
             <div key={v}>
               <p className="text-5xl font-semibold">{v}</p>
@@ -242,20 +252,20 @@ function Proof({ farm }: { farm: Farm }) {
   const r = farm.replayRun
   return (
     <section className="mx-auto max-w-5xl px-6 py-16">
-      <h1 className="font-display text-5xl">Does it work?</h1>
-      <p className="mt-4 text-muted-foreground">We replay Cyclone Cody and compare with Sentinel-1 satellite flood maps.</p>
+      <h1 className="font-display text-5xl">How we'll validate</h1>
+      <p className="mt-4 text-muted-foreground">Next: compare the Cyclone Cody replay with Sentinel-1 satellite flood maps.</p>
       <div className="mt-12 grid gap-4 md:grid-cols-2">
         <div className="rounded-3xl border border-rule bg-card p-6">
           <p className="text-sm text-muted-foreground">Predicted by FarmShield</p>
-          <p className="mt-4 text-5xl font-semibold">{r ? `${r.a.floodedHa.toFixed(0)} ha` : "–"}</p>
-          <p className="mt-2 text-muted-foreground">of {r?.a.areaHa.toFixed(0) ?? "–"} ha under water</p>
+          <p className="mt-4 text-5xl font-semibold">{r ? `${r.a.floodedHa.toFixed(1)} ha` : "–"}</p>
+          <p className="mt-2 text-muted-foreground">of {r?.a.areaHa.toFixed(1) ?? "–"} ha under water</p>
           <a href="#/live?replay" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-leaf hover:underline">
             See it on the map <ArrowRight className="size-4" aria-hidden />
           </a>
         </div>
         <div className="rounded-3xl border border-dashed border-silt/50 p-6">
           <p className="text-sm text-muted-foreground">Observed by Sentinel-1</p>
-          <p className="mt-4 text-5xl font-semibold text-muted-foreground/50">Soon</p>
+          <p className="mt-4 text-5xl font-semibold text-muted-foreground/50">Coming next</p>
           <p className="mt-2 text-muted-foreground">Radar flood extent, January 2022</p>
         </div>
       </div>

@@ -9,7 +9,7 @@ Field-level flood warnings for cane growers on the Ba River floodplain, Fiji. Fa
 ```bash
 cd web
 npm install
-npm run dev                    # http://localhost:5173  (add #replay to open on Cyclone Cody)
+npm run dev                    # http://localhost:5173  (open #/live?replay for the Cyclone Cody replay)
 node src/lib/flood.check.ts    # flood model self-check
 ```
 

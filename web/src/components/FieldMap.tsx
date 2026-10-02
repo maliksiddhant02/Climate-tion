@@ -1,4 +1,5 @@
 import { useEffect } from "react"
+import L from "leaflet"
 import { CircleMarker, MapContainer, ZoomControl, Polygon, Polyline, Rectangle, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet"
 import { KNOBS, type Cell, type LatLng } from "@/lib/flood"
 
@@ -36,7 +37,8 @@ export function FieldMap(props: {
   const half = stepM / 2 / M_PER_DEG
   const cos = Math.cos((poly[0][0] * Math.PI) / 180)
   return (
-    <MapContainer center={poly[0]} zoom={15} scrollWheelZoom={false} zoomControl={false} className="h-full w-full">
+    // One-finger drag on a phone should scroll the page, not get stuck panning the map. Pinch still zooms.
+    <MapContainer center={poly[0]} zoom={15} scrollWheelZoom={false} dragging={!L.Browser.mobile} zoomControl={false} className="h-full w-full">
       <ZoomControl position="topright" />
       <TileLayer
         url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"

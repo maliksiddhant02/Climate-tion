@@ -4,11 +4,14 @@ import { FieldMap } from "@/components/FieldMap"
 import { DECADES, RainBars, wx } from "@/components/weather"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getElevations, getWeather, REPLAY, type Weather } from "@/lib/api"
-import { assess, floodDepths, gridInPolygon, maxRolling, PLAYBOOK, type Assessment, type Cell, type LatLng, type Level } from "@/lib/flood"
+import { assess, floodDepths, gridInPolygon, KNOBS, maxRolling, PLAYBOOK, type Assessment, type Cell, type LatLng, type Level } from "@/lib/flood"
 import { cn } from "@/lib/utils"
 
 // Demo block: cane farms on the east bank of the Ba River, just north of Ba town.
 export const DEMO: LatLng[] = [[-17.52031, 177.68509], [-17.51976, 177.69024], [-17.52577, 177.6911], [-17.52686, 177.68566]]
+
+// Fewer elevation cells than this and the field is too small to say anything useful.
+const MIN_CELLS = 4
 
 export const fjd = (v: number) => `F$${(Math.round(v / 100) * 100).toLocaleString("en-AU")}`
 const dateLabel = (iso: string) => new Date(iso).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })
@@ -33,20 +36,26 @@ export function useFarm() {
   const [replay, setReplay] = useState<Weather>()
   const [elev, setElev] = useState<Elev>()
   const [error, setError] = useState<string>()
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     const center: LatLng = [poly.reduce((s, p) => s + p[0], 0) / poly.length, poly.reduce((s, p) => s + p[1], 0) / poly.length]
-    const fail = (e: Error) => setError(e.message)
+    const fail = (e: unknown) =>
+      setError(e instanceof TypeError ? "We couldn't reach the weather service. Check your connection and try again." : (e as Error).message)
+    // Drop the old field's numbers so nothing stale shows while (or if) the new one loads.
     setError(undefined)
+    setLive(undefined)
+    setReplay(undefined)
+    setElev(undefined)
     getWeather(center, false).then(setLive).catch(fail)
     getWeather(center, true).then(setReplay).catch(fail)
     const { points, stepM } = gridInPolygon(poly)
     getElevations(points).then((e) => setElev({ points, stepM, e })).catch(fail)
-  }, [poly])
+  }, [poly, attempt])
 
   const liveRun = useMemo(() => run(live, elev), [live, elev])
   const replayRun = useMemo(() => run(replay, elev), [replay, elev])
-  return { poly, setPoly, elev, error, liveRun, replayRun }
+  return { poly, setPoly, elev, error, liveRun, replayRun, retry: () => setAttempt((n) => n + 1), isDemo: poly === DEMO }
 }
 
 export type Farm = ReturnType<typeof useFarm>
@@ -67,7 +76,7 @@ function StatusPill({ level }: { level: Level }) {
   )
 }
 
-function smsText({ a, peak, w }: Run, replay: boolean) {
+function smsText({ a, peak, w }: Run, replay: boolean, demo: boolean) {
   const from = w.hourly.time[peak.start]
   const head = {
     act: `FLOOD RISK HIGH from ${dateLabel(from)}`,
@@ -79,7 +88,7 @@ function smsText({ a, peak, w }: Run, replay: boolean) {
       ? `Up to ${peak.total.toFixed(0)} mm of rain in 3 days. Your field should drain fine.`
       : `${peak.total.toFixed(0)} mm of rain in 72 h. Your low ground could sit under ~${a.maxDepth.toFixed(1)} m of water. About ${a.floodedHa.toFixed(0)} ha of cane, ${fjd(a.valueAtRisk)}.`
   return [
-    `FarmShield · Ba block${replay ? " (replay)" : ""}`,
+    `FarmShield · ${demo ? "Ba block" : "your field"}${replay ? " (replay)" : ""}`,
     head,
     body,
     PLAYBOOK[a.level].map((t, i) => `${i + 1}. ${t}`).join("\n"),
@@ -90,13 +99,28 @@ function smsText({ a, peak, w }: Run, replay: boolean) {
 const card = "rounded-3xl border border-white/10 bg-white/[0.04] p-6"
 
 export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "replay"; setMode: (m: "live" | "replay") => void }) {
-  const { poly, setPoly, elev, error, liveRun, replayRun } = farm
+  const { poly, setPoly, elev, error, liveRun, replayRun, retry, isDemo } = farm
   const [draft, setDraft] = useState<LatLng[]>()
+  const [draftError, setDraftError] = useState<string>()
   const [lang, setLang] = useState("en")
   const r = mode === "live" ? liveRun : replayRun
 
+  const startDraft = () => {
+    setDraftError(undefined)
+    setDraft([])
+  }
+  const cancelDraft = () => {
+    setDraftError(undefined)
+    setDraft(undefined)
+  }
   const finishDraft = () => {
-    if (draft && draft.length >= 3) setPoly(draft)
+    if (!draft || draft.length < 3) return
+    if (gridInPolygon(draft).points.length < MIN_CELLS) {
+      setDraftError("Too small to read. Mark a block at least 1 ha across.")
+      return
+    }
+    setDraftError(undefined)
+    setPoly(draft)
     setDraft(undefined)
   }
   const pill = "rounded-full bg-ink/80 px-4 py-2 text-sm backdrop-blur hover:bg-ink"
@@ -107,7 +131,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <h1 className="font-display text-5xl">Live field</h1>
-            <p className="mt-3 text-white/60">40 ha of cane on the Ba River, Fiji.</p>
+            <p className="mt-3 text-white/60">{isDemo ? "40 ha of cane on the Ba River, Fiji." : r ? `Your ${r.a.areaHa.toFixed(1)} ha field.` : "Your field."}</p>
           </div>
           <Tabs value={mode} onValueChange={(v) => setMode(v as "live" | "replay")}>
             <TabsList className="h-11 rounded-full bg-white/[0.07] p-1">
@@ -121,7 +145,21 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
           </Tabs>
         </div>
 
-        {error && <p className="mt-6 rounded-xl border border-flood/40 bg-flood/10 px-4 py-3 text-sm">Couldn't load data: {error}</p>}
+        {error && (
+          <div role="alert" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-flood/40 bg-flood/10 px-4 py-3 text-sm">
+            <p>{error}</p>
+            <div className="flex gap-2">
+              <button onClick={retry} className="rounded-full bg-white px-4 py-2 text-sm font-medium text-ink hover:bg-paper">
+                Try again
+              </button>
+              {!isDemo && (
+                <button onClick={() => setPoly(DEMO)} className="rounded-full border border-white/25 px-4 py-2 text-sm hover:bg-white/10">
+                  Back to demo
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className={cn("mt-10 grid gap-4 transition-opacity lg:grid-cols-12", !r && "opacity-60")}>
           <div className="relative overflow-hidden rounded-3xl border border-white/10 lg:col-span-7 lg:row-span-2">
@@ -130,19 +168,29 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
                 poly={poly}
                 cells={r?.cells ?? []}
                 stepM={elev?.stepM ?? 30}
-                high={r?.a.high}
+                high={r && r.cells.length > 1 && r.a.high.depth < KNOBS.floodedDepth ? r.a.high : undefined}
                 draft={draft}
                 onMapClick={draft ? (p) => setDraft([...draft, p]) : undefined}
               />
             </div>
-            <div className="absolute top-3 left-3 z-[1000] flex gap-2">
+            <div className="absolute inset-x-3 top-3 z-[1000] flex flex-wrap gap-2 pr-12">
               {!draft ? (
-                <button onClick={() => setDraft([])} className={cn(pill, "inline-flex items-center gap-2")}>
+                <button onClick={startDraft} className={cn(pill, "inline-flex items-center gap-2")}>
                   <PenLine className="size-4" aria-hidden /> Draw your field
                 </button>
               ) : (
                 <>
-                  <span className={pill}>Tap corners · {draft.length}</span>
+                  <span className={pill} aria-live="polite">
+                    {draft.length < 3 ? `Tap corners · ${draft.length} of 3+` : `${draft.length} corners`}
+                  </span>
+                  {draft.length > 0 && (
+                    <button onClick={() => setDraft(draft.slice(0, -1))} className={pill}>
+                      Undo
+                    </button>
+                  )}
+                  <button onClick={cancelDraft} className={pill}>
+                    Cancel
+                  </button>
                   <button onClick={finishDraft} disabled={draft.length < 3} className="rounded-full bg-cane px-4 py-2 text-sm font-medium text-ink disabled:opacity-40">
                     Done
                   </button>
@@ -152,6 +200,11 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
                 <button onClick={() => setPoly(DEMO)} className={cn(pill, "inline-flex items-center gap-2")}>
                   <RotateCcw className="size-4" aria-hidden /> Reset
                 </button>
+              )}
+              {draftError && (
+                <p role="alert" className="w-full max-w-sm rounded-xl bg-flood px-4 py-2 text-sm text-white">
+                  {draftError}
+                </p>
               )}
             </div>
             {r && !draft && (
@@ -176,13 +229,14 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
             <div className="mt-4">{r && <RainBars time={r.w.hourly.time} rain={r.w.hourly.rain} start={r.peak.start} />}</div>
           </div>
 
-          <div className="grid grid-cols-4 gap-3 sm:grid-cols-7 lg:col-span-12">
+          <div className="-mx-6 flex snap-x gap-3 overflow-x-auto px-6 pb-1 sm:mx-0 sm:grid sm:grid-cols-7 sm:overflow-visible sm:px-0 lg:col-span-12">
             {r?.w.daily.time.map((t, i) => {
               const { Icon, label } = wx(r.w.daily.code[i])
-              const wettest = r.w.daily.rain[i] === Math.max(...r.w.daily.rain)
+              // Only call out a day that's actually wet, not the least-dry day of a dry week.
+              const wettest = r.w.daily.rain[i] >= 10 && r.w.daily.rain[i] === Math.max(...r.w.daily.rain)
               return (
-                <div key={t} className={cn("rounded-3xl p-4", wettest ? "bg-rain-soft text-ink" : "border border-white/10 bg-white/[0.04]")}>
-                  <p className={cn("text-sm", !wettest && "text-white/60")}>{weekday(t)}</p>
+                <div key={t} className={cn("min-w-[6.5rem] shrink-0 snap-start rounded-3xl p-4 sm:min-w-0", wettest ? "bg-rain-soft text-ink" : "border border-white/10 bg-white/[0.04]")}>
+                  <p className={cn("text-sm", !wettest && "text-white/60")}>{weekday(t)}{wettest && " · wettest"}</p>
                   <Icon className="my-4 size-7" aria-label={label} />
                   <p className="text-2xl font-semibold">{r.w.daily.rain[i].toFixed(0)}<span className="text-sm font-normal"> mm</span></p>
                 </div>
@@ -205,7 +259,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
             </div>
             <div className="mx-auto mt-5 max-w-sm rounded-[2rem] border border-white/15 bg-[#0d1712] p-3">
               <p className="rounded-[1.5rem] bg-white/10 p-4 text-sm leading-relaxed whitespace-pre-line text-white/90">
-                {lang !== "en" ? "Native-speaker translation coming." : r ? smsText(r, mode === "replay") : "…"}
+                {lang !== "en" ? "Native-speaker translation coming." : r ? smsText(r, mode === "replay", isDemo) : "…"}
               </p>
             </div>
           </div>
@@ -237,11 +291,13 @@ function RiskCard({ a, onReplay }: { a?: Assessment; onReplay?: () => void }) {
         <p className="text-sm text-muted-foreground">Likely under water</p>
         {a && <StatusPill level={a.level} />}
       </div>
-      <p className="mt-6 text-5xl font-semibold tracking-tight">{a ? `${a.floodedHa.toFixed(1)} ha` : "–"}</p>
+      <p className={cn("mt-6 text-5xl tracking-tight", a?.level === "clear" ? "font-display" : "font-semibold")}>
+        {!a ? "–" : a.level === "clear" ? "Nothing goes under." : `${a.floodedHa.toFixed(1)} ha`}
+      </p>
       <div className="mt-6 flex items-end justify-between border-t border-rule pt-4">
         <div>
           <p className="text-sm text-muted-foreground">Cane at risk</p>
-          <p className="text-2xl font-semibold">{a ? fjd(a.valueAtRisk) : "–"}</p>
+          <p className="text-2xl font-semibold">{a ? (a.valueAtRisk > 0 ? fjd(a.valueAtRisk) : "None") : "–"}</p>
         </div>
         {a?.level === "clear" && onReplay && (
           <button onClick={onReplay} className="inline-flex items-center gap-1 text-sm font-medium text-leaf hover:underline">

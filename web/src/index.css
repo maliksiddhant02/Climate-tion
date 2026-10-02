@@ -21,7 +21,7 @@
     --color-rain: #3c6fae;
     --color-rain-soft: #9db8da;
     --color-flood: #d4472a;
-    --color-silt: #8a6c4c;
+    --color-silt: #6f5539;
     --color-rule: #d9d0bd;
     --color-chart-5: var(--chart-5);
     --color-chart-4: var(--chart-4);
@@ -67,7 +67,7 @@
     --secondary: #e9e2d2;
     --secondary-foreground: #13211a;
     --muted: #e9e2d2;
-    --muted-foreground: #5d6a61;
+    --muted-foreground: #525e56;
     --accent: #e9e2d2;
     --accent-foreground: #13211a;
     --destructive: #d4472a;
@@ -96,6 +96,10 @@
   }
   ::selection { background: var(--color-cane); color: var(--color-ink); }
 }
+
+/* One visible focus ring everywhere: leaf on the paper surfaces, cane on the dark and green ones. */
+:focus-visible { outline: 2px solid var(--color-leaf); outline-offset: 2px; }
+.bg-ink :focus-visible, .bg-leaf :focus-visible { outline-color: var(--color-cane); }
 
 .leaflet-container { font-family: var(--font-sans); background: #1d3127; }
 .leaflet-control-attribution { font-size: 10px; }

@@ -1,0 +1,444 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-02T06:12:12+00:00",
+  "title": "Design System: FarmShield",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "neutral",
+        "displayName": "Night Ink",
+        "canonical": "#13211a",
+        "oklch": "oklch(23.2% 0.024 162.1)",
+        "tonalRamp": [
+          "oklch(15.0% 0.024 162.1)",
+          "oklch(26.0% 0.024 162.1)",
+          "oklch(37.0% 0.024 162.1)",
+          "oklch(48.0% 0.024 162.1)",
+          "oklch(59.0% 0.024 162.1)",
+          "oklch(71.0% 0.024 162.1)",
+          "oklch(83.0% 0.024 162.1)",
+          "oklch(95.0% 0.024 162.1)"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Night Ink, raised",
+        "canonical": "#1d3127",
+        "oklch": "oklch(29.3% 0.032 161.8)",
+        "tonalRamp": [
+          "oklch(15.0% 0.032 161.8)",
+          "oklch(26.0% 0.032 161.8)",
+          "oklch(37.0% 0.032 161.8)",
+          "oklch(48.0% 0.032 161.8)",
+          "oklch(59.0% 0.032 161.8)",
+          "oklch(71.0% 0.032 161.8)",
+          "oklch(83.0% 0.032 161.8)",
+          "oklch(95.0% 0.032 161.8)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Almanac Paper",
+        "canonical": "#f3eee3",
+        "oklch": "oklch(95.0% 0.016 86.4)",
+        "tonalRamp": [
+          "oklch(15.0% 0.016 86.4)",
+          "oklch(26.0% 0.016 86.4)",
+          "oklch(37.0% 0.016 86.4)",
+          "oklch(48.0% 0.016 86.4)",
+          "oklch(59.0% 0.016 86.4)",
+          "oklch(71.0% 0.016 86.4)",
+          "oklch(83.0% 0.016 86.4)",
+          "oklch(95.0% 0.016 86.4)"
+        ]
+      },
+      "paper-2": {
+        "role": "neutral",
+        "displayName": "Almanac Paper, alternate",
+        "canonical": "#e9e2d2",
+        "oklch": "oklch(91.4% 0.023 87.2)",
+        "tonalRamp": [
+          "oklch(15.0% 0.023 87.2)",
+          "oklch(26.0% 0.023 87.2)",
+          "oklch(37.0% 0.023 87.2)",
+          "oklch(48.0% 0.023 87.2)",
+          "oklch(59.0% 0.023 87.2)",
+          "oklch(71.0% 0.023 87.2)",
+          "oklch(83.0% 0.023 87.2)",
+          "oklch(95.0% 0.023 87.2)"
+        ]
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "Card Paper",
+        "canonical": "#fbf8f1",
+        "oklch": "oklch(98.0% 0.010 87.5)",
+        "tonalRamp": [
+          "oklch(15.0% 0.010 87.5)",
+          "oklch(26.0% 0.010 87.5)",
+          "oklch(37.0% 0.010 87.5)",
+          "oklch(48.0% 0.010 87.5)",
+          "oklch(59.0% 0.010 87.5)",
+          "oklch(71.0% 0.010 87.5)",
+          "oklch(83.0% 0.010 87.5)",
+          "oklch(95.0% 0.010 87.5)"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Field Rule",
+        "canonical": "#d9d0bd",
+        "oklch": "oklch(86.0% 0.028 85.7)",
+        "tonalRamp": [
+          "oklch(15.0% 0.028 85.7)",
+          "oklch(26.0% 0.028 85.7)",
+          "oklch(37.0% 0.028 85.7)",
+          "oklch(48.0% 0.028 85.7)",
+          "oklch(59.0% 0.028 85.7)",
+          "oklch(71.0% 0.028 85.7)",
+          "oklch(83.0% 0.028 85.7)",
+          "oklch(95.0% 0.028 85.7)"
+        ]
+      },
+      "muted-text": {
+        "role": "neutral",
+        "displayName": "Weathered Text",
+        "canonical": "#525e56",
+        "oklch": "oklch(46.9% 0.020 156.4)",
+        "tonalRamp": [
+          "oklch(15.0% 0.020 156.4)",
+          "oklch(26.0% 0.020 156.4)",
+          "oklch(37.0% 0.020 156.4)",
+          "oklch(48.0% 0.020 156.4)",
+          "oklch(59.0% 0.020 156.4)",
+          "oklch(71.0% 0.020 156.4)",
+          "oklch(83.0% 0.020 156.4)",
+          "oklch(95.0% 0.020 156.4)"
+        ]
+      },
+      "leaf": {
+        "role": "secondary",
+        "displayName": "Leaf Green",
+        "canonical": "#2f5e3d",
+        "oklch": "oklch(43.9% 0.075 151.8)",
+        "tonalRamp": [
+          "oklch(15.0% 0.059 151.8)",
+          "oklch(26.0% 0.069 151.8)",
+          "oklch(37.0% 0.075 151.8)",
+          "oklch(48.0% 0.075 151.8)",
+          "oklch(59.0% 0.075 151.8)",
+          "oklch(71.0% 0.075 151.8)",
+          "oklch(83.0% 0.070 151.8)",
+          "oklch(95.0% 0.059 151.8)"
+        ]
+      },
+      "cane": {
+        "role": "primary",
+        "displayName": "Cane Gold",
+        "canonical": "#d4a72c",
+        "oklch": "oklch(75.0% 0.141 87.1)",
+        "tonalRamp": [
+          "oklch(15.0% 0.093 87.1)",
+          "oklch(26.0% 0.112 87.1)",
+          "oklch(37.0% 0.130 87.1)",
+          "oklch(48.0% 0.141 87.1)",
+          "oklch(59.0% 0.141 87.1)",
+          "oklch(71.0% 0.134 87.1)",
+          "oklch(83.0% 0.113 87.1)",
+          "oklch(95.0% 0.093 87.1)"
+        ]
+      },
+      "cane-light": {
+        "role": "primary",
+        "displayName": "Pale Cane",
+        "canonical": "#f0d27a",
+        "oklch": "oklch(87.1% 0.113 91.1)",
+        "tonalRamp": [
+          "oklch(15.0% 0.079 91.1)",
+          "oklch(26.0% 0.094 91.1)",
+          "oklch(37.0% 0.109 91.1)",
+          "oklch(48.0% 0.113 91.1)",
+          "oklch(59.0% 0.113 91.1)",
+          "oklch(71.0% 0.111 91.1)",
+          "oklch(83.0% 0.095 91.1)",
+          "oklch(95.0% 0.079 91.1)"
+        ]
+      },
+      "rain": {
+        "role": "tertiary",
+        "displayName": "Rain Blue",
+        "canonical": "#3c6fae",
+        "oklch": "oklch(53.6% 0.114 254.8)",
+        "tonalRamp": [
+          "oklch(15.0% 0.079 254.8)",
+          "oklch(26.0% 0.094 254.8)",
+          "oklch(37.0% 0.109 254.8)",
+          "oklch(48.0% 0.114 254.8)",
+          "oklch(59.0% 0.114 254.8)",
+          "oklch(71.0% 0.112 254.8)",
+          "oklch(83.0% 0.095 254.8)",
+          "oklch(95.0% 0.079 254.8)"
+        ]
+      },
+      "rain-bright": {
+        "role": "tertiary",
+        "displayName": "Rain Blue, bright",
+        "canonical": "#5a8fd8",
+        "oklch": "oklch(64.5% 0.124 256.7)",
+        "tonalRamp": [
+          "oklch(15.0% 0.084 256.7)",
+          "oklch(26.0% 0.101 256.7)",
+          "oklch(37.0% 0.117 256.7)",
+          "oklch(48.0% 0.124 256.7)",
+          "oklch(59.0% 0.124 256.7)",
+          "oklch(71.0% 0.120 256.7)",
+          "oklch(83.0% 0.102 256.7)",
+          "oklch(95.0% 0.084 256.7)"
+        ]
+      },
+      "rain-soft": {
+        "role": "tertiary",
+        "displayName": "Rain Blue, soft",
+        "canonical": "#9db8da",
+        "oklch": "oklch(77.4% 0.057 254.3)",
+        "tonalRamp": [
+          "oklch(15.0% 0.050 254.3)",
+          "oklch(26.0% 0.057 254.3)",
+          "oklch(37.0% 0.057 254.3)",
+          "oklch(48.0% 0.057 254.3)",
+          "oklch(59.0% 0.057 254.3)",
+          "oklch(71.0% 0.057 254.3)",
+          "oklch(83.0% 0.057 254.3)",
+          "oklch(95.0% 0.050 254.3)"
+        ]
+      },
+      "flood": {
+        "role": "tertiary",
+        "displayName": "Flood Red",
+        "canonical": "#d4472a",
+        "oklch": "oklch(59.2% 0.182 33.4)",
+        "tonalRamp": [
+          "oklch(15.0% 0.115 33.4)",
+          "oklch(26.0% 0.139 33.4)",
+          "oklch(37.0% 0.163 33.4)",
+          "oklch(48.0% 0.182 33.4)",
+          "oklch(59.0% 0.182 33.4)",
+          "oklch(71.0% 0.167 33.4)",
+          "oklch(83.0% 0.141 33.4)",
+          "oklch(95.0% 0.115 33.4)"
+        ]
+      },
+      "silt": {
+        "role": "neutral",
+        "displayName": "Silt",
+        "canonical": "#6f5539",
+        "oklch": "oklch(46.9% 0.054 68.0)",
+        "tonalRamp": [
+          "oklch(15.0% 0.048 68.0)",
+          "oklch(26.0% 0.054 68.0)",
+          "oklch(37.0% 0.054 68.0)",
+          "oklch(48.0% 0.054 68.0)",
+          "oklch(59.0% 0.054 68.0)",
+          "oklch(71.0% 0.054 68.0)",
+          "oklch(83.0% 0.054 68.0)",
+          "oklch(95.0% 0.048 68.0)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The hero question only."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section statements written as sentences."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Step and card headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Explanations, max ~36rem wide."
+      },
+      "figure": {
+        "displayName": "Figure",
+        "purpose": "Hectares, millimetres and F$, always with a unit."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Mono uppercase markers, captions, model inputs."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "color-fade",
+        "value": "150ms ease (Tailwind transition-colors)",
+        "purpose": "Hover fills on pills and links."
+      },
+      {
+        "name": "opacity-load",
+        "value": "transition-opacity, 60% while loading",
+        "purpose": "Dashboard dims until the field's data arrives."
+      },
+      {
+        "name": "live-pulse",
+        "value": "animate-pulse on a 6px cane dot",
+        "purpose": "Marks the live forecast card. Disabled under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button (on ink)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main call to action on dark sections: white pill, ink text.",
+      "html": "<div class=\"ds-dark\"><button class=\"ds-btn-primary\">See the live field <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></button></div>",
+      "css": ".ds-dark{background:#13211a;padding:24px}.ds-btn-primary{display:inline-flex;align-items:center;gap:8px;background:#fff;color:#13211a;border:0;border-radius:9999px;padding:12px 20px;font:500 14px/1 'Geist Variable',sans-serif;cursor:pointer;transition:background .15s}.ds-btn-primary:hover{background:#f3eee3}.ds-btn-primary:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}"
+    },
+    {
+      "name": "Cane Button",
+      "kind": "button",
+      "refersTo": "button-cane",
+      "description": "Accent action: 'Try it', 'Done'.",
+      "html": "<div class=\"ds-dark\"><button class=\"ds-btn-cane\">Try it</button> <button class=\"ds-btn-cane\" disabled>Done</button></div>",
+      "css": ".ds-dark{background:#13211a;padding:24px}.ds-btn-cane{background:#d4a72c;color:#13211a;border:0;border-radius:9999px;padding:8px 16px;font:500 14px/1.2 'Geist Variable',sans-serif;cursor:pointer;transition:background .15s}.ds-btn-cane:hover{background:#e2b84a}.ds-btn-cane:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}.ds-btn-cane:disabled{opacity:.4;cursor:default}"
+    },
+    {
+      "name": "Ghost Button (on ink)",
+      "kind": "button",
+      "refersTo": "button-ghost-dark",
+      "description": "Secondary action on dark: hairline pill.",
+      "html": "<div class=\"ds-dark\"><button class=\"ds-btn-ghost\">Replay Cyclone Cody, 2022</button></div>",
+      "css": ".ds-dark{background:#13211a;padding:24px}.ds-btn-ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:9999px;padding:12px 20px;font:400 14px/1 'Geist Variable',sans-serif;cursor:pointer;transition:background .15s}.ds-btn-ghost:hover{background:rgba(255,255,255,.1)}.ds-btn-ghost:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}"
+    },
+    {
+      "name": "Status Pills",
+      "kind": "chip",
+      "refersTo": "status-act",
+      "description": "The only status vocabulary: Act today / Watch / All clear.",
+      "html": "<div class=\"ds-row\"><span class=\"ds-pill ds-act\">Act today</span><span class=\"ds-pill ds-watch\">Watch</span><span class=\"ds-pill ds-clear\">All clear</span></div>",
+      "css": ".ds-row{display:flex;gap:8px;padding:16px;background:#fbf8f1}.ds-pill{display:inline-flex;align-items:center;border-radius:9999px;padding:4px 10px;font:400 11px/1.2 'Geist Mono Variable',monospace;text-transform:uppercase;letter-spacing:.08em}.ds-act{background:#d4472a;color:#fff}.ds-watch{background:#d4a72c;color:#13211a}.ds-clear{background:#2f5e3d;color:#fff}"
+    },
+    {
+      "name": "Map Chip",
+      "kind": "button",
+      "refersTo": "map-chip",
+      "description": "Floating control over the satellite map.",
+      "html": "<div class=\"ds-map\"><button class=\"ds-chip\">Draw your field</button><button class=\"ds-chip\">Cancel</button></div>",
+      "css": ".ds-map{display:flex;gap:8px;padding:16px;background:linear-gradient(135deg,#4a5a3a,#2f3f2a)}.ds-chip{background:rgba(19,33,26,.8);color:#fff;border:0;border-radius:9999px;padding:8px 14px;font:400 12px/1 'Geist Variable',sans-serif;backdrop-filter:blur(8px);cursor:pointer}.ds-chip:hover{background:#13211a}.ds-chip:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}"
+    },
+    {
+      "name": "Risk Card",
+      "kind": "card",
+      "refersTo": "card-paper",
+      "description": "The paper 'answer' card on the dark dashboard.",
+      "html": "<div class=\"ds-dark\"><div class=\"ds-risk\"><div class=\"ds-top\"><span>Likely under water</span><span class=\"ds-pill\">Act today</span></div><p class=\"ds-fig\">22.6 ha</p><p class=\"ds-sub\">of 40.4 ha · deepest ~2.9 m</p><div class=\"ds-foot\"><span>Cane at risk</span><strong>F$86,600</strong></div></div></div>",
+      "css": ".ds-dark{background:#13211a;padding:24px}.ds-risk{background:#fbf8f1;color:#13211a;border-radius:30.8px;padding:24px;max-width:360px;font-family:'Geist Variable',sans-serif}.ds-top{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:#525e56}.ds-pill{background:#d4472a;color:#fff;border-radius:9999px;padding:4px 10px;font:400 11px/1.2 'Geist Mono Variable',monospace;text-transform:uppercase;letter-spacing:.08em}.ds-fig{font-size:60px;font-weight:600;letter-spacing:-.025em;margin:24px 0 0;line-height:1}.ds-sub{color:#525e56;margin:8px 0 0}.ds-foot{display:flex;flex-direction:column;border-top:1px solid #d9d0bd;margin-top:24px;padding-top:16px;font-size:12px;color:#525e56}.ds-foot strong{font-size:24px;color:#13211a}"
+    },
+    {
+      "name": "Dark Card",
+      "kind": "card",
+      "refersTo": "card-dark",
+      "description": "Translucent panel on ink for charts and model details.",
+      "html": "<div class=\"ds-dark\"><div class=\"ds-card\"><p class=\"ds-cap\">Wettest 72 hours, mm per 3 h</p><p class=\"ds-big\">454 mm</p></div></div>",
+      "css": ".ds-dark{background:#13211a;padding:24px}.ds-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:30.8px;padding:24px;color:#fff;font-family:'Geist Variable',sans-serif;max-width:360px}.ds-cap{margin:0;font-size:14px;color:rgba(255,255,255,.6)}.ds-big{margin:8px 0 0;font-size:24px;font-weight:600}"
+    },
+    {
+      "name": "Mode Tabs",
+      "kind": "nav",
+      "refersTo": "tabs",
+      "description": "Pill track with pill triggers: live week vs. replay.",
+      "html": "<div class=\"ds-dark\"><div class=\"ds-tabs\" role=\"tablist\"><button role=\"tab\" aria-selected=\"false\">This week</button><button role=\"tab\" aria-selected=\"true\">Replay: Cyclone Cody</button></div></div>",
+      "css": ".ds-dark{background:#13211a;padding:24px}.ds-tabs{display:inline-flex;gap:2px;background:rgba(255,255,255,.07);border-radius:9999px;padding:4px}.ds-tabs button{background:transparent;color:rgba(255,255,255,.6);border:0;border-radius:9999px;padding:8px 16px;font:500 14px/1 'Geist Variable',sans-serif;cursor:pointer}.ds-tabs button[aria-selected=true]{background:#fff;color:#13211a}.ds-tabs button:focus-visible{outline:2px solid #d4a72c;outline-offset:2px}"
+    },
+    {
+      "name": "SMS Mock",
+      "kind": "custom",
+      "refersTo": "sms-mock",
+      "description": "Signature: the exact text the farmer receives.",
+      "html": "<div class=\"ds-dark\"><div class=\"ds-phone\"><div class=\"ds-screen\"><p class=\"ds-hdr\">FarmShield · +679 SMS</p><p class=\"ds-msg\">FLOOD RISK HIGH from Sat 8 Jan\n\n1. Move cut cane, fertiliser and seed off the low corner today.\n\nWhy: Ba now gets more 50 mm+ rain days than in the 1990s.</p></div></div></div>",
+      "css": ".ds-dark{background:#13211a;padding:24px}.ds-phone{max-width:300px;background:#0d1712;border:1px solid rgba(255,255,255,.15);border-radius:2rem;padding:12px}.ds-screen{background:#16241c;border-radius:1.5rem;padding:16px}.ds-hdr{margin:0;text-align:center;font:400 11px 'Geist Mono Variable',monospace;color:rgba(255,255,255,.6)}.ds-msg{margin:12px 0 0;background:rgba(255,255,255,.1);border-radius:1rem 1rem 1rem 1rem;border-top-left-radius:4px;padding:14px;font:400 13px/1.6 'Geist Variable',sans-serif;color:rgba(255,255,255,.9);white-space:pre-line}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Field Almanac",
+    "overview": "FarmShield should read like a farmer's almanac that learned to read the weather forecast. Serif headlines and warm paper surfaces give it the weight of a printed reference. The data is set in plain sans figures and mono labels, so every number looks measured, not marketed. The tone is calm, honest and local: it reassures before it alarms, it shows its working, and it speaks in Ba, F$, iTaukei and cane, never in generic \"smart farming\" language.",
+    "keyCharacteristics": [
+      "Fraunces display serif with cane-gold italic emphasis on the one phrase that matters (\"your farm\", \"bottom third\").",
+      "Paper and ink as the only two grounds; leaf green as a single closing band.",
+      "Flat surfaces. Depth comes from tone, translucency and borders, never from shadows.",
+      "Fully rounded pills for every control; large soft-cornered cards for every container.",
+      "Model inputs, sources and caveats are visible on the page."
+    ],
+    "rules": [
+      {
+        "name": "The Flood Is Rare Rule",
+        "body": "Flood red appears only where something is under water or has gone wrong. Never use it for decoration, emphasis or branding.",
+        "section": "colors"
+      },
+      {
+        "name": "The Sixty Floor Rule",
+        "body": "On ink, no text goes below 60% white. Small labels on dark surfaces use white/60 or brighter.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tinted Muted Rule",
+        "body": "Secondary text on a coloured surface is tinted from that surface's hue (ink/75 on rain-soft, cane-light on leaf), never plain grey.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Italic Rule",
+        "body": "Each display or headline gets at most one italic phrase, coloured cane on ink or flood/leaf on paper. It marks the single idea the reader should take away.",
+        "section": "typography"
+      },
+      {
+        "name": "The Unit Rule",
+        "body": "A number never appears without its unit (ha, mm, m, F$, °). Dates use Fiji/Australian order (\"6 Jan\"), never MM/DD.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Shadow Rule",
+        "body": "Surfaces are flat. A new element that needs separation gets a tonal step or a hairline border, never a drop shadow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Blur Earns Its Place Rule",
+        "body": "Backdrop blur is only for surfaces sitting on a photo or a map. A card on a plain ground stays solid.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do put live data and the map on ink, and explanation on paper.",
+      "Do show your working: list model inputs, data sources and caveats next to the result.",
+      "Do use local language and units: Ba, F$, cane, iTaukei, and \"6 Jan\" date order.",
+      "Do keep every control a full pill and every container at 30.8px corners.",
+      "Do give the clear state a positive answer (\"Nothing goes under.\") rather than a row of zeros.",
+      "Do keep small text on ink at white/60 or brighter, and secondary text on paper at the muted-text colour."
+    ],
+    "donts": [
+      "Don't add box-shadows. Separation comes from tone and hairlines.",
+      "Don't use flood red for anything that isn't water damage or an error.",
+      "Don't use cane gold for small text on the leaf band; use cane-light.",
+      "Don't let AI-generated wording stand in for the farming playbook. Actions come from the fixed playbook only.",
+      "Don't show a dry week as the first impression: when the live forecast is clear, lead with the Cyclone Cody replay."
+    ]
+  }
+}
