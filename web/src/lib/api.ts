@@ -8,6 +8,31 @@ export type Weather = {
   daily: { time: string[]; rain: number[]; temp: number[]; code: number[]; prob?: number[] }
 }
 
+const HOUR = 3_600_000
+
+/**
+ * fetch + JSON with a localStorage cache, so reloads during a demo don't burn Open-Meteo's rate limit.
+ * Archive and elevation data never change; the forecast is reused for an hour.
+ * ponytail: no eviction; localStorage's ~5 MB cap is plenty for a handful of fields.
+ */
+async function cachedJson(url: string, ttlMs: number, fail: (status: number) => string) {
+  try {
+    const hit = JSON.parse(localStorage.getItem(url) ?? "null")
+    if (hit && Date.now() - hit.at < ttlMs) return hit.data
+  } catch {
+    /* storage blocked or corrupt: just fetch */
+  }
+  const r = await fetch(url)
+  if (!r.ok) throw new Error(fail(r.status))
+  const data = await r.json()
+  try {
+    localStorage.setItem(url, JSON.stringify({ at: Date.now(), data }))
+  } catch {
+    /* full or blocked: fine without cache */
+  }
+  return data
+}
+
 export const REPLAY = { name: "Cyclone Cody", start: "2022-01-06", end: "2022-01-12" }
 
 export async function getWeather([lat, lng]: LatLng, replay: boolean): Promise<Weather> {
@@ -15,9 +40,9 @@ export async function getWeather([lat, lng]: LatLng, replay: boolean): Promise<W
   const url = replay
     ? `https://archive-api.open-meteo.com/v1/archive?${at}&start_date=${REPLAY.start}&end_date=${REPLAY.end}&daily=precipitation_sum,temperature_2m_max,weather_code`
     : `https://api.open-meteo.com/v1/forecast?${at}&forecast_days=7&daily=precipitation_sum,temperature_2m_max,weather_code,precipitation_probability_max`
-  const r = await fetch(url)
-  if (!r.ok) throw new Error(`Weather request failed (${r.status})`)
-  const d = await r.json()
+  const d = await cachedJson(url, replay ? Infinity : HOUR, (s) =>
+    s === 429 ? "The weather service is busy right now. Wait a minute, then try again." : `The weather service returned an error (${s}). Try again in a minute.`,
+  )
   return {
     hourly: { time: d.hourly.time, rain: d.hourly.precipitation },
     daily: {
@@ -33,9 +58,10 @@ export async function getWeather([lat, lng]: LatLng, replay: boolean): Promise<W
 /** Copernicus GLO-90 DEM via Open-Meteo. Max 100 points per call. */
 export async function getElevations(points: LatLng[]): Promise<number[]> {
   const q = (i: 0 | 1) => points.map((p) => p[i].toFixed(5)).join(",")
-  const r = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${q(0)}&longitude=${q(1)}`)
-  if (!r.ok) throw new Error(`Elevation request failed (${r.status})`)
-  return (await r.json()).elevation
+  const d = await cachedJson(`https://api.open-meteo.com/v1/elevation?latitude=${q(0)}&longitude=${q(1)}`, Infinity, (s) =>
+    s === 429 ? "The elevation service is busy right now. Wait a minute, then try again." : `We couldn't read the land height for this field (error ${s}). Try redrawing it.`,
+  )
+  return d.elevation
 }
 
 /**

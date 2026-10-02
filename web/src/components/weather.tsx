@@ -20,7 +20,7 @@ const bar = (x: number, y: number, w: number, h: number, r = 4) =>
     ? `M${x},${y + h}V${y}H${x + w}V${y + h}Z`
     : `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`
 
-const niceMax = (v: number) => [5, 10, 20, 25, 50, 100, 150, 200, 300].find((n) => n >= v) ?? Math.ceil(v / 100) * 100
+const niceMax = (v: number) => [10, 20, 25, 50, 100, 150, 200, 300].find((n) => n >= v) ?? Math.ceil(v / 100) * 100
 
 /** The 72 h window the model uses, as 3-hourly bars. Dark surface. */
 export function RainBars({ time, rain, start }: { time: string[]; rain: number[]; start: number }) {
@@ -39,7 +39,7 @@ export function RainBars({ time, rain, start }: { time: string[]; rain: number[]
       {[0, max / 2, max].map((v) => (
         <g key={v}>
           <line x1={padL} x2={W} y1={y(v)} y2={y(v)} stroke="white" strokeOpacity={0.08} />
-          <text x={padL - 6} y={y(v) + 3} textAnchor="end" className="fill-white/45 font-mono text-[9px] tabular-nums">{v}</text>
+          <text x={padL - 6} y={y(v) + 3} textAnchor="end" className="fill-white/60 font-mono text-[9px] tabular-nums">{v}</text>
         </g>
       ))}
       {buckets.map((b, i) => {
@@ -51,7 +51,7 @@ export function RainBars({ time, rain, start }: { time: string[]; rain: number[]
             </rect>
             {b.mm > 0 && <path d={bar(x, y(b.mm), bw, H - padB - y(b.mm))} fill="#5a8fd8" pointerEvents="none" />}
             {b.t.endsWith("T00:00") && (
-              <text x={x + bw / 2} y={H - 6} textAnchor="middle" className="fill-white/55 font-mono text-[9px]">{day(b.t)}</text>
+              <text x={x + bw / 2} y={H - 6} textAnchor="middle" className="fill-white/60 font-mono text-[9px]">{day(b.t)}</text>
             )}
           </g>
         )
@@ -93,7 +93,7 @@ export function HeavyRainChart() {
         {[0, 5, 10, 15, 20].map((v) => (
           <g key={v}>
             <line x1={padL} x2={W} y1={y(v)} y2={y(v)} stroke="#d9d0bd" />
-            <text x={padL - 6} y={y(v) + 3} textAnchor="end" className="fill-[#5d6a61] font-mono text-[9px] tabular-nums">{v}</text>
+            <text x={padL - 6} y={y(v) + 3} textAnchor="end" className="fill-[#525e56] font-mono text-[9px] tabular-nums">{v}</text>
           </g>
         ))}
         {HEAVY_RAIN_DAYS.map(([yr, d], i) => {
@@ -105,7 +105,7 @@ export function HeavyRainChart() {
                 <title>{`${yr}: ${d} days with 50 mm+`}</title>
               </rect>
               {[1991, 2000, 2015, 2024].includes(yr) && (
-                <text x={x(i) + bw / 2} y={H - 6} textAnchor="middle" className="fill-[#5d6a61] font-mono text-[9px]">{yr}</text>
+                <text x={yr === 2024 ? x(i) + bw : x(i) + bw / 2} y={H - 6} textAnchor={yr === 2024 ? "end" : "middle"} className="fill-[#525e56] font-mono text-[9px]">{yr}</text>
               )}
             </g>
           )

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { AlertTriangle, ArrowRight, ArrowUpRight, Check, Eye, MapPin, PenLine, RotateCcw, Satellite } from "lucide-react"
 import { FieldMap } from "@/components/FieldMap"
 import { DECADES, HeavyRainChart, RainBars, wx } from "@/components/weather"
@@ -11,8 +11,12 @@ import { cn } from "@/lib/utils"
 // Demo block: cane farms on the east bank of the Ba River, just north of Ba town.
 const DEMO: LatLng[] = [[-17.52031, 177.68509], [-17.51976, 177.69024], [-17.52577, 177.6911], [-17.52686, 177.68566]]
 
-const fjd = (v: number) => `F$${(Math.round(v / 100) * 100).toLocaleString("en-AU")}`
+// Fewer elevation cells than this and the field is too small to say anything useful.
+const MIN_CELLS = 4
+
+const fjd =(v: number) => `F$${(Math.round(v / 100) * 100).toLocaleString("en-AU")}`
 const dateLabel = (iso: string) => new Date(iso).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })
+const shortDate = (iso: string) => new Date(iso).toLocaleDateString("en-AU", { day: "numeric", month: "short" })
 const weekday = (iso: string) => new Date(iso).toLocaleDateString("en-AU", { weekday: "short" })
 
 function run(w: Weather | undefined, elev: { points: LatLng[]; stepM: number; e: number[] } | undefined) {
@@ -63,7 +67,7 @@ function Logo({ light }: { light?: boolean }) {
   )
 }
 
-function smsText(r: NonNullable<ReturnType<typeof run>>, replay: boolean) {
+function smsText(r: NonNullable<ReturnType<typeof run>>, replay: boolean, demo: boolean) {
   const { a, peak, w } = r
   const from = w.hourly.time[peak.start]
   const head = {
@@ -76,7 +80,7 @@ function smsText(r: NonNullable<ReturnType<typeof run>>, replay: boolean) {
       ? `Up to ${peak.total.toFixed(0)} mm of rain in any 3 days. Your field should drain fine.`
       : `${peak.total.toFixed(0)} mm of rain in 72 h. Your lowest ground (${a.low.elev.toFixed(0)} m) could sit under ~${a.maxDepth.toFixed(1)} m of water. About ${a.floodedHa.toFixed(0)} ha of cane, ${fjd(a.valueAtRisk)}.`
   return [
-    `FarmShield · Ba block${replay ? " (replay)" : ""}`,
+    `FarmShield · ${demo ? "Ba block" : "your field"}${replay ? " (replay)" : ""}`,
     head,
     body,
     PLAYBOOK[a.level].map((t, i) => `${i + 1}. ${t}`).join("\n"),
@@ -93,25 +97,59 @@ export default function App() {
   const [replay, setReplay] = useState<Weather>()
   const [elev, setElev] = useState<{ points: LatLng[]; stepM: number; e: number[] }>()
   const [error, setError] = useState<string>()
+  const [draftError, setDraftError] = useState<string>()
+  const [attempt, setAttempt] = useState(0)
+  // Once someone picks a tab we stop auto-switching for them.
+  const modeChosen = useRef(location.hash === "#replay")
+  const chooseMode = (m: "live" | "replay") => {
+    modeChosen.current = true
+    setMode(m)
+  }
+  const isDemo = poly === DEMO
 
   const center = useMemo<LatLng>(() => [poly.reduce((s, p) => s + p[0], 0) / poly.length, poly.reduce((s, p) => s + p[1], 0) / poly.length], [poly])
 
   useEffect(() => {
+    // Drop the old field's numbers so nothing stale shows while (or if) the new one loads.
     setError(undefined)
-    getWeather(center, false).then(setLive).catch((e) => setError(e.message))
-    getWeather(center, true).then(setReplay).catch((e) => setError(e.message))
+    setLive(undefined)
+    setReplay(undefined)
+    setElev(undefined)
+    const fail = (e: unknown) =>
+      setError(e instanceof TypeError ? "We couldn't reach the weather service. Check your connection and try again." : (e as Error).message)
+    getWeather(center, false).then(setLive).catch(fail)
+    getWeather(center, true).then(setReplay).catch(fail)
     const { points, stepM } = gridInPolygon(poly)
     getElevations(points)
       .then((e) => setElev({ points, stepM, e }))
-      .catch((e) => setError(e.message))
-  }, [poly, center])
+      .catch(fail)
+  }, [poly, center, attempt])
 
   const liveRun = useMemo(() => run(live, elev), [live, elev])
   const replayRun = useMemo(() => run(replay, elev), [replay, elev])
   const r = mode === "live" ? liveRun : replayRun
 
+  // A dry week makes a dull demo: if this week is all clear, open on the Cody replay instead.
+  useEffect(() => {
+    if (liveRun?.a.level === "clear" && !modeChosen.current) setMode("replay")
+  }, [liveRun])
+
+  const startDraft = () => {
+    setDraftError(undefined)
+    setDraft([])
+  }
+  const cancelDraft = () => {
+    setDraftError(undefined)
+    setDraft(undefined)
+  }
   const finishDraft = () => {
-    if (draft && draft.length >= 3) setPoly(draft)
+    if (!draft || draft.length < 3) return
+    if (gridInPolygon(draft).points.length < MIN_CELLS) {
+      setDraftError("That field is too small to read. Tap the corners of a block at least 1 ha across.")
+      return
+    }
+    setDraftError(undefined)
+    setPoly(draft)
     setDraft(undefined)
   }
 
@@ -155,7 +193,7 @@ export default function App() {
               </a>
               <a
                 href="#live"
-                onClick={() => setMode("replay")}
+                onClick={() => chooseMode("replay")}
                 className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-3 text-sm text-white transition-colors hover:bg-white/10"
               >
                 <RotateCcw className="size-4" aria-hidden /> Replay Cyclone Cody, 2022
@@ -186,19 +224,30 @@ export default function App() {
               </div>
               <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
                 <div>
-                  <p className="text-xs text-white/55">Wettest 72 h this week</p>
+                  <p className="text-xs text-white/60">Wettest 72 h this week</p>
                   <p className="text-2xl font-semibold">{liveRun ? `${liveRun.peak.total.toFixed(0)} mm` : "–"}</p>
                 </div>
                 {liveRun && <StatusPill level={liveRun.a.level} />}
               </div>
-              <ul className="mt-4 space-y-2">
-                {(liveRun ? PLAYBOOK[liveRun.a.level] : []).slice(0, 2).map((t) => (
-                  <li key={t} className="flex gap-2.5 rounded-xl bg-white/[0.05] px-3 py-2.5 text-[13px] leading-snug text-white/80">
-                    <Check className="mt-0.5 size-3.5 shrink-0 text-cane" aria-hidden />
-                    {t}
-                  </li>
-                ))}
-              </ul>
+              {liveRun?.a.level === "clear" ? (
+                <a
+                  href="#live"
+                  onClick={() => chooseMode("replay")}
+                  className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-white/[0.05] px-3 py-2.5 text-[13px] leading-snug text-white/80 transition-colors hover:bg-white/10"
+                >
+                  <span>No flooding this week. See the week Cyclone Cody hit Ba.</span>
+                  <ArrowRight className="size-4 shrink-0 text-cane" aria-hidden />
+                </a>
+              ) : (
+                <ul className="mt-4 space-y-2">
+                  {(liveRun ? PLAYBOOK[liveRun.a.level] : []).slice(0, 2).map((t) => (
+                    <li key={t} className="flex gap-2.5 rounded-xl bg-white/[0.05] px-3 py-2.5 text-[13px] leading-snug text-white/80">
+                      <Check className="mt-0.5 size-3.5 shrink-0 text-cane" aria-hidden />
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </aside>
         </div>
@@ -210,7 +259,7 @@ export default function App() {
               [`${DECADES.now.toFixed(1)}`, `days a year of 50 mm+ rain at Ba, 2015–24. It was ${DECADES.then.toFixed(1)} in the 1990s.`],
               ["450+ mm", "fell on Ba in 72 hours during Cyclone Cody, January 2022 (ERA5)."],
               ["SMS", "Alerts reach basic phones. No app, no data plan."],
-              ["2035", "COP31 target: climate education for everyone."],
+              ["2035", "COP31 Awareness & Education track: climate action education for all by 2035."],
             ].map(([v, l]) => (
               <div key={v} className="bg-ink/40 px-5 py-4">
                 <dt className="sr-only">{l}</dt>
@@ -295,22 +344,42 @@ export default function App() {
                 <Eyebrow n="03" dark>
                   Live field
                 </Eyebrow>
-                <h2 className="mt-6 font-display text-4xl tracking-tight lg:text-5xl">A 40 ha cane block on the Ba floodplain</h2>
+                <h2 className="mt-6 font-display text-4xl tracking-tight lg:text-5xl">
+                  {isDemo ? "A 40 ha cane block on the Ba floodplain" : r ? `Your ${r.a.areaHa.toFixed(1)} ha field` : "Your field"}
+                </h2>
                 <p className="mt-3 max-w-xl text-white/60">Real forecast, real elevation, the same model the SMS uses. Draw your own field to try it.</p>
               </div>
-              <Tabs value={mode} onValueChange={(v) => setMode(v as "live" | "replay")}>
-                <TabsList className="h-10 rounded-full bg-white/[0.07] p-1">
+              <div className="flex max-w-full flex-col items-start gap-2">
+              <Tabs value={mode} onValueChange={(v) => chooseMode(v as "live" | "replay")} className="max-w-full">
+                <TabsList className="h-10 max-w-full rounded-full bg-white/[0.07] p-1">
                   <TabsTrigger value="live" className="rounded-full px-4 text-white/60 data-active:bg-white data-active:text-ink">
                     This week
                   </TabsTrigger>
                   <TabsTrigger value="replay" className="rounded-full px-4 text-white/60 data-active:bg-white data-active:text-ink">
-                    Replay: {REPLAY.name}, Jan 2022
+                    Replay: {REPLAY.name}
+                    <span className="hidden sm:inline">, Jan 2022</span>
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
+              {liveRun?.a.level === "clear" && <p className="px-1 text-xs text-white/60">This week: no flooding expected on this field.</p>}
+              </div>
             </div>
 
-            {error && <p className="mt-6 rounded-xl border border-flood/40 bg-flood/10 px-4 py-3 text-sm">Couldn't load data: {error}. Check your connection and reload.</p>}
+            {error && (
+              <div role="alert" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-flood/40 bg-flood/10 px-4 py-3 text-sm">
+                <p>{error}</p>
+                <div className="flex gap-2">
+                  <button onClick={() => setAttempt((n) => n + 1)} className="rounded-full bg-white px-3.5 py-1.5 text-xs font-medium text-ink hover:bg-paper">
+                    Try again
+                  </button>
+                  {!isDemo && (
+                    <button onClick={() => setPoly(DEMO)} className="rounded-full border border-white/25 px-3.5 py-1.5 text-xs hover:bg-white/10">
+                      Back to demo block
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className={cn("mt-10 grid gap-4 transition-opacity lg:grid-cols-12", !r && "opacity-60")}>
               {/* Map */}
@@ -320,25 +389,31 @@ export default function App() {
                     poly={poly}
                     cells={r?.cells ?? []}
                     stepM={elev?.stepM ?? 30}
-                    high={r?.a.high}
+                    high={r && r.cells.length > 1 && r.a.high.depth < KNOBS.floodedDepth ? r.a.high : undefined}
                     draft={draft}
                     onMapClick={draft ? (p) => setDraft([...draft, p]) : undefined}
                   />
                 </div>
-                <div className="pointer-events-none absolute inset-x-3 top-3 z-[1000] flex justify-between gap-2">
-                  <div className="pointer-events-auto flex gap-2">
+                <div className="pointer-events-none absolute inset-x-3 top-3 z-[1000]">
+                  <div className="pointer-events-auto flex flex-wrap gap-2">
                     {!draft ? (
-                      <button onClick={() => setDraft([])} className="inline-flex items-center gap-1.5 rounded-full bg-ink/80 px-3.5 py-2 text-xs backdrop-blur hover:bg-ink">
+                      <button onClick={startDraft} className="inline-flex items-center gap-1.5 rounded-full bg-ink/80 px-3.5 py-2 text-xs backdrop-blur hover:bg-ink">
                         <PenLine className="size-3.5" aria-hidden /> Draw your field
                       </button>
                     ) : (
                       <>
-                        <span className="rounded-full bg-ink/80 px-3.5 py-2 text-xs backdrop-blur">Tap each corner · {draft.length} placed</span>
-                        <button
-                          onClick={finishDraft}
-                          disabled={draft.length < 3}
-                          className="rounded-full bg-cane px-3.5 py-2 text-xs font-medium text-ink disabled:opacity-40"
-                        >
+                        <span className="rounded-full bg-ink/80 px-3.5 py-2 text-xs backdrop-blur" aria-live="polite">
+                          {draft.length < 3 ? `Tap each corner of your field · ${draft.length} of 3+` : `${draft.length} corners · tap more or press Done`}
+                        </span>
+                        {draft.length > 0 && (
+                          <button onClick={() => setDraft(draft.slice(0, -1))} className="rounded-full bg-ink/80 px-3.5 py-2 text-xs backdrop-blur hover:bg-ink">
+                            Undo
+                          </button>
+                        )}
+                        <button onClick={cancelDraft} className="rounded-full bg-ink/80 px-3.5 py-2 text-xs backdrop-blur hover:bg-ink">
+                          Cancel
+                        </button>
+                        <button onClick={finishDraft} disabled={draft.length < 3} className="rounded-full bg-cane px-3.5 py-2 text-xs font-medium text-ink disabled:opacity-40">
                           Done
                         </button>
                       </>
@@ -349,29 +424,34 @@ export default function App() {
                       </button>
                     )}
                   </div>
+                  {draftError && (
+                    <p role="alert" className="pointer-events-auto mt-2 max-w-sm rounded-xl bg-flood px-3.5 py-2 text-xs text-white">
+                      {draftError}
+                    </p>
+                  )}
                 </div>
                 {/* Field readout, after dashboard.webp's overlay card */}
                 {r && !draft && (
                   <div className="absolute inset-x-3 bottom-3 z-[1000] rounded-2xl border border-white/10 bg-ink/75 p-4 backdrop-blur-md">
-                    <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
                       <div>
-                        <p className="text-[11px] text-white/50">Field</p>
+                        <p className="text-[11px] text-white/60">Field</p>
                         <p className="font-medium">{r.a.areaHa.toFixed(1)} ha</p>
                       </div>
                       <div>
-                        <p className="text-[11px] text-white/50">Low → high</p>
+                        <p className="text-[11px] text-white/60">Low → high</p>
                         <p className="font-medium">
                           {r.a.low.elev.toFixed(0)} → {r.a.high.elev.toFixed(0)} m
                         </p>
                       </div>
-                      <div>
-                        <p className="text-[11px] text-white/50">Legend</p>
+                      <div className="col-span-2 sm:col-span-1">
+                        <p className="text-[11px] text-white/60">Legend</p>
                         <p className="flex items-center gap-3 text-xs">
                           <span className="flex items-center gap-1">
-                            <i className="size-2.5 rounded-sm bg-flood" /> under water
+                            <i className="inline-block size-2.5 shrink-0 rounded-sm bg-flood" /> under water
                           </span>
                           <span className="flex items-center gap-1">
-                            <i className="size-2.5 rounded-sm bg-rain-soft" /> puddling
+                            <i className="inline-block size-2.5 shrink-0 rounded-sm bg-rain-soft" /> puddling
                           </span>
                         </p>
                       </div>
@@ -381,7 +461,7 @@ export default function App() {
               </div>
 
               {/* Risk */}
-              <RiskCard a={r?.a} mode={mode} onReplay={() => setMode("replay")} />
+              <RiskCard a={r?.a} mode={mode} onReplay={() => chooseMode("replay")} />
 
               {/* Rain chart */}
               <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 lg:col-span-5">
@@ -393,18 +473,19 @@ export default function App() {
               </div>
 
               {/* 7 days, after weather-idea-2 */}
-              <div className="grid grid-cols-4 gap-3 sm:grid-cols-7 lg:col-span-12">
+              <div className="-mx-6 flex snap-x gap-3 overflow-x-auto px-6 pb-1 sm:mx-0 sm:grid sm:grid-cols-7 sm:overflow-visible sm:px-0 lg:col-span-12">
                 {r?.w.daily.time.map((t, i) => {
                   const { Icon, label } = wx(r.w.daily.code[i])
-                  const wettest = r.w.daily.rain[i] === Math.max(...r.w.daily.rain)
+                  // Only call out a day that's actually wet, not the least-dry day of a dry week.
+                  const wettest = r.w.daily.rain[i] >= 10 && r.w.daily.rain[i] === Math.max(...r.w.daily.rain)
                   return (
-                    <div key={t} className={cn("rounded-3xl p-4 transition-colors", wettest ? "bg-rain-soft text-ink" : "border border-white/10 bg-white/[0.04]")}>
+                    <div key={t} className={cn("min-w-[6.5rem] shrink-0 snap-start rounded-3xl p-4 transition-colors sm:min-w-0", wettest ? "bg-rain-soft text-ink" : "border border-white/10 bg-white/[0.04]")}>
                       <p className={cn("text-sm", wettest ? "font-medium" : "text-white/70")}>{weekday(t)}</p>
-                      <p className={cn("font-mono text-[10px]", wettest ? "text-ink/60" : "text-white/40")}>{t.slice(5).replace("-", "/")}</p>
+                      <p className={cn("font-mono text-[11px]", wettest ? "text-ink/75" : "text-white/60")}>{shortDate(t)}{wettest && " · wettest"}</p>
                       <Icon className="my-4 size-7" aria-label={label} />
                       <p className="text-xl font-semibold">{r.w.daily.rain[i].toFixed(0)} mm</p>
-                      <p className={cn("text-xs", wettest ? "text-ink/60" : "text-white/45")}>
-                        {r.w.daily.temp[i].toFixed(0)}°{r.w.daily.prob ? ` · ${r.w.daily.prob[i]}%` : ""}
+                      <p className={cn("text-xs", wettest ? "text-ink/75" : "text-white/60")}>
+                        {r.w.daily.temp[i].toFixed(0)}°{r.w.daily.prob ? ` · ${r.w.daily.prob[i]}% rain` : ""}
                       </p>
                     </div>
                   )
@@ -413,7 +494,7 @@ export default function App() {
 
               {/* SMS */}
               <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 lg:col-span-5">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm text-white/60">The text the farmer gets</p>
                   <Tabs value={lang} onValueChange={(v) => setLang(v as string)}>
                     <TabsList className="h-8 rounded-full bg-white/[0.07] p-0.5">
@@ -427,10 +508,10 @@ export default function App() {
                 </div>
                 <div className="mx-auto mt-5 max-w-sm rounded-[2rem] border border-white/15 bg-[#0d1712] p-3">
                   <div className="rounded-[1.5rem] bg-[#16241c] p-4">
-                    <p className="text-center font-mono text-[10px] text-white/40">FarmShield · +679 SMS</p>
+                    <p className="text-center font-mono text-[11px] text-white/60">FarmShield · +679 SMS</p>
                     {lang === "en" ? (
                       <p className="mt-3 rounded-2xl rounded-tl-sm bg-white/10 p-3.5 text-[13px] leading-relaxed whitespace-pre-line text-white/90">
-                        {r ? smsText(r, mode === "replay") : "…"}
+                        {r ? smsText(r, mode === "replay", isDemo) : "…"}
                       </p>
                     ) : (
                       <p className="mt-3 rounded-2xl border border-dashed border-white/20 p-3.5 text-[13px] leading-relaxed text-white/60">
@@ -454,12 +535,12 @@ export default function App() {
                     ["Cane value", `${fjd(KNOBS.caneValuePerHa)}/ha`],
                   ].map(([k, v]) => (
                     <div key={k}>
-                      <dt className="text-[11px] tracking-wide text-white/45 uppercase">{k}</dt>
+                      <dt className="text-[11px] tracking-wide text-white/60 uppercase">{k}</dt>
                       <dd className="mt-1 tabular-nums">{v}</dd>
                     </div>
                   ))}
                 </dl>
-                <p className="mt-6 border-t border-white/10 pt-4 text-sm leading-relaxed text-white/55">
+                <p className="mt-6 border-t border-white/10 pt-4 text-sm leading-relaxed text-white/60">
                   Rain that doesn't soak in or drain away settles into the lowest cells first, like filling a bathtub with a lumpy floor. It's a simple
                   model on purpose. We tune these numbers against what the satellites saw during real floods (section 05), and every knob is listed here.
                 </p>
@@ -488,7 +569,8 @@ export default function App() {
                 <HeavyRainChart />
               </div>
               <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-                Source: ERA5 reanalysis via Open-Meteo, one ~25 km grid cell over Ba. Year-to-year swings are large and reanalysis rainfall carries
+                Blue bars are the two decades we compare. The years between are grey for context, not left out. Source: ERA5 reanalysis via
+                Open-Meteo, one ~25 km grid cell over Ba. Year-to-year swings are large and reanalysis rainfall carries
                 uncertainty. We use this as context for farmers, not as proof of a trend.
               </p>
             </div>
@@ -498,9 +580,9 @@ export default function App() {
         {/* ───────────── Validation ───────────── */}
         <section id="proof" className="border-t border-rule bg-paper-2">
           <div className="mx-auto max-w-7xl px-6 py-28">
-            <Eyebrow n="05">Does it work?</Eyebrow>
+            <Eyebrow n="05">How we'll validate</Eyebrow>
             <div className="mt-8 grid gap-10 lg:grid-cols-12">
-              <h2 className="font-display text-4xl leading-tight tracking-tight lg:col-span-6 lg:text-5xl">We check the model against what satellites saw.</h2>
+              <h2 className="font-display text-4xl leading-tight tracking-tight lg:col-span-6 lg:text-5xl">Next: check the model against what satellites saw.</h2>
               <p className="leading-relaxed text-muted-foreground lg:col-span-5 lg:col-start-8">
                 We replay the forecast from the days before Cyclone Cody, then lay FarmShield's predicted flood cells over Sentinel-1 radar images
                 (the EU's Copernicus satellites see through cloud). The question: would it have warned the right paddocks, early enough to act?
@@ -509,19 +591,19 @@ export default function App() {
             <div className="mt-12 grid gap-4 md:grid-cols-2">
               <div className="rounded-3xl border border-rule bg-card p-6">
                 <p className="font-mono text-xs tracking-wider text-muted-foreground uppercase">Predicted · FarmShield replay</p>
-                <p className="mt-4 text-5xl font-semibold">{replayRun ? `${replayRun.a.floodedHa.toFixed(0)} ha` : "–"}</p>
+                <p className="mt-4 text-5xl font-semibold">{replayRun ? `${replayRun.a.floodedHa.toFixed(1)} ha` : "–"}</p>
                 <p className="mt-2 text-muted-foreground">
-                  of the {replayRun?.a.areaHa.toFixed(0) ?? "–"} ha demo block flagged as under water from {replayRun ? `${replayRun.peak.total.toFixed(0)} mm` : "–"} of rain.
+                  of the {replayRun?.a.areaHa.toFixed(1) ?? "–"} ha demo block flagged as under water from {replayRun ? `${replayRun.peak.total.toFixed(0)} mm` : "–"} of rain.
                 </p>
-                <button onClick={() => { setMode("replay"); document.getElementById("live")?.scrollIntoView() }} className={cn(buttonVariants({ variant: "outline" }), "mt-6 rounded-full")}>
+                <button onClick={() => { chooseMode("replay"); document.getElementById("live")?.scrollIntoView({ behavior: "smooth" }) }} className={cn(buttonVariants({ variant: "outline" }), "mt-6 rounded-full")}>
                   See it on the map <ArrowRight aria-hidden />
                 </button>
               </div>
               <div className="flex flex-col justify-between rounded-3xl border border-dashed border-silt/50 p-6">
                 <div>
                   <p className="font-mono text-xs tracking-wider text-muted-foreground uppercase">Observed · Sentinel-1, Jan 2022</p>
-                  <p className="mt-4 text-xl font-medium">In progress</p>
-                  <p className="mt-2 text-muted-foreground">Processing the radar flood extent for the Ba floodplain. This panel will show the overlap score.</p>
+                  <p className="mt-4 text-xl font-medium">Coming next</p>
+                  <p className="mt-2 text-muted-foreground">We're processing the radar flood extent for the Ba floodplain. When it's ready, this panel shows how many flagged cells really flooded.</p>
                 </div>
                 <p className="mt-6 font-mono text-xs text-silt">Target: flag the paddocks that flooded at least 2 days before the peak.</p>
               </div>
@@ -538,7 +620,7 @@ export default function App() {
               ["Path to scale", "SMS-first, one playbook per crop and hazard, native-speaker translations. Built to run through Pacific extension services and partners like the EU–Pacific Green Blue Alliance."],
             ].map(([h, p]) => (
               <div key={h} className="border-t border-white/25 pt-5">
-                <p className="font-mono text-xs tracking-[0.16em] text-cane uppercase">{h}</p>
+                <p className="font-mono text-xs tracking-[0.16em] text-[#f0d27a] uppercase">{h}</p>
                 <p className="mt-3 text-lg leading-snug text-white/90">{p}</p>
               </div>
             ))}
@@ -550,10 +632,10 @@ export default function App() {
         <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 text-sm md:grid-cols-12">
           <div className="md:col-span-4">
             <Logo light />
-            <p className="mt-4 max-w-xs leading-relaxed">Built from scratch at Climate Hack-tion 2026, 2–4 October. Team: names and roles go here.</p>
+            <p className="mt-4 max-w-xs leading-relaxed">Built from scratch at Climate Hack-tion 2026, 2–4 October. Team Pixelers: Peter Ma, Siddhant Malik and Adin Sreekesh.</p>
           </div>
           <div className="md:col-span-4">
-            <p className="font-mono text-xs tracking-wider text-white/40 uppercase">Data</p>
+            <p className="font-mono text-xs tracking-wider text-white/60 uppercase">Data</p>
             <ul className="mt-3 space-y-1.5">
               <li>Forecast, ERA5 archive, elevation: Open-Meteo (CC BY 4.0)</li>
               <li>Elevation model: Copernicus GLO-90 DEM</li>
@@ -561,7 +643,7 @@ export default function App() {
             </ul>
           </div>
           <div className="md:col-span-4">
-            <p className="font-mono text-xs tracking-wider text-white/40 uppercase">Photos (Unsplash)</p>
+            <p className="font-mono text-xs tracking-wider text-white/60 uppercase">Photos (Unsplash)</p>
             <ul className="mt-3 space-y-1.5">
               <li>Storm over field: Troy Olson</li>
               <li>Flooded farmland: insung yoon</li>
@@ -582,13 +664,22 @@ function RiskCard({ a, mode, onReplay }: { a?: Assessment; mode: "live" | "repla
         {a && <StatusPill level={a.level} />}
       </div>
       <div className="mt-6">
-        <p className="text-6xl font-semibold tracking-tight">{a ? `${a.floodedHa.toFixed(1)} ha` : "–"}</p>
-        <p className="mt-2 text-muted-foreground">{a ? `of ${a.areaHa.toFixed(1)} ha · deepest ~${a.maxDepth.toFixed(1)} m` : "Loading field…"}</p>
+        {a?.level === "clear" ? (
+          <>
+            <p className="font-display text-5xl tracking-tight">Nothing goes under.</p>
+            <p className="mt-2 text-muted-foreground">{`All ${a.areaHa.toFixed(1)} ha should drain this week.`}</p>
+          </>
+        ) : (
+          <>
+            <p className="text-6xl font-semibold tracking-tight">{a ? `${a.floodedHa.toFixed(1)} ha` : "–"}</p>
+            <p className="mt-2 text-muted-foreground">{a ? `of ${a.areaHa.toFixed(1)} ha · deepest ~${a.maxDepth.toFixed(1)} m` : "Loading field…"}</p>
+          </>
+        )}
       </div>
       <div className="mt-6 flex items-end justify-between border-t border-rule pt-4">
         <div>
           <p className="text-xs text-muted-foreground">Cane at risk</p>
-          <p className="text-2xl font-semibold">{a ? fjd(a.valueAtRisk) : "–"}</p>
+          <p className="text-2xl font-semibold">{a ? (a.valueAtRisk > 0 ? fjd(a.valueAtRisk) : "None") : "–"}</p>
         </div>
         {a?.level === "clear" && mode === "live" ? (
           <button onClick={onReplay} className="inline-flex items-center gap-1 text-sm font-medium text-leaf hover:underline">
