@@ -1,6 +1,6 @@
 // Run: node src/lib/flood.check.ts
 import assert from "node:assert/strict"
-import { assess, floodDepths, gridInPolygon, inPolygon, maxRolling, type LatLng } from "./flood.ts"
+import { assess, floodDepths, gridInPolygon, inPolygon, KNOBS, maxRolling, type LatLng } from "./flood.ts"
 
 const square: LatLng[] = [[0, 0], [0, 1], [1, 1], [1, 0]]
 assert.equal(inPolygon([0.5, 0.5], square), true)
@@ -28,3 +28,19 @@ assert.equal(a.floodedHa, 1)
 assert.equal(a.high.elev, 9)
 
 console.log("flood model: ok")
+
+// River: stays in its banks up to the 2-year flood, then rises with √Q.
+import { levelFor, riverDepths, riverStage } from "./flood.ts"
+const ba = { q2: 400, q5: 750, h0: 0.5, k: 0.3 }
+assert.equal(riverStage(100, ba), 0)
+assert.equal(riverStage(400, ba), 0)
+assert.ok(riverStage(900, ba) > riverStage(500, ba) && riverStage(500, ba) > 0.5)
+assert.deepEqual(riverDepths([0, 1, 5], 2), [2, 1, 0])
+assert.equal(levelFor([0, 0, 0]), "clear")
+assert.equal(levelFor([1, ...Array(19).fill(0)]), "watch")
+assert.equal(levelFor([1, 1, 0]), "act")
+// Farm value only counts farmland cells (WorldCover 30/40), not houses (50).
+const b = assess([{ lat: 0, lng: 0, elev: 1, depth: 1, land: 50 }, { lat: 0, lng: 0, elev: 1, depth: 1, land: 40 }], 100)
+assert.equal(b.floodedHa, 2)
+assert.equal(b.valueAtRisk, KNOBS.caneValuePerHa)
+console.log("river model: ok")

@@ -8,6 +8,9 @@ export type Weather = {
   daily: { time: string[]; rain: number[]; temp: number[]; code: number[]; prob?: number[] }
 }
 
+/** Ba River discharge (m³/s) per day; `members` are the GloFAS ensemble runs, forecast only. */
+export type Flow = { time: string[]; q: number[]; members?: number[][] }
+
 const HOUR = 3_600_000
 
 /**
@@ -53,6 +56,24 @@ export async function getWeather([lat, lng]: LatLng, replay: boolean): Promise<W
       prob: d.daily.precipitation_probability_max,
     },
   }
+}
+
+/** The Cyclone Cody replay, shipped with the site (scripts/build_ba_data.py) so the demo never waits on an API. */
+export async function getCodyReplay(): Promise<{ weather: Weather; flow: Flow }> {
+  const d = await fetch("/data/ba/cody.json").then((r) => r.json())
+  return { weather: d, flow: { time: d.daily.time, q: d.daily.discharge } }
+}
+
+/** GloFAS v4 river discharge forecast, 7 days, with its 50-member ensemble (Copernicus EMS via Open-Meteo). */
+export async function getFlowForecast([lat, lng]: LatLng): Promise<Flow> {
+  const url = `https://flood-api.open-meteo.com/v1/flood?latitude=${lat}&longitude=${lng}&daily=river_discharge&forecast_days=7&ensemble=true`
+  const d = await cachedJson(url, HOUR, (s) =>
+    s === 429 ? "The river forecast service is busy right now. Wait a minute, then try again." : `The river forecast returned an error (${s}). Try again in a minute.`,
+  )
+  const members = Object.keys(d.daily)
+    .filter((k) => k.startsWith("river_discharge_member"))
+    .map((k) => d.daily[k] as number[])
+  return { time: d.daily.time, q: d.daily.river_discharge, members }
 }
 
 /** Copernicus GLO-90 DEM via Open-Meteo. Max 100 points per call. */

@@ -2,13 +2,14 @@
 
 export type LatLng = [number, number]
 
-export type Cell = { lat: number; lng: number; elev: number; depth: number }
+/** hand = height above the Ba River (m); land = ESA WorldCover class. Both only inside the Ba data region. */
+export type Cell = { lat: number; lng: number; elev: number; depth: number; hand?: number; land?: number }
 
 export type Level = "clear" | "watch" | "act"
 
 const M_PER_DEG = 111_320
 
-// Calibration knobs. Tune these against the Sentinel-1 backtest, not by feel.
+// Rain-pooling knobs. The river side is calibrated from data in scripts/build_ba_data.py (see River).
 export const KNOBS = {
   /** Share of rain on the field + upslope that ends up pooling on it (runoff coeff × catchment ratio). */
   pooling: 1.8,
@@ -30,8 +31,8 @@ export function inPolygon([lat, lng]: LatLng, poly: LatLng[]): boolean {
   return inside
 }
 
-/** Regular grid of points inside the polygon, coarsened until it fits one elevation API call (100 points). */
-export function gridInPolygon(poly: LatLng[], stepM = 30): { points: LatLng[]; stepM: number } {
+/** Regular grid of points inside the polygon, coarsened until it fits `max` points (100 = one elevation API call). */
+export function gridInPolygon(poly: LatLng[], stepM = 30, max = 100): { points: LatLng[]; stepM: number } {
   const lats = poly.map((p) => p[0])
   const lngs = poly.map((p) => p[1])
   const [minLat, maxLat, minLng, maxLng] = [Math.min(...lats), Math.max(...lats), Math.min(...lngs), Math.max(...lngs)]
@@ -43,7 +44,7 @@ export function gridInPolygon(poly: LatLng[], stepM = 30): { points: LatLng[]; s
     for (let lat = minLat + dLat / 2; lat < maxLat; lat += dLat)
       for (let lng = minLng + dLng / 2; lng < maxLng; lng += dLng)
         if (inPolygon([lat, lng], poly)) points.push([lat, lng])
-    if (points.length <= 100) return { points, stepM }
+    if (points.length <= max) return { points, stepM }
     stepM *= 1.15
   }
 }
@@ -86,19 +87,48 @@ export function floodDepths(
   return elevs.map((e) => Math.max(0, hi - e))
 }
 
+/** Calibrated in scripts/build_ba_data.py from 40 years of GloFAS flow and two recorded facts; shipped in meta.json. */
+export type River = { q2: number; q5: number; h0: number; k: number }
+
+/**
+ * How far the Ba River rises over its normal level (m) at a discharge (m³/s).
+ * Below the 2-year flood it stays in its banks; above that the level grows with √Q, a standard rating-curve shape.
+ */
+export function riverStage(q: number, r: River): number {
+  return q <= r.q2 ? 0 : r.h0 + r.k * (Math.sqrt(q) - Math.sqrt(r.q2))
+}
+
+/** River water reaches every cell that sits lower than the river level (HAND = height above the river). */
+export function riverDepths(hands: number[], stage: number): number[] {
+  return hands.map((h) => Math.max(0, stage - h))
+}
+
+// WorldCover often maps sugarcane as grassland (30) rather than cropland (40), so both count as farmland.
+const FARMLAND = new Set([30, 40])
+
+const levelOf = (flooded: number, total: number): Level => (flooded === 0 ? "clear" : flooded / total < 0.1 ? "watch" : "act")
+
+/** The level a set of depths would trigger, for scoring forecast ensemble members. */
+export function levelFor(depths: number[]): Level {
+  return levelOf(depths.filter((d) => d >= KNOBS.floodedDepth).length, depths.length)
+}
+
 export function assess(cells: Cell[], stepM: number) {
   const cellHa = (stepM * stepM) / 10_000
   const flooded = cells.filter((c) => c.depth >= KNOBS.floodedDepth)
   const share = cells.length ? flooded.length / cells.length : 0
-  const level: Level = flooded.length === 0 ? "clear" : share < 0.1 ? "watch" : "act"
-  const high = cells.reduce((a, c) => (c.elev > a.elev ? c : a), cells[0])
-  const low = cells.reduce((a, c) => (c.elev < a.elev ? c : a), cells[0])
+  const level = levelOf(flooded.length, cells.length)
+  // Height above the river is what matters for parking machinery, when we have it.
+  const h = (c: Cell) => c.hand ?? c.elev
+  const high = cells.reduce((a, c) => (h(c) > h(a) ? c : a), cells[0])
+  const low = cells.reduce((a, c) => (h(c) < h(a) ? c : a), cells[0])
+  const farm = (c: Cell) => c.land === undefined || FARMLAND.has(c.land)
   return {
     level,
     share,
     areaHa: cells.length * cellHa,
     floodedHa: flooded.length * cellHa,
-    valueAtRisk: flooded.length * cellHa * KNOBS.caneValuePerHa,
+    valueAtRisk: flooded.filter(farm).length * cellHa * KNOBS.caneValuePerHa,
     maxDepth: Math.max(0, ...cells.map((c) => c.depth)),
     high,
     low,

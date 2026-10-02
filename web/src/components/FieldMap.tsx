@@ -42,7 +42,7 @@ export function FieldMap(props: {
       <ZoomControl position="topright" />
       <TileLayer
         url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-        attribution="Imagery © Esri, Maxar, Earthstar Geographics · Elevation: Copernicus DEM via Open-Meteo"
+        attribution="Imagery © Esri, Maxar, Earthstar Geographics · Elevation: Copernicus DEM · Land: ESA WorldCover · River: GloFAS"
         maxZoom={18}
       />
       <Fit poly={poly} />

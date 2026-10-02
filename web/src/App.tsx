@@ -109,7 +109,7 @@ export default function App() {
       <footer className="border-t border-rule">
         <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-4 px-6 py-8 text-sm text-muted-foreground">
           <p>Team Pixelers · Peter Ma, Siddhant Malik, Adin Sreekesh · Climate Hack-tion 2026</p>
-          <p>Data: Open-Meteo, Copernicus, Esri · Photos: Unsplash (Troy Olson, insung yoon, Christine Walker)</p>
+          <p>Data: Copernicus (DEM, Sentinel-1, GloFAS, ERA5), ESA WorldCover, Open-Meteo, Esri · Photos: Unsplash (Troy Olson, insung yoon, Christine Walker)</p>
         </div>
       </footer>
     </div>
@@ -211,7 +211,7 @@ function How() {
         <ol className="mt-12">
           {[
             ["Mark your field", "Tap its corners on a satellite map. Once."],
-            ["We match land to rain", "Elevation finds the low ground. The forecast says how much is coming."],
+            ["We match land to river and rain", "We know how high every part of the field sits above the Ba River. River and rain forecasts say how high the water will go."],
             ["You get a text", "What to move, where to park, and why it's happening."],
           ].map(([h, p], i) => (
             <li key={h} className="grid grid-cols-[3.5rem_1fr] border-t border-rule py-8">
@@ -248,36 +248,98 @@ function Why() {
   )
 }
 
+const LEVEL = { act: ["Act today", "bg-flood text-white"], watch: ["Watch", "bg-cane text-ink"], missed: ["Missed", "border border-rule text-muted-foreground"] } as const
+
+const monthYear = (iso: string) => new Date(iso).toLocaleDateString("en-AU", { month: "short", year: "numeric" })
+
 function Proof({ farm }: { farm: Farm }) {
   const r = farm.replayRun
+  const m = farm.meta
+  const major = m?.record.filter((e) => e.peak >= m.river.q5) ?? []
+  const caught = m?.record.filter((e) => e.level !== "missed").length ?? 0
   return (
     <section className="mx-auto max-w-5xl px-6 py-16">
-      <h1 className="font-display text-5xl">How we'll validate</h1>
-      <p className="mt-4 text-muted-foreground">Next: compare the Cyclone Cody replay with Sentinel-1 satellite flood maps.</p>
-      <div className="mt-12 grid gap-4 md:grid-cols-2">
+      <h1 className="font-display text-5xl leading-tight">Does it work?</h1>
+      <p className="mt-4 max-w-2xl text-muted-foreground">
+        We can't wait for the next flood, so we replayed the record. Every major Ba River flood on file shows up in the river data, and the
+        model would have said "Act today" for each one.
+      </p>
+
+      <div className="mt-12 grid gap-4 md:grid-cols-3">
+        <div className="rounded-3xl bg-ink p-6 text-white">
+          <p className="text-sm text-white/60">Major recorded floods caught</p>
+          <p className="mt-4 text-5xl font-semibold">{m ? `${major.filter((e) => e.level === "act").length} of ${major.length}` : "–"}</p>
+          <p className="mt-2 text-sm text-white/60">{m ? `${caught} of ${m.record.length} recorded floods at Act or Watch` : ""}</p>
+        </div>
         <div className="rounded-3xl border border-rule bg-card p-6">
-          <p className="text-sm text-muted-foreground">Predicted by Draki</p>
+          <p className="text-sm text-muted-foreground">Cyclone Cody, demo block</p>
           <p className="mt-4 text-5xl font-semibold">{r ? `${r.a.floodedHa.toFixed(1)} ha` : "–"}</p>
-          <p className="mt-2 text-muted-foreground">of {r?.a.areaHa.toFixed(1) ?? "–"} ha under water</p>
-          <a href="#/live?replay" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-leaf hover:underline">
+          <p className="mt-2 text-sm text-muted-foreground">
+            of {r?.a.areaHa.toFixed(1) ?? "–"} ha under water{r?.river ? `, river ${r.river.stage.toFixed(1)} m above normal` : ""}
+          </p>
+          <a href="#/live?replay" className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-leaf hover:underline">
             See it on the map <ArrowRight className="size-4" aria-hidden />
           </a>
         </div>
-        <div className="rounded-3xl border border-dashed border-silt/50 p-6">
-          <p className="text-sm text-muted-foreground">Observed by Sentinel-1</p>
-          <p className="mt-4 text-5xl font-semibold text-muted-foreground/50">Coming next</p>
-          <p className="mt-2 text-muted-foreground">Radar flood extent, January 2022</p>
+        <div className="rounded-3xl border border-rule bg-card p-6">
+          <p className="text-sm text-muted-foreground">Sentinel-1 satellite, {m ? new Date(m.sentinel1.after).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "11 Jan"}</p>
+          <p className="mt-4 text-5xl font-semibold">{m ? `${m.sentinel1.newWaterHa} ha` : "–"}</p>
+          <p className="mt-2 text-sm text-muted-foreground">of open floodwater left, 2.5 days after Cody's peak. Ba's floods drain before a satellite returns. A forecast has to warn first.</p>
         </div>
       </div>
-      <h2 className="mt-20 text-2xl">Model settings</h2>
-      <dl className="mt-6 grid gap-x-10 gap-y-4 sm:grid-cols-3">
+
+      <h2 className="mt-20 text-2xl">Every recorded Ba flood we could source</h2>
+      <div className="mt-6 overflow-x-auto">
+        <table className="w-full min-w-[36rem] text-left text-sm">
+          <thead className="text-muted-foreground">
+            <tr className="border-b border-rule">
+              <th className="py-3 pr-4 font-normal">When</th>
+              <th className="py-3 pr-4 font-normal">What happened</th>
+              <th className="py-3 pr-4 text-right font-normal">River peak</th>
+              <th className="py-3 font-normal">Draki river alert</th>
+            </tr>
+          </thead>
+          <tbody>
+            {m?.record.map((e) => (
+              <tr key={e.start} className="border-b border-rule">
+                <td className="py-3 pr-4 whitespace-nowrap">{monthYear(e.start)}</td>
+                <td className="py-3 pr-4">
+                  {e.name}
+                  <span className="block text-xs text-muted-foreground">{e.source}</span>
+                </td>
+                <td className="py-3 pr-4 text-right whitespace-nowrap tabular-nums">{e.peak.toLocaleString("en-AU")} m³/s</td>
+                <td className="py-3">
+                  <span className={cn("inline-block rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap", LEVEL[e.level][1])}>{LEVEL[e.level][0]}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {m && (
+        <p className="mt-4 max-w-3xl text-sm text-muted-foreground">
+          In the two misses the Ba River itself stayed low, so the water likely came from creeks or heavy local rain instead. We haven't confirmed that. Those are the floods the rain-pooling half of the model is meant to catch. Since 2009 the
+          river also crossed the Act line {m.unmatchedAlarms.length} times with no flood we could find a record of (
+          {m.unmatchedAlarms.map(monthYear).join(", ")}). Some of those may be floods that never made the news; we haven't checked yet.
+        </p>
+      )}
+
+      <h2 className="mt-20 text-2xl">How the model works</h2>
+      <p className="mt-4 max-w-3xl text-muted-foreground">
+        Ba floods when the Ba River overtops its banks. For every 30 m square of a field we know how high it sits above the river. When the
+        forecast river flow pushes the water higher than that, the square floods. Heavy local rain can also pool in the low spots.
+      </p>
+      <dl className="mt-8 grid gap-x-10 gap-y-4 sm:grid-cols-3">
         {[
-          ["Soaks in or drains", `${KNOBS.absorbedMm} mm`],
-          ["Pooling factor", `× ${KNOBS.pooling}`],
+          ["River stays in its banks up to", m ? `${m.river.q2} m³/s (2-year flood)` : "–"],
+          ["Act today from", m ? `${m.river.q5} m³/s (5-year flood)` : "–"],
+          ["River level above normal", m ? `${m.river.h0} m + ${m.river.k} × (√flow − √${m.river.q2})` : "–"],
+          ["Tuned on", "Ba Town's streets flooding in Cody"],
           ["Counts as flooded", `${KNOBS.floodedDepth} m deep`],
           ["Cane value", `${fjd(KNOBS.caneValuePerHa)}/ha`],
-          ["Elevation", "Copernicus 90 m"],
-          ["Rain window", "72 hours"],
+          ["Elevation", "Copernicus GLO-30, 30 m"],
+          ["Land cover", "ESA WorldCover, 10 m"],
+          ["River flow", "GloFAS v4, 1984–today"],
         ].map(([k, v]) => (
           <div key={k} className="border-t border-rule pt-3">
             <dt className="text-sm text-muted-foreground">{k}</dt>
@@ -285,6 +347,11 @@ function Proof({ farm }: { farm: Farm }) {
           </div>
         ))}
       </dl>
+      <p className="mt-8 max-w-3xl text-sm text-muted-foreground">
+        Limits we know about: the elevation model measures the top of crops and roofs, not bare ground; height above the river is measured in a
+        straight line, not along how water actually flows; and the river level curve rests on one tuning point. Each would sharpen with Fiji LiDAR
+        and a river gauge record.
+      </p>
     </section>
   )
 }

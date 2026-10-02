@@ -3,8 +3,9 @@ import { AlertTriangle, ArrowRight, Check, Eye, PenLine, RotateCcw } from "lucid
 import { FieldMap } from "@/components/FieldMap"
 import { DECADES, RainBars, wx } from "@/components/weather"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { getElevations, getWeather, REPLAY, type Weather } from "@/lib/api"
-import { assess, floodDepths, gridInPolygon, KNOBS, maxRolling, PLAYBOOK, type Assessment, type Cell, type LatLng, type Level } from "@/lib/flood"
+import { getCodyReplay, getElevations, getFlowForecast, getWeather, REPLAY, type Flow, type Weather } from "@/lib/api"
+import { assess, floodDepths, gridInPolygon, KNOBS, levelFor, maxRolling, PLAYBOOK, riverDepths, riverStage, type Assessment, type Cell, type LatLng, type Level, type River } from "@/lib/flood"
+import { covers, loadRegion, sample, type Meta } from "@/lib/region"
 import { cn } from "@/lib/utils"
 
 // Demo block: cane farms on the east bank of the Ba River, just north of Ba town.
@@ -17,14 +18,33 @@ export const fjd = (v: number) => `F$${(Math.round(v / 100) * 100).toLocaleStrin
 const dateLabel = (iso: string) => new Date(iso).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })
 const weekday = (iso: string) => new Date(iso).toLocaleDateString("en-AU", { weekday: "short" })
 
-type Elev = { points: LatLng[]; stepM: number; e: number[] }
+type Elev = { points: LatLng[]; stepM: number; e: number[]; hand?: number[]; land?: number[] }
 
-function run(w: Weather | undefined, elev: Elev | undefined) {
+const flowLabel = (q: number) => `${q < 10 ? q.toFixed(1) : Math.round(q).toLocaleString("en-AU")} m³/s`
+
+const peakQ = (q: (number | null)[]) => Math.max(0, ...q.map((v) => v ?? 0))
+
+/** Rain pooling everywhere; plus the Ba River rising over the field when we have its height above the river. */
+function run(w: Weather | undefined, elev: Elev | undefined, flow?: Flow, cal?: River) {
   if (!w || !elev) return undefined
   const peak = maxRolling(w.hourly.rain)
-  const depths = floodDepths(elev.e, elev.stepM ** 2, peak.total)
-  const cells: Cell[] = elev.points.map(([lat, lng], i) => ({ lat, lng, elev: elev.e[i], depth: depths[i] }))
-  return { peak, cells, a: assess(cells, elev.stepM), w }
+  const rain = floodDepths(elev.e, elev.stepM ** 2, peak.total)
+  let depths = rain
+  let river: { q: number; day: string; stage: number; cal: River; odds?: { flood: number; act: number; n: number } } | undefined
+  if (flow && cal && elev.hand) {
+    const hand = elev.hand
+    const withRiver = (q: number) => riverDepths(hand, riverStage(q, cal)).map((d, i) => Math.max(d, rain[i]))
+    const q = peakQ(flow.q)
+    depths = withRiver(q)
+    river = { q, day: flow.time[flow.q.indexOf(q)] ?? flow.time[0], stage: riverStage(q, cal), cal }
+    // Forecast confidence: run the field once per GloFAS ensemble member.
+    if (flow.members?.length) {
+      const levels = flow.members.map((m) => levelFor(withRiver(peakQ(m))))
+      river.odds = { flood: levels.filter((l) => l !== "clear").length, act: levels.filter((l) => l === "act").length, n: levels.length }
+    }
+  }
+  const cells: Cell[] = elev.points.map(([lat, lng], i) => ({ lat, lng, elev: elev.e[i], depth: depths[i], hand: elev.hand?.[i], land: elev.land?.[i] }))
+  return { peak, cells, a: assess(cells, elev.stepM), w, river }
 }
 
 type Run = NonNullable<ReturnType<typeof run>>
@@ -34,28 +54,56 @@ export function useFarm() {
   const [poly, setPoly] = useState<LatLng[]>(DEMO)
   const [live, setLive] = useState<Weather>()
   const [replay, setReplay] = useState<Weather>()
+  const [liveFlow, setLiveFlow] = useState<Flow>()
+  const [replayFlow, setReplayFlow] = useState<Flow>()
   const [elev, setElev] = useState<Elev>()
+  const [meta, setMeta] = useState<Meta>()
   const [error, setError] = useState<string>()
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
+    let stale = false
     const center: LatLng = [poly.reduce((s, p) => s + p[0], 0) / poly.length, poly.reduce((s, p) => s + p[1], 0) / poly.length]
-    const fail = (e: unknown) =>
-      setError(e instanceof TypeError ? "We couldn't reach the weather service. Check your connection and try again." : (e as Error).message)
+    const fail = (e: unknown) => {
+      if (!stale) setError(e instanceof TypeError ? "We couldn't reach the weather service. Check your connection and try again." : (e as Error).message)
+    }
     // Drop the old field's numbers so nothing stale shows while (or if) the new one loads.
     setError(undefined)
     setLive(undefined)
     setReplay(undefined)
+    setLiveFlow(undefined)
+    setReplayFlow(undefined)
     setElev(undefined)
-    getWeather(center, false).then(setLive).catch(fail)
-    getWeather(center, true).then(setReplay).catch(fail)
-    const { points, stepM } = gridInPolygon(poly)
-    getElevations(points).then((e) => setElev({ points, stepM, e })).catch(fail)
+    getWeather(center, false).then((w) => !stale && setLive(w)).catch(fail)
+    loadRegion()
+      .catch(() => undefined) // no region data: rain-only everywhere
+      .then((region) => {
+        if (stale) return
+        setMeta(region?.meta)
+        if (region && covers(region, poly)) {
+          // Ba floodplain: 30 m grid from the shipped data, river model on, Cody replay from static files.
+          const { points, stepM } = gridInPolygon(poly, 30, 2500)
+          const s = points.map((p) => sample(region, p))
+          setElev({ points, stepM, e: s.map((x) => x.elev), hand: s.map((x) => x.hand), land: s.map((x) => x.land) })
+          getCodyReplay()
+            .then(({ weather, flow }) => !stale && (setReplay(weather), setReplayFlow(flow)))
+            .catch(fail)
+          getFlowForecast(region.meta.glofas).then((f) => !stale && setLiveFlow(f)).catch(fail)
+        } else {
+          getWeather(center, true).then((w) => !stale && setReplay(w)).catch(fail)
+          const { points, stepM } = gridInPolygon(poly)
+          getElevations(points).then((e) => !stale && setElev({ points, stepM, e })).catch(fail)
+        }
+      })
+    return () => {
+      stale = true
+    }
   }, [poly, attempt])
 
-  const liveRun = useMemo(() => run(live, elev), [live, elev])
-  const replayRun = useMemo(() => run(replay, elev), [replay, elev])
-  return { poly, setPoly, elev, error, liveRun, replayRun, retry: () => setAttempt((n) => n + 1), isDemo: poly === DEMO }
+  const cal = elev?.hand ? meta?.river : undefined
+  const liveRun = useMemo(() => run(live, elev, liveFlow, cal), [live, elev, liveFlow, cal])
+  const replayRun = useMemo(() => run(replay, elev, replayFlow, cal), [replay, elev, replayFlow, cal])
+  return { poly, setPoly, elev, meta, error, liveRun, replayRun, retry: () => setAttempt((n) => n + 1), isDemo: poly === DEMO }
 }
 
 export type Farm = ReturnType<typeof useFarm>
@@ -76,17 +124,19 @@ function StatusPill({ level }: { level: Level }) {
   )
 }
 
-function smsText({ a, peak, w }: Run, replay: boolean, demo: boolean) {
-  const from = w.hourly.time[peak.start]
+function smsText({ a, peak, w, river }: Run, replay: boolean, demo: boolean) {
+  const from = river && river.stage > 0 ? river.day : w.hourly.time[peak.start]
+  const odds = !replay && river?.odds ? ` (${Math.round((100 * river.odds.flood) / river.odds.n)}% chance)` : ""
   const head = {
-    act: `FLOOD RISK HIGH from ${dateLabel(from)}`,
-    watch: `Wet spell from ${dateLabel(from)}`,
+    act: `FLOOD RISK HIGH from ${dateLabel(from)}${odds}`,
+    watch: `Flood watch from ${dateLabel(from)}${odds}`,
     clear: "No flooding expected this week",
   }[a.level]
+  const riverLine = river && river.stage > 0 ? `Ba River rising ~${river.stage.toFixed(1)} m above normal. ` : ""
   const body =
     a.level === "clear"
       ? `Up to ${peak.total.toFixed(0)} mm of rain in 3 days. Your field should drain fine.`
-      : `${peak.total.toFixed(0)} mm of rain in 72 h. Your low ground could sit under ~${a.maxDepth.toFixed(1)} m of water. About ${a.floodedHa.toFixed(0)} ha of cane, ${fjd(a.valueAtRisk)}.`
+      : `${riverLine}${peak.total.toFixed(0)} mm of rain in 72 h. Your low ground could sit under ~${a.maxDepth.toFixed(1)} m of water. About ${a.floodedHa.toFixed(0)} ha of cane, ${fjd(a.valueAtRisk)}.`
   return [
     `Draki · ${demo ? "Ba block" : "your field"}${replay ? " (replay)" : ""}`,
     head,
@@ -219,7 +269,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
             )}
           </div>
 
-          <RiskCard a={r?.a} onReplay={mode === "live" ? () => setMode("replay") : undefined} />
+          <RiskCard r={r} live={mode === "live"} onReplay={mode === "live" ? () => setMode("replay") : undefined} />
 
           <div className={cn(card, "lg:col-span-5")}>
             <div className="flex items-baseline justify-between">
@@ -284,7 +334,9 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
   )
 }
 
-function RiskCard({ a, onReplay }: { a?: Assessment; onReplay?: () => void }) {
+function RiskCard({ r, live, onReplay }: { r?: Run; live: boolean; onReplay?: () => void }) {
+  const a: Assessment | undefined = r?.a
+  const river = r?.river
   return (
     <div className="flex flex-col justify-between rounded-3xl bg-paper p-6 text-ink lg:col-span-5">
       <div className="flex items-start justify-between">
@@ -294,6 +346,14 @@ function RiskCard({ a, onReplay }: { a?: Assessment; onReplay?: () => void }) {
       <p className={cn("mt-6 text-5xl tracking-tight", a?.level === "clear" ? "font-display" : "font-semibold")}>
         {!a ? "–" : a.level === "clear" ? "Nothing goes under." : `${a.floodedHa.toFixed(1)} ha`}
       </p>
+      {river && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          {river.stage > 0
+            ? `Ba River peaks at ${flowLabel(river.q)}, ~${river.stage.toFixed(1)} m above normal.`
+            : `Ba River stays in its banks (peak ${flowLabel(river.q)}).`}
+          {live && river.odds && ` ${river.odds.flood} of ${river.odds.n} forecast runs flood this field.`}
+        </p>
+      )}
       <div className="mt-6 flex items-end justify-between border-t border-rule pt-4">
         <div>
           <p className="text-sm text-muted-foreground">Cane at risk</p>
