@@ -65,7 +65,7 @@ export function FarmPage({ farm }: { farm: Farm }) {
     setProfileState(p)
     save(p)
   }
-  // The flood model always runs on the farm the grower marked.
+  // The flood model always runs on the farm the farmer marked.
   useEffect(() => {
     if (profile && profile.boundary.length >= 3 && JSON.stringify(profile.boundary) !== JSON.stringify(farm.poly)) farm.setPoly(profile.boundary)
   }, [profile?.boundary]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -129,7 +129,7 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
     setError(undefined)
     setStep(n)
   }
-  // Keep the map still while the grower taps: frame the farm once it exists, otherwise the lower Richmond demo area.
+  // Keep the map still while the farmer taps: frame the farm once it exists, otherwise the lower Richmond demo area.
   const view = profile.boundary.length >= 3 ? profile.boundary : DEMO
 
   const onMapClick = (p: LatLng) => {
@@ -686,7 +686,7 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
 
 const centre = (poly: LatLng[]): LatLng => [poly.reduce((a, p) => a + p[0], 0) / poly.length, poly.reduce((a, p) => a + p[1], 0) / poly.length]
 
-/** This week's weather at the farm: what a grower checks every day. */
+/** This week's weather at the farm: what a farmer checks every day. */
 function Week({ farm }: { farm: Farm }) {
   const r = farm.liveRun
   const day = (iso: string, i: number) => (i === 0 ? "Today" : new Date(iso).toLocaleDateString("en-AU", { weekday: "short" }))

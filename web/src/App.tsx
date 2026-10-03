@@ -163,7 +163,7 @@ function Home({ farm }: { farm: Farm }) {
             Flood warnings cover districts. <span className="text-flood">Floods hit paddocks.</span>
           </h2>
           <p className="mt-8 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            A flood warning for the whole Richmond valley can't tell a grower that the bottom of their block goes under first. Draki works it out for
+            A flood warning for the whole Richmond valley can't tell a farmer that the bottom of their block goes under first. Draki works it out for
             one field: how high each 30 m of ground sits above the river, how high the river is forecast to rise, and what to move before it does.
           </p>
           <a href="#/farm" className="mt-8 inline-flex items-center gap-2 font-medium text-leaf hover:underline">
@@ -173,7 +173,7 @@ function Home({ farm }: { farm: Farm }) {
         <figure className="md:col-span-5">
           <Phone {...(r ? smsText(r, true, farm.isDemo) : { msgs: [] })} empty="…" />
           <figcaption className="mx-auto mt-4 max-w-[22rem] text-center text-sm text-muted-foreground">
-            The texts Draki writes from the February 2022 flood's recorded rain and river flow. The grower's reply is an example.
+            The texts Draki writes from the February 2022 flood's recorded rain and river flow. The farmer's reply is an example.
           </figcaption>
         </figure>
       </section>
@@ -206,7 +206,7 @@ function Home({ farm }: { farm: Farm }) {
           <dl className="mt-10 max-w-xl space-y-6">
             {[
               ["COP31 target", "Climate action education for all by 2035"],
-              ["How", "Each alert ends with one line on why heavy rain is getting more common here, tied to rain the grower can see"],
+              ["How", "Each alert ends with one line on why heavy rain is getting more common here, tied to rain the farmer can see"],
               ["Where", "Northern Rivers cane country, NSW. Australia is leading the COP31 talks, and this is climate action you can see on a farm"],
             ].map(([k, v]) => (
               <div key={k} className="grid grid-cols-[7rem_1fr] border-t border-rule pt-4">

@@ -70,7 +70,7 @@ type Run = NonNullable<ReturnType<typeof run>>
 
 /** All data for the field. Lives in App so switching pages never refetches. */
 export function useFarm() {
-  // Start on the farm the grower marked in My farm, if they have one.
+  // Start on the farm the farmer marked in My farm, if they have one.
   const [poly, setPoly] = useState<LatLng[]>(() => {
     const b = loadProfile()?.boundary
     return b && b.length >= 3 ? b : DEMO
@@ -165,7 +165,7 @@ export function smsText({ a, peak, w, river }: Run, replay: boolean, demo: boole
     { text: `What to do:\n${PLAYBOOK[a.level].map((t, i) => `${i + 1}. ${t}`).join("\n")}` },
     { text: "Why: very heavy rain days (50 mm or more) have nearly tripled here since the 1990s. A warmer climate puts more water in the air." },
   ]
-  // An example reply, so it reads as a conversation the grower can answer (Draki doesn't read replies yet).
+  // An example reply, so it reads as a conversation the farmer can answer (Draki doesn't read replies yet).
   if (a.level !== "clear") msgs.push({ me: true, text: "Thanks. Moving the gear up to the shed now." })
   return { msgs, stamp: `${demo ? "Demo block" : "Your field"} · ${dateLabel(from)}${replay ? " (replay)" : ""}` }
 }
@@ -414,7 +414,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
           </div>
 
           <div className={cn(card, "lg:col-span-5")}>
-            <p className="text-sm text-muted-foreground">The text the grower gets</p>
+            <p className="text-sm text-muted-foreground">The text the farmer gets</p>
             <Phone
               className="mt-5"
               {...(r && !(frame && frame.a.level === "clear") ? smsText(r, mode === "replay", isDemo) : { msgs: [] })}
@@ -422,7 +422,9 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
             />
           </div>
 
-          <div className={cn(card, "flex flex-col lg:col-span-7")}>
+          {/* What to do and the river stack beside the phone, so the row has no empty card. */}
+          <div className="flex flex-col gap-4 lg:col-span-7">
+          <div className={card}>
             <p className="text-sm text-muted-foreground">What to do</p>
             <ol className="mt-4 space-y-3">
               {(r ? PLAYBOOK[r.a.level] : []).map((t, i) => (
@@ -432,13 +434,13 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
                 </li>
               ))}
             </ol>
-            <a href="#/proof" className="mt-auto inline-flex items-center gap-2 pt-6 text-sm text-muted-foreground hover:text-ink">
+            <a href="#/proof" className="inline-flex items-center gap-2 pt-6 text-sm text-muted-foreground hover:text-ink">
               How we check this <ArrowRight className="size-4" aria-hidden />
             </a>
           </div>
 
           {r?.river && (
-            <div className={cn(card, "lg:col-span-7")}>
+            <div className={cn(card, "flex-1")}>
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="text-sm text-muted-foreground">
                   Richmond River flow, {mode === "live" ? "next 7 days" : "24 February – 4 March 2022"}
@@ -458,6 +460,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
               </div>
             </div>
           )}
+          </div>
 
           <Sources r={r} mode={mode} poly={poly} hasRegion={!!elev?.hand} />
         </div>
@@ -532,9 +535,9 @@ function Sources({ r, mode, poly, hasRegion }: { r?: Run; mode: "live" | "replay
     ["How it's built", "Every step, in one Python script", "https://github.com/maliksiddhant02/Climate-tion/blob/main/scripts/build_region.py"],
   ]
   return (
-    <div className={cn(card, "lg:col-span-5")}>
+    <div className={cn(card, "lg:col-span-12")}>
       <p className="text-sm text-muted-foreground">Where these numbers come from</p>
-      <dl className="mt-4 space-y-3 text-sm">
+      <dl className="mt-4 grid gap-x-10 gap-y-3 text-sm md:grid-cols-2">
         {rows.map(([k, v, href]) => (
           <div key={k} className="grid grid-cols-[6.5rem_1fr] gap-3 border-t border-rule pt-3">
             <dt className="text-muted-foreground">{k}</dt>

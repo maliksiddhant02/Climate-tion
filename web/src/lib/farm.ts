@@ -1,4 +1,4 @@
-// A grower's own farm: boundary, paddocks (what grows where) and things on the farm (machines, stores, stock).
+// A farmer's own farm: boundary, paddocks (what grows where) and things on the farm (machines, stores, stock).
 // Pure functions, no imports beyond types, so `node src/lib/farm.check.ts` can run it.
 import { inPolygon, KNOBS, type Cell, type LatLng } from "./flood.ts"
 
@@ -10,7 +10,7 @@ export type Item = { id: string; kind: ItemId; at: LatLng; hours?: number }
 export type Profile = { boundary: LatLng[]; paddocks: Paddock[]; items: Item[]; name: string; phone: string; done: boolean }
 
 // Colours checked with the dataviz validator (CVD-safe adjacent pairs); every paddock also carries a text label.
-// Cane value: two-year Northern Rivers cane, 125 t/ha × A$55/t (NSW DPI, see KNOBS). Other crops: the grower enters theirs.
+// Cane value: two-year Northern Rivers cane, 125 t/ha × A$55/t (NSW DPI, see KNOBS). Other crops: the farmer enters theirs.
 export const CROPS: Record<CropId, { label: string; color: string; valuePerHa?: number; months?: number }> = {
   cane: { label: "Sugarcane", color: "#d4a72c", valuePerHa: KNOBS.caneValuePerHa, months: 24 },
   pasture: { label: "Pasture / cattle", color: "#3f8a5a" },
