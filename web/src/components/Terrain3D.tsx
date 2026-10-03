@@ -77,7 +77,8 @@ export default function Terrain3D(props: Props) {
     const m = new maplibregl.Map({
       container: el.current!,
       bounds: [Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)],
-      fitBoundsOptions: { padding: 60 },
+      // MapLibre zoom runs one step below Leaflet's, so 14 here matches the flat map's cap of 15.
+      fitBoundsOptions: { padding: 60, maxZoom: 14 },
       pitch: 62,
       bearing: -25,
       maxPitch: 80,

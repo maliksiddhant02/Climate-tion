@@ -192,6 +192,8 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
                 stepM={30}
                 draft={drawing ? draft : undefined}
                 noOutline={step === 0}
+                // No farm yet: open on the whole lower Richmond so the farmer can find theirs.
+                fitMaxZoom={profile.boundary.length >= 3 ? 15 : 12}
                 shapes={step > 0 ? shapes : undefined}
                 pins={step === 2 ? pins : undefined}
                 onMapClick={drawing || kind ? onMapClick : undefined}
@@ -330,20 +332,34 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
   )
 }
 
-/** Jump the map to a road or town. OpenStreetMap Nominatim: free, light use, attribution in the footer. */
+type Hit = { lat: string; lon: string; display_name: string; type: string; class: string }
+
+/**
+ * Find an address, road or town and jump the map there. OpenStreetMap Nominatim: free, light use (one search per press, no
+ * autocomplete, per its usage policy), attribution in the footer. Results near the Northern Rivers come first, not Broadwater WA.
+ */
 function Find({ onFound }: { onFound: (p: LatLng) => void }) {
   const [q, setQ] = useState("")
+  const [hits, setHits] = useState<Hit[]>()
   const [msg, setMsg] = useState<string>()
+  const pick = (h: Hit) => {
+    onFound([+h.lat, +h.lon])
+    setHits(undefined)
+    // Rural house numbers are mostly missing from the map data, so an address often lands on its road.
+    setMsg(/\d/.test(q) && h.class === "highway" ? "We found the road, not the house number. Zoom in to your farm along it." : undefined)
+  }
   const search = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!q.trim()) return
+    setHits(undefined)
     setMsg("Searching…")
     try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=au&q=${encodeURIComponent(q)}`)
-      const [hit] = await r.json()
-      if (!hit) return setMsg("Couldn't find that. Try a road name and town.")
-      onFound([+hit.lat, +hit.lon])
+      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=au&viewbox=152.8,-28.4,153.8,-29.5&q=${encodeURIComponent(q)}`
+      const found: Hit[] = await (await fetch(url)).json()
+      if (!found.length) return setMsg("Couldn't find that. Try the road name and town, e.g. Rileys Hill Road, Broadwater.")
       setMsg(undefined)
+      if (found.length === 1) pick(found[0])
+      else setHits(found)
     } catch {
       setMsg("Search isn't working right now. Zoom the map by hand.")
     }
@@ -351,9 +367,27 @@ function Find({ onFound }: { onFound: (p: LatLng) => void }) {
   return (
     <form onSubmit={search} className="mt-5">
       <div className="flex gap-2">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Road or town, e.g. Broadwater" aria-label="Find your farm" className="min-w-0 flex-1 rounded-full border border-rule bg-card px-4 py-3" />
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Address, road or town"
+          aria-label="Find your farm by address"
+          autoComplete="street-address"
+          className="min-w-0 flex-1 rounded-full border border-rule bg-card px-4 py-3"
+        />
         <button className={cn(btn, "bg-ink text-paper hover:bg-ink-2")}>Find</button>
       </div>
+      {hits && (
+        <ul className="mt-2 divide-y divide-rule overflow-hidden rounded-2xl border border-rule bg-card" aria-label="Places found">
+          {hits.map((h) => (
+            <li key={`${h.lat},${h.lon}`}>
+              <button type="button" onClick={() => pick(h)} className="w-full px-4 py-2.5 text-left text-sm hover:bg-paper-2">
+                {h.display_name.replace(/, Australia$/, "")}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       {msg && <p className="mt-2 text-sm text-muted-foreground">{msg}</p>}
     </form>
   )
@@ -573,7 +607,7 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
             <FieldMap poly={profile.boundary} cells={cells ?? []} stepM={stepM} shapes={shapes} pins={pins} wetOnly
               runKey={scenario}
               flyTo={focus}
-              flyZoom={17}
+              flyZoom={16}
               legend={
                 <>
                   <span className="flex items-center gap-2">

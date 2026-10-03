@@ -37,11 +37,12 @@ function Relief() {
 
 const M_PER_DEG = 111_320
 
-function Fit({ poly }: { poly: LatLng[] }) {
+// A 40 ha block fills the map at about zoom 17, which hides everything around it. Cap the opening zoom so the farm shows in context.
+function Fit({ poly, maxZoom }: { poly: LatLng[]; maxZoom: number }) {
   const map = useMap()
   useEffect(() => {
-    map.fitBounds(poly, { padding: [40, 40] })
-  }, [map, poly])
+    map.fitBounds(poly, { padding: [40, 40], maxZoom })
+  }, [map, poly, maxZoom])
   return null
 }
 
@@ -106,6 +107,8 @@ export function FieldMap(props: {
   wetOnly?: boolean
   /** Hide the field outline (e.g. while the farmer is still marking it). */
   noOutline?: boolean
+  /** Closest the map opens to `poly` (lower = more of the area around it). */
+  fitMaxZoom?: number
   /** Jump the map here (e.g. a searched address, or a tapped item). Pass a new array to jump again. */
   flyTo?: LatLng
   flyZoom?: number
@@ -114,7 +117,7 @@ export function FieldMap(props: {
   /** Swatches for what's drawn on the map; shown in the bar under it. */
   legend?: ReactNode
 }) {
-  const { poly, cells, stepM, high, draft, onMapClick, runKey = "", overlay, shapes, pins, wetOnly, noOutline, flyTo, flyZoom = 16, drag, legend } = props
+  const { poly, cells, stepM, high, draft, onMapClick, runKey = "", overlay, shapes, pins, wetOnly, noOutline, fitMaxZoom = 15, flyTo, flyZoom = 15, drag, legend } = props
   const half = stepM / 2 / M_PER_DEG
   const maxDepth = Math.max(0, ...cells.map((c) => c.depth))
   const cos = Math.cos((poly[0][0] * Math.PI) / 180)
@@ -146,7 +149,7 @@ export function FieldMap(props: {
       )}
       <TileLayer url={`${ESRI}/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}`} maxZoom={18} zIndex={3} attribution="Labels © Esri · Flood model: Copernicus DEM, ESA WorldCover, GloFAS" />
       {overlay && <ImageOverlay url={overlay.url} bounds={overlay.bounds} opacity={0.85} />}
-      <Fit poly={poly} />
+      <Fit poly={poly} maxZoom={fitMaxZoom} />
       <Fly to={flyTo} zoom={flyZoom} />
       <Clicks onClick={onMapClick} />
       {shapes?.map((s) => (
