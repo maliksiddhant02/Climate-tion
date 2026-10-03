@@ -171,3 +171,12 @@
 .leaflet-tooltip.farm-label { background: rgba(19, 33, 26, 0.8); color: #fff; border: 0; border-radius: 9999px; padding: 2px 10px; font-size: 12px; box-shadow: none; }
 .leaflet-tooltip.farm-label::before { display: none; }
 .farm-label-3d { background: rgba(19, 33, 26, 0.8); color: #fff; border-radius: 9999px; padding: 2px 10px; font-size: 12px; white-space: nowrap; pointer-events: none; }
+
+/* Flood record (components/FloodRecord): hidden on screen, the only thing on paper. */
+#print-root { display: none; }
+@media print {
+    @page { margin: 14mm; }
+    body > *:not(#print-root) { display: none !important; }
+    #print-root { display: block; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    body { background: #fff !important; }
+}

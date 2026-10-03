@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight, Check, Droplets, Fl
 import { FieldMap, iconSvg, type Pin } from "@/components/FieldMap"
 import { DECADES, HeavyRainChart, wx } from "@/components/weather"
 import { Phone } from "@/components/Phone"
+import { FloodRecord } from "@/components/FloodRecord"
 import { aud, DEMO, type Farm } from "@/Live"
 import { areaHa, cropLabel, CROPS, fuelYear, itemDepth, ITEMS, loadProfile, paddockRisk, readyDate, safeGround, saveProfile as save, uid, valuePerHa, type CropId, type ItemId, type Paddock, type Profile } from "@/lib/farm"
 import { gridInPolygon, KNOBS, riverDepths, riverStage, type Cell, type LatLng } from "@/lib/flood"
@@ -29,7 +30,7 @@ const SAFE_SVG = iconSvg(MapPin)
 // The example farm: the 40 ha demo block near Broadwater, split into cane, soybeans and pasture, with its shed, tank, pump and store.
 const [[n, w], , [s, e]] = DEMO
 const mid = (a: number, b: number, t = 0.5) => a + (b - a) * t
-const EXAMPLE: Profile = {
+export const EXAMPLE: Profile = {
   name: "",
   phone: "",
   done: true,
@@ -792,6 +793,10 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
         </div>
 
         <div className={cn(card, "lg:col-span-12")}>
+          <FloodRecord farm={farm} profile={profile} />
+        </div>
+
+        <div className={cn(card, "lg:col-span-12")}>
           <h2 className="text-2xl">Worth knowing</h2>
           <ul className="mt-4 grid gap-x-10 md:grid-cols-2 [&>li]:border-t [&>li]:border-rule">
             {fuel.map(({ it, f }) => (
@@ -802,16 +807,6 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
                 <span className="text-muted-foreground">{f!.swap ? `Switching to ${f!.swap} saves that fuel.` : "No practical electric option yet. Keep it tuned."}</span>
               </li>
             ))}
-            <li className="py-3">
-              <span className="font-medium">If you flood,</span>{" "}
-              <span className="text-muted-foreground">
-                Draki's record of your farm (date, hectares, depth) backs up a{" "}
-                <a href="https://www.disasterassist.gov.au/" target="_blank" rel="noreferrer" className="text-leaf hover:underline">
-                  disaster grant <ArrowUpRight className="inline size-3.5" aria-hidden />
-                </a>{" "}
-                or insurance claim.
-              </span>
-            </li>
           </ul>
         </div>
       </div>

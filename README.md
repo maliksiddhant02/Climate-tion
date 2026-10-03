@@ -46,7 +46,7 @@ node src/lib/flood.check.ts    # flood model self-check
    - **Your climate:** heavy-rain days at Woodburn then and now, why (warmer air holds more water), this season's El Niño from NOAA's ONI and 35 years of ERA5 rain (El Niño seasons average 904 mm against 1,207 mm in La Niña seasons), and which paddock floods first.
    - **Fuel:** litres and A$ of diesel a year for a diesel water pump, and the practical electric swap (a solar pump).
    - **Your texts:** the messages the farmer would get, in a phone.
-   - **If you flood:** a link to disaster assistance; Draki's record of the farm (date, hectares, depth) backs up a claim.
+   - **Flood record:** a drawn map of the farm with the squares that went under, and per paddock the hectares under water, deepest water and crop value, for the February 2022 flood. "Print flood record" prints a one-page record for a disaster grant or insurance claim.
 
 ## Rebuild the data (optional, no API keys)
 
@@ -70,6 +70,7 @@ scripts/.venv/Scripts/python scripts/build_season_data.py          # El Nino / L
 | Python: numpy, scipy, rasterio, pystac-client, planetary-computer, requests | Building the data files | BSD / MIT / Apache-2.0 |
 | Flood records: Lismore City Council, ABC, FloodList, Richmond Valley Council, AIDR Knowledge Hub, Australian Severe Weather archive | Dates of recorded floods for validation | Cited on the Evidence page |
 | Cane yield and price: NSW DPI (two-year cane 105–150 t/ha; 2024 average A$55/t); Sunshine Sugar (crushing season) | Cane value at risk, harvest timing | Cited in `web/src/lib/flood.ts` and `web/src/lib/farm.ts` |
+| NSW DPI Primary Industries Insights 2023 (sugarcane); ABC Rural, 6 Sep 2022 | What 2022 cost: Northern Rivers crush 1.33 Mt, 17% lower; Broadwater mill under ~3 m of water, A$29m repairs, 40,000 t of cane sent to other mills | Cited and linked on the landing page |
 | NOAA CPC Oceanic Niño Index (ONI) | El Niño / La Niña phase, now and for every season since 1991 | US Government public domain |
 | Australian average pump prices, October 2026 (AIP / dailyfuels) | Equipment fuel cost | Cited in `web/src/lib/farm.ts` |
 | disasterassist.gov.au | Help to claim after a flood | Linked on the My farm page |

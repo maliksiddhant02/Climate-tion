@@ -8,7 +8,7 @@ export type Msg = { text: string; me?: boolean }
 export function Phone({ msgs, stamp, empty = "No texts yet.", className }: { msgs: Msg[]; stamp?: string; empty?: string; className?: string }) {
   return (
     <div className={cn("flex justify-center", className)}>
-      <div className="device device-iphone-14-pro" style={{ zoom: 0.72 }}>
+      <div className="device device-iphone-14-pro [zoom:0.6] sm:[zoom:0.72]">
         <div className="device-frame">
           <div className="device-screen flex flex-col overflow-hidden bg-card text-ink">
             <div className="flex items-center justify-between px-10 pt-5 text-[1.05rem] font-semibold tabular-nums" aria-hidden>

@@ -4,7 +4,9 @@ import { ago, aud, LivePage, smsText, useFarm, type Farm } from "@/Live"
 import { Phone } from "@/components/Phone"
 import { DECADES, FlowHistory, HeavyRainChart } from "@/components/weather"
 import { FloodValley } from "@/components/FloodValley"
-import { FarmPage } from "@/Farm"
+import { EXAMPLE, FarmPage } from "@/Farm"
+import { FarmSketch } from "@/components/FarmSketch"
+import { CROPS } from "@/lib/farm"
 import { getFlowHistory, weatherUrl } from "@/lib/api"
 import { BASE } from "@/lib/region"
 import { KNOBS } from "@/lib/flood"
@@ -140,13 +142,13 @@ function Home({ farm }: { farm: Farm }) {
           </h1>
           <div className="mt-5 grid gap-4 border-t border-white/25 pt-4 md:mt-8 md:grid-cols-12 md:items-end md:gap-6 md:pt-5">
             <p className="text-white/80 md:col-span-6 md:text-lg">
-              Mark your paddocks, machines and sheds once. Draki keeps you across the week's weather, harvest timing and fuel all season, and texts you
+              Mark your paddocks, sheds and tanks once. Draki keeps you across the week's weather, harvest timing and fuel all season, and texts you
               exactly what to move when the river rises. <strong className="font-semibold text-white">Real data, not a mock-up:</strong> scroll, and the lower
               Richmond rises to its February 2022 peak.
             </p>
             <div className="flex flex-wrap gap-3 md:col-span-6 md:justify-end">
-              <a href="#/farm" className={cn(btn, "bg-white text-ink hover:bg-paper")}>
-                Set up my farm <ArrowRight className="size-4" aria-hidden />
+              <a href="#/farm?example" className={cn(btn, "bg-white text-ink hover:bg-paper")}>
+                See an example farm <ArrowRight className="size-4" aria-hidden />
               </a>
               <a href="#/live?replay" className={cn(btn, "border border-white/30 text-white hover:bg-white/10")}>
                 Watch the 2022 flood
@@ -155,6 +157,8 @@ function Home({ farm }: { farm: Farm }) {
           </div>
         </div>
       </FloodValley>
+
+      <HowItWorks farm={farm} />
 
       <RealData farm={farm} />
 
@@ -195,6 +199,7 @@ function Home({ farm }: { farm: Farm }) {
             </a>
           </div>
         </div>
+        <CaneLoss />
       </section>
 
       <section className="grid md:grid-cols-2">
@@ -223,6 +228,146 @@ function Home({ farm }: { farm: Farm }) {
   )
 }
 
+
+/** What the 2022 flood cost the Northern Rivers cane industry. Sources linked under the chart. */
+function CaneLoss() {
+  // 2022 crush 1.33 Mt, 17% below 2021 (NSW DPI), so 2021 was about 1.33 / 0.83 = 1.6 Mt.
+  const was = 1.33 / 0.83
+  return (
+    <div className={cn(WRAP, "grid gap-10 border-t border-white/15 py-14 md:grid-cols-12 md:py-20")}>
+      <figure className="md:col-span-7">
+        <figcaption className="text-sm text-white/60">Cane crushed in the Northern Rivers, million tonnes</figcaption>
+        <div className="mt-5 space-y-4">
+          {[
+            ["2021", was, `${was.toFixed(1)}`],
+            ["2022", 1.33, "1.33"],
+          ].map(([yr, v, label]) => (
+            <div key={yr as string} className="grid grid-cols-[3.5rem_1fr] items-center gap-4">
+              <span className="text-sm text-white/70 tabular-nums">{yr}</span>
+              <div className="relative h-11 overflow-hidden rounded-full bg-white/[0.06]">
+                <div className="absolute inset-y-0 left-0 flex items-center justify-end rounded-full bg-cane pr-4 text-sm font-semibold text-ink tabular-nums" style={{ width: `${((v as number) / was) * 100}%` }}>
+                  {label}
+                </div>
+                {yr === "2022" && (
+                  <div
+                    className="absolute inset-y-0 right-0 flex items-center justify-center text-sm font-semibold text-white"
+                    style={{ width: `${(1 - 1.33 / was) * 100}%`, background: "repeating-linear-gradient(135deg, #d4472a 0 6px, #a8361f 6px 12px)" }}
+                  >
+                    −17%
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </figure>
+      <dl className="grid grid-cols-3 gap-6 md:col-span-5 md:self-end">
+        {[
+          ["~3 m", "of floodwater through the Broadwater sugar mill"],
+          ["A$29m", "to repair the mill"],
+          ["40,000 t", "of cane trucked to other mills while it was shut"],
+        ].map(([v, k]) => (
+          <div key={k} className="flex flex-col-reverse justify-end gap-2 border-t border-white/25 pt-3">
+            <dt className="text-sm text-white/60">{k}</dt>
+            <dd className="font-display text-[clamp(1.5rem,2.4vw,2.5rem)] leading-none whitespace-nowrap text-cane tabular-nums">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="text-xs text-white/50 md:col-span-12">
+        Sources:{" "}
+        <a href="https://www.dpi.nsw.gov.au/about-us/publications/pdi/2023/sugarcane" target="_blank" rel="noreferrer" className="underline hover:text-white">
+          NSW DPI, Primary Industries Insights 2023
+        </a>{" "}
+        (2022 crush 1.33 Mt, 17% lower; 2021 worked back from that) ·{" "}
+        <a href="https://www.abc.net.au/news/rural/2022-09-06/broadwater-sugar-mill-crushing-cane-after-catastrophic-floods/101408454" target="_blank" rel="noreferrer" className="underline hover:text-white">
+          ABC Rural, 6 September 2022
+        </a>
+      </p>
+    </div>
+  )
+}
+
+/** How Draki works, in three pictures drawn from the real data: the farm, the 2022 river, the text that went out. */
+function HowItWorks({ farm }: { farm: Farm }) {
+  const r = farm.replayRun
+  const river = r?.river
+  const first = r ? smsText(r, true, farm.isDemo).msgs[0].text.split("\n")[0] : "FLOOD RISK HIGH"
+  const paddocks = farm.isDemo ? EXAMPLE.paddocks.map((p) => ({ poly: p.poly, color: CROPS[p.crop].color })) : []
+  const steps = [
+    {
+      who: "Farmer or mill adviser",
+      title: "Mark the farm once",
+      note: "Paddocks, sheds and tanks. About ten minutes, on any map.",
+      visual: <FarmSketch boundary={farm.poly} paddocks={paddocks} className="h-full" />,
+    },
+    {
+      who: "Draki, every hour",
+      title: "Watches the river and rain",
+      note: "Europe's flood forecast, 50 versions of it, run over every 30 m of the farm.",
+      visual: river ? <RiverSpark q={river.flow.q} act={river.cal.q5} /> : null,
+    },
+    {
+      who: "Farmer, any phone",
+      title: "Gets a text in time",
+      note: "What floods, what to move, and why it's happening more often. No app.",
+      visual: (
+        <div className="w-full max-w-[15rem] space-y-2">
+          <p className="w-fit max-w-full rounded-2xl rounded-bl-md bg-card px-3.5 py-2 text-sm leading-snug shadow-[0_6px_16px_-10px_rgba(19,33,26,0.5)]">{first}</p>
+          <p className="ml-auto w-fit rounded-2xl rounded-br-md bg-rain px-3.5 py-2 text-sm text-white">Moving the gear now.</p>
+        </div>
+      ),
+    },
+  ]
+  return (
+    <section className={cn(WRAP, "py-16 md:py-24")}>
+      <div className="flex flex-wrap items-end justify-between gap-6">
+        <h2 className="font-display text-[clamp(2rem,4.4vw,4.5rem)] leading-[0.95]">How Draki works</h2>
+        <a href="#/farm?example" className={cn(btn, "bg-ink text-paper hover:bg-ink-2")}>
+          See an example farm <ArrowRight className="size-4" aria-hidden />
+        </a>
+      </div>
+      <ol className="mt-10 grid gap-4 md:grid-cols-3">
+        {steps.map((s, i) => (
+          <li key={s.title} className="relative flex flex-col rounded-3xl border border-rule bg-card p-5">
+            <div className="grid h-48 place-items-center rounded-2xl bg-paper-2 p-5">{s.visual}</div>
+            <div className="mt-5 flex items-baseline gap-3">
+              <span className="font-display text-3xl leading-none text-leaf">{i + 1}</span>
+              <div>
+                <p className="text-sm text-muted-foreground">{s.who}</p>
+                <h3 className="mt-0.5 text-xl font-semibold">{s.title}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{s.note}</p>
+              </div>
+            </div>
+            {i < 2 && (
+              <ArrowRight className="absolute top-1/2 -right-[1.1rem] z-10 hidden size-7 -translate-y-1/2 rounded-full border border-rule bg-paper p-1.5 text-leaf md:block" aria-hidden />
+            )}
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
+/** The February 2022 river, with the line where Draki says Act today. */
+function RiverSpark({ q, act }: { q: (number | null)[]; act: number }) {
+  const W = 260, H = 130, pad = 8
+  const vals = q.map((v) => v ?? 0)
+  const max = Math.max(act, ...vals) * 1.08
+  const x = (i: number) => pad + (i / (vals.length - 1)) * (W - 2 * pad)
+  const y = (v: number) => H - pad - (v / max) * (H - 2 * pad)
+  const line = vals.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("")
+  const peak = vals.indexOf(Math.max(...vals))
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-full w-full" role="img" aria-label="Richmond River flow, 24 February to 4 March 2022, rising far above the Act today level">
+      <path d={`${line}L${x(vals.length - 1)},${H - pad}L${x(0)},${H - pad}Z`} fill="#3c6fae" fillOpacity={0.15} />
+      <line x1={pad} x2={W - pad} y1={y(act)} y2={y(act)} stroke="#d4472a" strokeDasharray="4 4" />
+      <text x={W - pad} y={y(act) - 5} textAnchor="end" className="fill-[#a8361f] text-[11px] font-medium">Act today</text>
+      <path d={line} fill="none" stroke="#3c6fae" strokeWidth={2.5} strokeLinejoin="round" />
+      <circle cx={x(peak)} cy={y(vals[peak])} r={4.5} fill="#3c6fae" stroke="#fbf8f1" strokeWidth={2} />
+      <text x={x(peak)} y={y(vals[peak]) - 9} textAnchor="middle" className="fill-ink text-[11px] font-semibold">Feb 2022</text>
+    </svg>
+  )
+}
 
 /** The landing page's proof that nothing is mocked: live forecasts with their numbers right now, and the records behind the model. */
 function RealData({ farm }: { farm: Farm }) {
