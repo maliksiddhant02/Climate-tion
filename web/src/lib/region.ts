@@ -31,6 +31,19 @@ export type Meta = {
     demoModel: number
     note: string
   }
+  /** Blind check: the frozen river curve against a flood it was never tuned on (scripts/build_region.py --blind). */
+  sentinel1Blind?: {
+    event: string
+    before: string
+    after: string
+    dischargeThatDay: number
+    csi: number
+    observedHa: number
+    modelHa: number
+    judgedHa: number
+    floodplainSeen: number
+    note: string
+  }
   sources: string[]
 }
 

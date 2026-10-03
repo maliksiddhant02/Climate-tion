@@ -123,5 +123,23 @@
     "Sentinel-1A RTC (Copernicus, EU), via Microsoft Planetary Computer",
     "GloFAS v4 river discharge (Copernicus EMS), via Open-Meteo Flood API",
     "ERA5 reanalysis rain (Copernicus C3S), via Open-Meteo archive API"
-  ]
+  ],
+  "sentinel1Blind": {
+    "event": "Second 2022 flood (30 March)",
+    "before": "2022-03-19",
+    "after": "2022-03-31",
+    "dischargeThatDay": 1745,
+    "stageM": 4.47,
+    "csi": 0.543,
+    "hits": 28535,
+    "misses": 380,
+    "falseAlarms": 23627,
+    "observedHa": 2417,
+    "modelHa": 4361,
+    "judgedHa": 5592,
+    "floodplainSeen": 0.25,
+    "demoObserved": null,
+    "demoModel": null,
+    "note": "Blind: river curve frozen from the 2 March 2022 fit, run at this day's GloFAS flow; nothing refitted. Different flood, date and orbit. This pass only covers the western part of the floodplain (Coraki side), so scores are for that part; the demo block is outside it."
+  }
 }

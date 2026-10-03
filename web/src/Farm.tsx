@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
-import { AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight, Beef, Check, Droplets, FlaskConical, Fuel, House, MapPin, Pencil, Tractor, Trash2, Truck, Undo2, Warehouse } from "lucide-react"
+import { AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight, Check, Droplets, FlaskConical, Fuel, House, MapPin, Pencil, Tractor, Trash2, Undo2, Warehouse } from "lucide-react"
 import { FieldMap, iconSvg, type Pin } from "@/components/FieldMap"
-import { wx } from "@/components/weather"
+import { DECADES, HeavyRainChart, wx } from "@/components/weather"
 import { Phone } from "@/components/Phone"
 import { aud, DEMO, type Farm } from "@/Live"
 import { areaHa, CROPS, fuelYear, itemDepth, ITEMS, loadProfile, paddockRisk, readyDate, safeGround, saveProfile as save, uid, valuePerHa, type CropId, type ItemId, type Paddock, type Profile } from "@/lib/farm"
@@ -14,23 +14,19 @@ const card = "rounded-3xl border border-rule bg-card p-6"
 const btn = "press inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-medium disabled:opacity-40"
 const chip = "press inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm"
 
-export const ICON: Record<ItemId, typeof Tractor> = {
-  tractor: Tractor,
-  harvester: Tractor,
-  truck: Truck,
+export const ICON: Record<ItemId, typeof Fuel> = {
   pump: Droplets,
   fuel: Fuel,
   chem: FlaskConical,
   shed: Warehouse,
   house: House,
-  cattle: Beef,
 }
 // Map pin markup, rendered once at load (see iconSvg).
 const SVG = Object.fromEntries(Object.entries(ICON).map(([k, I]) => [k, iconSvg(I)])) as Record<ItemId, string>
 const SAFE_SVG = iconSvg(MapPin)
 
 
-// The example farm: the 40 ha demo block near Broadwater, split into cane, soybeans and pasture, with the usual kit.
+// The example farm: the 40 ha demo block near Broadwater, split into cane, soybeans and pasture, with its shed, tank, pump and store.
 const [[n, w], , [s, e]] = DEMO
 const mid = (a: number, b: number, t = 0.5) => a + (b - a) * t
 const EXAMPLE: Profile = {
@@ -44,17 +40,15 @@ const EXAMPLE: Profile = {
     { id: "p3", crop: "pasture", poly: [[mid(n, s), mid(w, e)], [mid(n, s), e], [s, e], [s, mid(w, e)]] },
   ],
   items: [
-    { id: "i1", kind: "tractor", at: [mid(n, s, 0.2), mid(w, e, 0.3)] },
     { id: "i2", kind: "pump", at: [mid(n, s, 0.85), mid(w, e, 0.1)], hours: 300 },
     { id: "i3", kind: "fuel", at: [mid(n, s, 0.25), mid(w, e, 0.38)] },
     { id: "i4", kind: "chem", at: [mid(n, s, 0.8), mid(w, e, 0.55)] },
     { id: "i5", kind: "shed", at: [mid(n, s, 0.15), mid(w, e, 0.42)] },
-    { id: "i6", kind: "cattle", at: [mid(n, s, 0.75), mid(w, e, 0.8)] },
   ],
 }
 
 const EMPTY: Profile = { boundary: [], paddocks: [], items: [], name: "", phone: "", done: false }
-const STEPS = ["Your farm", "Crops", "Equipment", "Your details"]
+const STEPS = ["Your farm", "Crops", "Sheds & tanks", "Your details"]
 const monthYear = (d: Date) => d.toLocaleDateString("en-AU", { month: "long", year: "numeric" })
 
 export function FarmPage({ farm }: { farm: Farm }) {
@@ -90,7 +84,7 @@ function Intro({ onStart, onExample }: { onStart: () => void; onExample: () => v
         <h1 className="font-display text-5xl uppercase md:text-7xl">Set up your farm</h1>
         <p className="mt-6 max-w-xl text-lg text-muted-foreground">Four short steps on a map. Then Draki tells you what floods, what to move, and when your crops are ready.</p>
         <ol className="mt-10 max-w-xl">
-          {["Mark your farm on the map", "Show what you grow, and where", "Place your tractor, pump and sheds", "Add your name and mobile"].map((t, i) => (
+          {["Mark your farm on the map", "Show what you grow, and where", "Mark your sheds, fuel tanks and pumps", "Add your name and mobile"].map((t, i) => (
             <li key={t} className="flex items-center gap-5 border-t border-rule py-4 text-lg">
               <span className="font-display text-3xl text-leaf">{i + 1}</span>
               {t}
@@ -167,8 +161,8 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
           : "Pick a crop, then tap its paddock on the map."
         : step === 2
           ? kind
-            ? `Tap where your ${ITEMS[kind].label.toLowerCase()} usually sits.`
-            : "Pick something, then tap where it usually sits."
+            ? `Tap where your ${ITEMS[kind].label.toLowerCase()} is.`
+            : "Pick something, then tap where it is."
           : ""
 
   return (
@@ -253,7 +247,10 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
           {step === 2 && (
             <>
               <h1 className="font-display text-5xl uppercase">What's on your farm?</h1>
-              <p className="mt-3 text-muted-foreground">Place the things a flood could reach. Draki tells you which ones to move.</p>
+              <p className="mt-3 text-muted-foreground">
+                Mark the things that stay put. No need to add your tractor or stock: they move every day, so Draki tells you which paddocks flood and you
+                move whatever is there.
+              </p>
               <div className="mt-5 flex flex-wrap gap-2">
                 {(Object.keys(ITEMS) as ItemId[]).map((k) => {
                   const I = ICON[k]
@@ -468,9 +465,9 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
   const items = profile.items.map((it) => ({ it, depth: cells ? itemDepth(it, cells, stepM) : undefined }))
   const isWet = (d?: number) => (d ?? 0) >= KNOBS.floodedDepth
   const wet = items.filter((x) => isWet(x.depth))
-  const toMove = wet.filter((x) => !ITEMS[x.it.kind].prep)
-  const toPrep = wet.filter((x) => ITEMS[x.it.kind].prep)
   const paddocks = profile.paddocks.map((p) => ({ p, ...paddockRisk(p, cells ?? [], stepM) }))
+  const wetPaddocks = paddocks.filter((x) => x.floodedHa > 0)
+  const paddockName = (p: Paddock) => `${CROPS[p.crop].label.split(" /")[0].toLowerCase()} paddock`
   const atRisk = paddocks.reduce((s, x) => s + x.atRisk, 0)
   const shed = items.find((x) => (x.it.kind === "shed" || x.it.kind === "house") && x.depth !== undefined && !isWet(x.depth))
   // The highest dry ground on the farm, pinned as Safe ground (only if there's enough of it to use).
@@ -480,7 +477,7 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
   const name = profile.name.trim()
 
   const pins: Pin[] = [
-    ...(wet.length && high && !shed ? [{ id: "safe", at: [high.lat, high.lng] as LatLng, svg: SAFE_SVG, label: "Safe ground: highest dry spot" }] : []),
+    ...((wet.length || wetPaddocks.length) && high && !shed ? [{ id: "safe", at: [high.lat, high.lng] as LatLng, svg: SAFE_SVG, label: "Safe ground: highest dry spot" }] : []),
     ...items.map(({ it, depth }) => ({
     id: it.id,
     at: it.at,
@@ -492,16 +489,21 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
   const shapes = profile.paddocks.map((p) => ({ id: p.id, poly: p.poly, color: CROPS[p.crop].color, label: CROPS[p.crop].label }))
   const fuel = profile.items.map((it) => ({ it, f: fuelYear(it) })).filter((x) => x.f && x.f.litres > 0)
   const cane = paddocks.filter((x) => x.p.crop === "cane")
+  const record = farm.replayRun?.cells
+  const firstUnder = record
+    ? profile.paddocks.map((p) => ({ p, ...paddockRisk(p, record, stepM) })).sort((a, b) => b.floodedHa - a.floodedHa)[0]
+    : undefined
   const ready = profile.paddocks.map((p) => ({ p, d: readyDate(p) })).filter((x) => x.d).sort((a, b) => +a.d! - +b.d!)
 
   const texts = [
-    wet.length
-      ? `Draki: FLOOD WARNING${name ? `, ${name}` : ""}.${toMove.length ? ` Move your ${list(toMove.map((x) => ITEMS[x.it.kind].label.toLowerCase()))} to ${safePlace} before the river peaks.` : ""}${toPrep.map((x) => ` Your ${ITEMS[x.it.kind].label.toLowerCase()} will flood: ${ITEMS[x.it.kind].prep}.`).join("")}`
+    wet.length || wetPaddocks.length
+      ? `Draki: FLOOD WARNING${name ? `, ${name}` : ""}.${wetPaddocks.length ? ` Your ${list(wetPaddocks.map((x) => paddockName(x.p)))} ${wetPaddocks.length === 1 ? "goes" : "go"} under. Move any machinery or stock parked there to ${safePlace} before the river peaks.` : ""}${wet.map((x) => ` Your ${ITEMS[x.it.kind].label.toLowerCase()} will flood: ${ITEMS[x.it.kind].prep}.`).join("")}`
       : `Draki: ${name ? `${name}, n` : "N"}othing on your farm is in the water's way. Draki keeps watching the river.`,
     cane.length && cane[0].floodedHa > 0
       ? `Draki: ${cane[0].floodedHa.toFixed(1)} of your ${cane[0].ha.toFixed(1)} ha of cane could go under. Hold off fertilising the low rows.`
       : undefined,
     ready[0] ? `Draki: your ${CROPS[ready[0].p.crop].label.toLowerCase()} (${areaHa(ready[0].p.poly).toFixed(0)} ha) is ready from ${monthYear(ready[0].d!)}.` : undefined,
+    `Draki: why this matters more now. Very heavy rain days at Woodburn have gone from about ${DECADES.then.toFixed(1)} a year in the 1990s to ${DECADES.now.toFixed(1)}. Warmer air holds more water.`,
   ].filter(Boolean) as string[]
 
   return (
@@ -539,22 +541,26 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
       <div
         className={cn(
           "mt-4 flex flex-wrap items-center gap-4 rounded-3xl px-6 py-5",
-          loading ? "bg-paper-2" : wet.length || atRisk ? "bg-flood text-white" : "bg-leaf text-white",
+          loading ? "bg-paper-2" : wet.length || wetPaddocks.length ? "bg-flood text-white" : "bg-leaf text-white",
         )}
       >
-        {!loading && (wet.length || atRisk ? <AlertTriangle className="size-6" aria-hidden /> : <Check className="size-6" aria-hidden />)}
+        {!loading && (wet.length || wetPaddocks.length ? <AlertTriangle className="size-6" aria-hidden /> : <Check className="size-6" aria-hidden />)}
         <p className="text-2xl">
           {loading
             ? "Reading your farm…"
-            : wet.length
-              ? `${wet.length} thing${wet.length === 1 ? "" : "s"} in the water's way${atRisk ? `, ${aud(atRisk)} of crops under water` : ""}`
-              : atRisk
-                ? `${aud(atRisk)} of crops under water`
-                : scenario === "week"
+            : wet.length || wetPaddocks.length
+              ? [
+                  wetPaddocks.length && `${wetPaddocks.length} paddock${wetPaddocks.length === 1 ? "" : "s"} under water`,
+                  wet.length && `${wet.length} thing${wet.length === 1 ? "" : "s"} to prepare`,
+                  atRisk && `${aud(atRisk)} of crops`,
+                ]
+                  .filter(Boolean)
+                  .join(", ")
+              : scenario === "week"
                   ? "This week, nothing on your farm floods."
                   : "Your farm stays dry."}
         </p>
-        {scenario === "week" && !loading && !wet.length && (
+        {scenario === "week" && !loading && !wet.length && !wetPaddocks.length && (
           <button onClick={() => setScenario("common")} className="ml-auto text-sm underline underline-offset-4">
             See what a flood would do
           </button>
@@ -574,7 +580,7 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
                     <i className="size-3 rounded-sm bg-flood" /> Under water
                   </span>
                   <span className="flex items-center gap-2">
-                    <i className="size-3 rounded-full bg-flood ring-2 ring-white" /> Move this
+                    <i className="size-3 rounded-full bg-flood ring-2 ring-white" /> Floods: prepare it
                   </span>
                 </>
               }
@@ -585,7 +591,19 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
         <div className={cn(card, "lg:col-span-5")}>
           <h2 className="text-2xl">Before the water comes</h2>
           <ul className="mt-4 divide-y divide-rule">
-            {items.length === 0 && <li className="py-3 text-muted-foreground">Place your equipment to see what to move.</li>}
+            <li className="flex items-center gap-3 py-3">
+              <span className={cn("grid size-9 shrink-0 place-items-center rounded-full", wetPaddocks.length ? "bg-flood text-white" : "bg-paper-2 text-leaf")}>
+                <Tractor className="size-4" aria-hidden />
+              </span>
+              <span className="flex-1">
+                Machinery and stock
+                <span className="block text-sm text-muted-foreground">
+                  {wetPaddocks.length
+                    ? `Move anything in your ${list(wetPaddocks.map((x) => paddockName(x.p)))} to ${safePlace}.`
+                    : "Nothing you park on your paddocks is in the water's way."}
+                </span>
+              </span>
+            </li>
             {items.map(({ it, depth }) => {
               const I = ICON[it.kind]
               const w = isWet(depth)
@@ -601,14 +619,13 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
                     {w && ITEMS[it.kind].prep && <span className="block text-sm text-muted-foreground">{ITEMS[it.kind].prep}</span>}
                   </span>
                   <span className={cn("text-right text-sm", w ? "font-medium text-flood" : "text-muted-foreground")}>
-                    {depth === undefined ? "off your farm" : w ? `${ITEMS[it.kind].prep ? "floods" : "move it"} · ${deep}` : "stays dry"}
+                    {depth === undefined ? "off your farm" : w ? `floods · ${deep}` : "stays dry"}
                   </span>
                   </button>
                 </li>
               )
             })}
           </ul>
-          {toMove.length > 0 && <p className="mt-4 text-sm text-muted-foreground">Move them to {safePlace}.</p>}
         </div>
 
         <div className={cn(card, "lg:col-span-5")}>
@@ -647,18 +664,53 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
         </div>
 
         <div className={cn(card, "lg:col-span-12")}>
+          <div className="grid gap-8 md:grid-cols-12">
+            <div className="md:col-span-5">
+              <h2 className="text-2xl">Your climate</h2>
+              <p className="mt-1 text-sm text-muted-foreground">What's changing here, and what it means for your farm.</p>
+              <ol className="mt-4 divide-y divide-rule">
+                {[
+                  [
+                    "Very heavy rain days have nearly tripled here.",
+                    `Days with 50 mm or more of rain at Woodburn: about ${DECADES.then.toFixed(1)} a year in the 1990s, ${DECADES.now.toFixed(1)} in 2016–25. That's a small number of days, so read it as a sign, not proof.`,
+                  ],
+                  ["Why: warmer air holds more water.", "Each 1 °C of warming lets the air hold about 7% more moisture, so the same storm can drop more rain (IPCC, 2021)."],
+                  ...(season
+                    ? [
+                        season.latest.phase === "elnino"
+                          ? [
+                              "El Niño is under way this season.",
+                              `El Niño seasons here average ${season.phases.elnino.meanRain.toLocaleString("en-AU")} mm of rain, against ${season.phases.lanina.meanRain.toLocaleString("en-AU")} mm in La Niña seasons. Expect a drier run: keep the trash blanket on and check your pump.`,
+                            ]
+                          : ["No El Niño this season.", "Draki watches the rain and the river all season, and texts you when that changes."],
+                      ]
+                    : []),
+                  firstUnder && firstUnder.floodedHa > 0
+                    ? [
+                        "What it means for your farm.",
+                        `In a 2022-size flood your ${CROPS[firstUnder.p.crop].label.toLowerCase()} paddock goes under first: ${firstUnder.floodedHa >= firstUnder.ha - 0.05 ? `all ${firstUnder.ha.toFixed(1)} ha` : `${firstUnder.floodedHa.toFixed(1)} of its ${firstUnder.ha.toFixed(1)} ha`}. With heavy rain getting more common, plan where machinery and stock go now, not on the day.`,
+                      ]
+                    : ["What it means for your farm.", "In a 2022-size flood your paddocks stay dry. Draki still watches the river for you all season."],
+                ].map(([t, d], i) => (
+                  <li key={t} className="flex gap-4 py-3">
+                    <span className="font-display text-xl text-leaf">{i + 1}</span>
+                    <span>
+                      <span className="font-medium">{t}</span> <span className="text-muted-foreground">{d}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <figure className="md:col-span-7">
+              <HeavyRainChart />
+              <figcaption className="mt-2 text-sm text-muted-foreground">Days a year with 50 mm or more of rain at Woodburn, 1991–2025. ERA5, the European long-term weather record, via Open-Meteo.</figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <div className={cn(card, "lg:col-span-12")}>
           <h2 className="text-2xl">Worth knowing</h2>
           <ul className="mt-4 grid gap-x-10 md:grid-cols-2 [&>li]:border-t [&>li]:border-rule">
-            {season && (
-              <li className="py-3">
-                <span className="font-medium">{season.latest.phase === "elnino" ? "El Niño is under way." : "No El Niño this season."}</span>{" "}
-                <span className="text-muted-foreground">
-                  {season.latest.phase === "elnino"
-                    ? `El Niño years bring about ${Math.round((1 - season.phases.elnino.meanRain / season.allMeanRain) * 100)}% less rain here. Keep the trash blanket on and check your pump.`
-                    : "Draki watches the rain all season."}
-                </span>
-              </li>
-            )}
             {fuel.map(({ it, f }) => (
               <li key={it.id} className="py-3">
                 <span className="font-medium">

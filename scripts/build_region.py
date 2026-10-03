@@ -12,10 +12,15 @@ Writes web/public/data/richmond/:
   event.json  the February 2022 flood replay: hourly ERA5 rain + daily GloFAS discharge
   flow.json   Richmond River flow history (weekly peak) for the Validation chart
 
+  agreement-blind.png  the same map for the held-out March 2022 flood (blind check, frozen calibration)
+
 Run from the repo root:  scripts/.venv/Scripts/python scripts/build_region.py
+Blind check only (reads the built files, patches meta.json["sentinel1Blind"], changes nothing else):
+                         scripts/.venv/Scripts/python scripts/build_region.py --blind
 """
 import datetime as dt
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -44,6 +49,8 @@ EVENT = ("2022-02-24", "2022-03-04")  # the February 2022 flood, Lismore's recor
 S1_BEFORE, S1_AFTER = "2022-02-18", "2022-03-02"  # Sentinel-1A descending, same orbit; after = ~2 days past the peak
 WOODBURN = (-29.0717, 153.3408)  # flooded >3 m in 2022 (Richmond Valley Council); used as a check, not for tuning
 BROADWATER_MILL = (-29.013, 153.431)  # cane mill under ~3 m of water in 2022 (ABC)
+# Held-out flood for a blind check: never used to fit anything. Same orbit (147) for both images; after = ~1 day past the 30 March peak.
+BLIND = ("Second 2022 flood (30 March)", "2022-03-19", "2022-03-31")
 
 # Recorded floods (Lismore gauge, Wilsons River), each with a source. Used to check the river signal, not to tune it.
 RECORDED = [
@@ -86,20 +93,91 @@ def px(lat, lng):
     return int((N - lat) / RES), int((lng - W) / RES)
 
 
+def floodplain(dem, land):
+    # HAND: height above the nearest permanent water (the river channels, or the sea at Evans Head)
+    water = land == 80
+    lab, n = ndimage.label(water)
+    sizes = ndimage.sum(water, lab, range(1, n + 1))
+    drain = np.isin(lab, [i + 1 for i, s in enumerate(sizes) if s > 300])
+    drain_elev = np.where(drain, ndimage.minimum_filter(dem, size=3), np.nan)
+    dist, (iy, ix) = ndimage.distance_transform_edt(~drain, return_indices=True)
+    # ponytail: straight-line nearest drainage, not D8 flow routing; fine on a flat floodplain.
+    hand = np.clip(dem - drain_elev[iy, ix], 0, 6000)
+    plain = (~water) & (dist < 70) & (dem < 15)
+    return water, hand, plain
+
+
+def s1_db(day):
+    it = item("sentinel-1-rtc", f"{day}/{day}")
+    lin = warp_mosaic(it, "vv", Resampling.average)
+    db = 10 * np.log10(np.maximum(ndimage.uniform_filter(np.where(lin > 0, lin, 1e-3), 5), 1e-6))
+    # Some passes cover only part of the box; outside the swath (and its smeared edge) is no data, not dark water.
+    return np.where(ndimage.binary_erosion(lin > 0, np.ones((7, 7)), border_value=1), db, np.nan)
+
+
+def s1_water(day_before, day_after, water):
+    before, after = s1_db(day_before), s1_db(day_after)
+    seen = np.isfinite(after) & np.isfinite(before) & (after > -40)
+    return ndimage.binary_opening((after < -15) & ((after - before) < -3) & ~water & seen, np.ones((3, 3))), seen
+
+
+def agreement_png(path, dem, water, pred, observed):
+    gy, gx = np.gradient(dem, RES * 111_320, RES * 111_320 * np.cos(np.radians(-29.03)))
+    shade = np.clip(0.55 + (-gx * 0.7 + gy * 0.7) * 3, 0.25, 1.0)
+    base = (np.stack([shade] * 3, -1) * np.array([60, 72, 64])).astype("uint8")
+    base[water] = (40, 70, 110)
+    base[pred & observed] = (93, 170, 110)  # agree: flooded
+    base[observed & ~pred] = (90, 143, 216)  # satellite saw water the model missed
+    base[pred & ~observed] = (212, 167, 44)  # model flooded, satellite saw none
+    Image.fromarray(base, "RGB").save(path, optimize=True)
+
+
+def blind_check(dem, land, hand, river, demo):
+    """Out-of-sample check: the frozen river curve (meta.river) at the held-out day's GloFAS flow vs that day's Sentinel-1 water. Fits nothing."""
+    name, b, a = BLIND
+    water, _, plain = floodplain(dem, land)
+    q = float(glofas(a, a)[1][0])
+    stage = 0.0 if q <= river["q2"] else river["h0"] + river["k"] * (np.sqrt(q) - np.sqrt(river["q2"]))  # riverStage() in flood.ts
+    observed, seen = s1_water(b, a, water)
+    judged = plain & seen
+    pred = (hand < stage) & judged
+    obs = observed & judged
+    hits, misses, fa = int((pred & obs).sum()), int((~pred & obs).sum()), int((pred & ~obs).sum())
+    y0, x0 = px(*demo[0])
+    y1, x1 = px(*demo[2])
+    blk = (slice(y0, y1), slice(x0, x1))
+    demo_seen = bool(seen[blk].all())
+    agreement_png(OUT / "agreement-blind.png", dem, water, pred, observed)
+    out = {
+        "event": name, "before": b, "after": a, "dischargeThatDay": round(q), "stageM": round(float(stage), 2),
+        "csi": round(hits / max(1, hits + misses + fa), 3), "hits": hits, "misses": misses, "falseAlarms": fa,
+        "observedHa": round(float(obs.sum() * CELL_HA)), "modelHa": round(float(pred.sum() * CELL_HA)),
+        "judgedHa": round(float(judged.sum() * CELL_HA)), "floodplainSeen": round(float(judged.sum() / plain.sum()), 2),
+        "demoObserved": round(float(observed[blk].mean()), 2) if demo_seen else None,
+        "demoModel": round(float((hand[blk] < stage).mean()), 2) if demo_seen else None,
+        "note": "Blind: river curve frozen from the 2 March 2022 fit, run at this day's GloFAS flow; nothing refitted. Different flood, date and orbit."
+                " This pass only covers the western part of the floodplain (Coraki side), so scores are for that part; the demo block is outside it.",
+    }
+    print("blind check:", out)
+    return out
+
+
+if "--blind" in sys.argv:
+    # Patch only meta.json["sentinel1Blind"] (+ agreement-blind.png) from the files already built; the rest stays byte-identical.
+    meta = json.loads((OUT / "meta.json").read_text())
+    dem = np.fromfile(OUT / "dem.bin", "<i2").reshape(HEIGHT, WIDTH) / 10
+    land = np.fromfile(OUT / "land.bin", "u1").reshape(HEIGHT, WIDTH)
+    hand = np.fromfile(OUT / "hand.bin", "<u2").reshape(HEIGHT, WIDTH) / 10  # what the site reads
+    meta["sentinel1Blind"] = blind_check(dem, land, hand, meta["river"], meta["demo"])
+    (OUT / "meta.json").write_text(json.dumps(meta, indent=2))
+    sys.exit()
+
+
 print(f"grid {WIDTH}x{HEIGHT}")
 dem = warp_mosaic(item("cop-dem-glo-30"), "data", Resampling.bilinear)
 land = warp_mosaic([i for i in item("esa-worldcover") if "2021" in i.id], "map", Resampling.mode, "uint8")
 
-# ---- HAND: height above the nearest permanent water (the river channels, or the sea at Evans Head) ----
-water = land == 80
-lab, n = ndimage.label(water)
-sizes = ndimage.sum(water, lab, range(1, n + 1))
-drain = np.isin(lab, [i + 1 for i, s in enumerate(sizes) if s > 300])
-drain_elev = np.where(drain, ndimage.minimum_filter(dem, size=3), np.nan)
-dist, (iy, ix) = ndimage.distance_transform_edt(~drain, return_indices=True)
-# ponytail: straight-line nearest drainage, not D8 flow routing; fine on a flat floodplain.
-hand = np.clip(dem - drain_elev[iy, ix], 0, 6000)
-plain = (~water) & (dist < 70) & (dem < 15)
+water, hand, plain = floodplain(dem, land)
 
 # ---- River climatology ----
 days, Q = glofas("1984-01-01", (dt.date.today() - dt.timedelta(days=1)).isoformat())
@@ -113,15 +191,7 @@ h0 = float(np.percentile(hand[plain], 2))
 print(f"Q2 {q2:.0f}  Q5 {q5:.0f}  Feb-2022 peak {q_peak:.0f}  on image day {q_image:.0f} m3/s  h0 {h0:.2f} m")
 
 # ---- What Sentinel-1 saw on 2 March 2022 ----
-def s1_db(day):
-    it = item("sentinel-1-rtc", f"{day}/{day}")
-    lin = warp_mosaic(it, "vv", Resampling.average)
-    return 10 * np.log10(np.maximum(ndimage.uniform_filter(np.where(lin > 0, lin, 1e-3), 5), 1e-6))
-
-
-before, after = s1_db(S1_BEFORE), s1_db(S1_AFTER)
-seen = np.isfinite(after) & np.isfinite(before) & (after > -40)
-observed = ndimage.binary_opening((after < -15) & ((after - before) < -3) & ~water & seen, np.ones((3, 3)))
+observed, seen = s1_water(S1_BEFORE, S1_AFTER, water)
 print(f"Sentinel-1 new open water on {S1_AFTER}: {observed.sum() * CELL_HA:.0f} ha")
 
 # ---- Calibrate k on that image: the river level that best explains where the water was ----
@@ -211,16 +281,8 @@ rgba[observed] = (157, 184, 218, 210)
 Image.fromarray(rgba, "RGBA").save(OUT / "water.png", optimize=True)
 
 # Agreement map for the Validation page: model (at the image day's river level) vs what Sentinel-1 saw, over a hillshade.
-gy, gx = np.gradient(dem, RES * 111_320, RES * 111_320 * np.cos(np.radians(-29.03)))
-shade = np.clip(0.55 + (-gx * 0.7 + gy * 0.7) * 3, 0.25, 1.0)
-base = (np.stack([shade] * 3, -1) * np.array([60, 72, 64])).astype("uint8")
-base[water] = (40, 70, 110)
-pred = (hand < best) & plain & seen
-both, only_obs, only_pred = pred & observed, observed & ~pred, pred & ~observed
-base[both] = (93, 170, 110)  # agree: flooded
-base[only_obs] = (90, 143, 216)  # satellite saw water the model missed
-base[only_pred] = (212, 167, 44)  # model flooded, satellite saw none
-Image.fromarray(base, "RGB").save(OUT / "agreement.png", optimize=True)
+agreement_png(OUT / "agreement.png", dem, water, (hand < best) & plain & seen, observed)
+river = {"q2": round(q2), "q5": round(q5), "h0": round(h0, 2), "k": round(float(k), 4), "eventPeak": round(q_peak)}
 
 (OUT / "meta.json").write_text(json.dumps({
     "name": "Lower Richmond River, NSW",
@@ -228,13 +290,14 @@ Image.fromarray(base, "RGB").save(OUT / "agreement.png", optimize=True)
     "glofas": GLOFAS,
     "demo": demo,
     "event": {"name": "February 2022 flood", "start": EVENT[0], "end": EVENT[1]},
-    "river": {"q2": round(q2), "q5": round(q5), "h0": round(h0, 2), "k": round(float(k), 4), "eventPeak": round(q_peak)},
+    "river": river,
     "sentinel1": {
         "before": S1_BEFORE, "after": S1_AFTER, "observedHa": round(float(observed.sum() * CELL_HA)), "dischargeThatDay": round(q_image),
         **fit,
         "demoObserved": round(float(demo_obs.mean()), 2), "demoModel": round(float(demo_pred.mean()), 2),
         "note": "Calibrated on this image (in-sample). The image is ~2 days after the peak, so the observed water is a lower bound for the peak flood.",
     },
+    "sentinel1Blind": blind_check(dem, land, hand, river, demo),
     "checks": {"woodburnAboveRiverM": round(woodburn_hand, 1), "stageAtPeakM": round(float(stage(q_peak)), 1)},
     "record": record,
     "unmatchedAlarms": unmatched,

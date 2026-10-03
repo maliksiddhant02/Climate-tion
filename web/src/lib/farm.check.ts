@@ -21,8 +21,8 @@ assert.equal(r.maxDepth, 1)
 assert.ok(r.atRisk > 0)
 assert.equal(paddockRisk({ ...cane, crop: "pasture" }, cells, 50).atRisk, 0) // no value entered yet
 
-assert.equal(itemDepth({ id: "t", kind: "tractor", at: [d * 0.25, d * 0.25] }, cells, 50), 1)
-assert.equal(itemDepth({ id: "t", kind: "tractor", at: [d * 10, d * 10] }, cells, 50), undefined)
+assert.equal(itemDepth({ id: "t", kind: "fuel", at: [d * 0.25, d * 0.25] }, cells, 50), 1)
+assert.equal(itemDepth({ id: "t", kind: "fuel", at: [d * 10, d * 10] }, cells, 50), undefined)
 
 // Cane planted Jan 2025 matures Jan 2027, waits for the mill to open in June.
 assert.equal(readyDate({ ...cane, planted: "2025-01" })?.getMonth(), 5)

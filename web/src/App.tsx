@@ -206,9 +206,10 @@ function Home({ farm }: { farm: Farm }) {
           <h2 className="font-display text-[clamp(2rem,3.6vw,3.75rem)] leading-[0.95]">Climate Awareness & Education</h2>
           <dl className="mt-10 max-w-xl space-y-6">
             {[
-              ["COP31 target", "Climate action education for all by 2035"],
-              ["How", "Each alert ends with one line on why heavy rain is getting more common here, tied to rain the farmer can see"],
+              ["COP31 target", "Climate education for all and climate-resilient farming, by 2035"],
+              ["How", "Every text ends with why heavy rain is getting more common here, and My farm shows each farmer their own climate: the rain trend, this season's El Niño, and which paddock floods first"],
               ["Where", "Northern Rivers cane country, NSW. Australia is leading the COP31 talks, and this is climate action you can see on a farm"],
+              ["Pacific", "Draki began on Fiji's Ba River (draki is Fijian for weather). It runs on free global data, so the same method can reach Pacific island farms, where field-level flood maps are rare"],
             ].map(([k, v]) => (
               <div key={k} className="grid grid-cols-[7rem_1fr] border-t border-rule pt-4">
                 <dt className="text-sm text-muted-foreground">{k}</dt>
@@ -389,8 +390,44 @@ function Proof({ farm }: { farm: Farm }) {
               </p>
             </div>
             <p className="mt-auto rounded-2xl bg-paper-2 p-4 text-sm text-muted-foreground">
-              One honest caveat: we used this same image to set the model up, so the overlap is a best fit rather than a blind test. The flood record below is the
-              independent check.
+              One honest caveat: we used this same image to set the model up, so {Math.round(s1.csi * 100)}% is a best fit. The blind test and the flood record below
+              are the independent checks.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 1b. The blind test: same model, frozen, on a flood it never saw. */}
+      {m?.sentinel1Blind && (
+        <div className="mt-10 grid gap-8 rounded-3xl border border-rule bg-card p-6 lg:grid-cols-12 lg:items-center">
+          <img
+            src={`${BASE}/agreement-blind.png`}
+            alt="Map of the western lower Richmond floodplain on 31 March 2022: green where Draki and the satellite agree it flooded, blue where only the satellite saw water, amber where only Draki predicted it"
+            className="w-full rounded-2xl lg:col-span-5"
+            loading="lazy"
+          />
+          <div className="lg:col-span-7">
+            <h2 className="text-2xl">Blind test: a flood the model never saw</h2>
+            <p className="mt-3 text-muted-foreground">
+              We froze the model and ran it on the {m.sentinel1Blind.event.charAt(0).toLowerCase() + m.sentinel1Blind.event.slice(1)}, then compared it with a different satellite pass on{" "}
+              {day(m.sentinel1Blind.after)}. Nothing was re-tuned.
+            </p>
+            <dl className="mt-6 grid grid-cols-3 gap-6">
+              {[
+                [`${Math.round(m.sentinel1Blind.csi * 100)}%`, "overlap, square by square"],
+                [`${Math.round(m.sentinel1Blind.observedHa / 100)} km²`, "seen under water by satellite"],
+                [`${Math.round(m.sentinel1Blind.modelHa / 100)} km²`, "flooded in Draki's map"],
+              ].map(([v, k]) => (
+                <div key={k} className="flex flex-col-reverse justify-end gap-2 border-t border-ink pt-3">
+                  <dt className="text-sm text-muted-foreground">{k}</dt>
+                  <dd className="font-display text-[clamp(1.5rem,1.9vw,2.25rem)] leading-none whitespace-nowrap tabular-nums">{v}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-6 text-sm text-muted-foreground">
+              Draki caught almost all the water the satellite saw, but flooded more ground than it showed: it leans towards warning too much, not too little. This
+              pass only covers about {Math.round(m.sentinel1Blind.floodplainSeen * 100)}% of the floodplain (the Coraki side), and radar misses water under standing
+              cane and trees, so the satellite's figure is a minimum.
             </p>
           </div>
         </div>

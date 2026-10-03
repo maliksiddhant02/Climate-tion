@@ -1,9 +1,10 @@
-// A farmer's own farm: boundary, paddocks (what grows where) and things on the farm (machines, stores, stock).
+// A farmer's own farm: boundary, paddocks (what grows where) and the things on it that stay put (sheds, tanks, pumps).
+// Machinery and stock move daily, so Draki never tracks them: it names the paddocks that flood, and the farmer moves what's there.
 // Pure functions, no imports beyond types, so `node src/lib/farm.check.ts` can run it.
 import { inPolygon, KNOBS, type Cell, type LatLng } from "./flood.ts"
 
 export type CropId = "cane" | "soy" | "pasture" | "macadamia" | "veg" | "other"
-export type ItemId = "tractor" | "harvester" | "truck" | "pump" | "fuel" | "chem" | "shed" | "house" | "cattle"
+export type ItemId = "pump" | "fuel" | "chem" | "shed" | "house"
 
 export type Paddock = { id: string; crop: CropId; poly: LatLng[]; planted?: string; valuePerHa?: number }
 export type Item = { id: string; kind: ItemId; at: LatLng; hours?: number }
@@ -22,17 +23,13 @@ export const CROPS: Record<CropId, { label: string; color: string; valuePerHa?: 
 
 // Fuel use: typical farm-size machines (editable on the page). Prices: national average pump prices, Oct 2026 (AIP).
 const DIESEL = 2.62
-// `prep`: what to do for things that can't be driven away (NSW SES flood advice: secure tanks so they can't float off).
+// `prep`: what to do before the water comes (NSW SES flood advice: secure tanks so they can't float off).
 export const ITEMS: Record<ItemId, { label: string; lph?: number; hours?: number; swap?: string; prep?: string }> = {
-  tractor: { label: "Tractor", lph: 6, hours: 250 },
-  harvester: { label: "Harvester" },
-  truck: { label: "Truck / haul-out" },
-  pump: { label: "Water pump", lph: 0.8, hours: 300, swap: "a solar pump" },
+  pump: { label: "Water pump", lph: 0.8, hours: 300, swap: "a solar pump", prep: "unplug it and lift the motor if you can" },
   fuel: { label: "Fuel tank", prep: "tie it down so it can't float off" },
-  chem: { label: "Fertiliser & chemicals" },
+  chem: { label: "Fertiliser & chemicals", prep: "lift it off the floor or move it to higher ground" },
   shed: { label: "Shed", prep: "lift what's inside off the floor" },
   house: { label: "House", prep: "move valuables up high" },
-  cattle: { label: "Cattle" },
 }
 
 const M_PER_DEG = 111_320
@@ -94,7 +91,9 @@ export const uid = () => Math.random().toString(36).slice(2, 9)
 const KEY = "draki-farm-v1"
 export function loadProfile(): Profile | undefined {
   try {
-    return JSON.parse(localStorage.getItem(KEY) ?? "null") ?? undefined
+    const p: Profile | null = JSON.parse(localStorage.getItem(KEY) ?? "null")
+    // Farms saved before machinery and stock were dropped: keep only the things that stay put.
+    return p ? { ...p, items: p.items.filter((it) => it.kind in ITEMS) } : undefined
   } catch {
     return undefined
   }
