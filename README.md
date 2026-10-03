@@ -71,6 +71,7 @@ scripts/.venv/Scripts/python scripts/build_season_data.py          # El Nino / L
 | Esri World Transportation, World Boundaries and Places | Roads and place names on the ground-height map | Esri terms, attribution shown on map |
 | AWS Terrain Tiles (Mapzen Terrarium; SRTM, GMTED and other open sources) | The ground-height map (coloured and shaded in the browser) and the shape of the tilted 3D view | Open data, attribution shown on map |
 | MapLibre GL JS | Tilted 3D map (loaded only when 3D is pressed) | BSD-3-Clause |
+| devices.css (picturepan2) | Phone frame around the example text messages | MIT |
 | React, Vite, TypeScript, Tailwind CSS | App | MIT |
 | shadcn/ui (Base UI), lucide-react, `cn` | UI components, icons | MIT / ISC |
 | Leaflet, react-leaflet | Map | BSD-2 / Hippocratic-2.1 |

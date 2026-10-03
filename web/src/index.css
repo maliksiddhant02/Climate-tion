@@ -4,6 +4,8 @@
 /* Archivo: one variable family, weight 100–900 and width 62–125%. Expanded for display, normal for reading. */
 @import "@fontsource-variable/archivo/wdth.css";
 @import "leaflet/dist/leaflet.css";
+/* Phone frame for the texts (components/Phone). In the base layer so Tailwind utilities beat its `.device * { display: block }`. */
+@import "devices.css/dist/devices.min.css" layer(base);
 
 @custom-variant dark (&:is(.dark *));
 

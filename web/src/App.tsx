@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react"
 import { ArrowRight, ArrowUpRight } from "lucide-react"
-import { aud, LivePage, smsText, useFarm, type Farm } from "@/Live"
+import { ago, aud, LivePage, smsText, useFarm, type Farm } from "@/Live"
+import { Phone } from "@/components/Phone"
 import { DECADES, FlowHistory, HeavyRainChart } from "@/components/weather"
 import { FloodValley } from "@/components/FloodValley"
 import { FarmPage } from "@/Farm"
-import { getFlowHistory } from "@/lib/api"
+import { getFlowHistory, weatherUrl } from "@/lib/api"
 import { BASE } from "@/lib/region"
 import { KNOBS } from "@/lib/flood"
 import { cn } from "@/lib/utils"
@@ -133,13 +134,14 @@ function Home({ farm }: { farm: Farm }) {
   return (
     <>
       <FloodValley>
-        <div className={cn(WRAP, "stagger absolute inset-x-0 bottom-0 pb-6 text-white md:pb-14")}>
+        <div className={cn(WRAP, "stagger absolute inset-x-0 bottom-0 pb-16 text-white md:pb-32")}>
           <h1 className="font-display text-[clamp(2.1rem,7vw,8rem)] leading-[0.92] uppercase">
             Know which part of your farm will <em className="text-cane">flood.</em>
           </h1>
           <div className="mt-5 grid gap-4 border-t border-white/25 pt-4 md:mt-8 md:grid-cols-12 md:items-end md:gap-6 md:pt-5">
             <p className="text-white/80 md:col-span-6 md:text-lg">
-              This is the real lower Richmond floodplain in NSW, mapped in 30-metre squares. Scroll, and the river rises to its February 2022 peak.
+              <strong className="font-semibold text-white">Real data, not a mock-up.</strong> This is the lower Richmond floodplain in NSW, mapped in 30-metre
+              squares from satellite height data. Scroll, and the river rises to its February 2022 peak, replayed from the recorded rain and river flow.
             </p>
             <div className="flex flex-wrap gap-3 md:col-span-6 md:justify-end">
               <a href="#/farm" className={cn(btn, "bg-white text-ink hover:bg-paper")}>
@@ -153,27 +155,27 @@ function Home({ farm }: { farm: Farm }) {
         </div>
       </FloodValley>
 
-      <section className={cn(WRAP, "py-24 md:py-32")}>
-        <h2 className="font-display text-[clamp(2.25rem,5.6vw,6rem)] leading-[0.95]">
-          Flood warnings cover districts. <span className="text-flood">Floods hit paddocks.</span>
-        </h2>
-        <div className="mt-16 grid gap-12 md:grid-cols-12">
-          <div className="md:col-span-5">
-            <p className="text-lg leading-relaxed text-muted-foreground">
-              A flood warning for the whole Richmond valley can't tell a grower that the bottom of their block goes under first. Draki works it out for
-              one field: how high each 30 m of ground sits above the river, how high the river is forecast to rise, and what to move before it does.
-            </p>
-            <a href="#/farm" className="mt-8 inline-flex items-center gap-2 font-medium text-leaf hover:underline">
-              Mark your farm and see it <ArrowRight className="size-4" aria-hidden />
-            </a>
-          </div>
-          <figure className="md:col-span-6 md:col-start-7 md:-mt-4">
-            <div className="rounded-[2rem] bg-ink p-3">
-              <p className="rounded-[1.5rem] bg-white/10 p-5 text-base leading-relaxed whitespace-pre-line text-white/90">{r ? smsText(r, true, true) : "…"}</p>
-            </div>
-            <figcaption className="mt-3 text-sm text-muted-foreground">The text Draki writes for the demo block from the February 2022 flood's recorded rain and river flow.</figcaption>
-          </figure>
+      <RealData farm={farm} />
+
+      <section className={cn(WRAP, "grid gap-12 py-20 md:grid-cols-12 md:items-center md:py-28")}>
+        <div className="md:col-span-7">
+          <h2 className="font-display text-[clamp(2.25rem,4.6vw,5rem)] leading-[0.95]">
+            Flood warnings cover districts. <span className="text-flood">Floods hit paddocks.</span>
+          </h2>
+          <p className="mt-8 max-w-xl text-lg leading-relaxed text-muted-foreground">
+            A flood warning for the whole Richmond valley can't tell a grower that the bottom of their block goes under first. Draki works it out for
+            one field: how high each 30 m of ground sits above the river, how high the river is forecast to rise, and what to move before it does.
+          </p>
+          <a href="#/farm" className="mt-8 inline-flex items-center gap-2 font-medium text-leaf hover:underline">
+            Mark your farm and see it <ArrowRight className="size-4" aria-hidden />
+          </a>
         </div>
+        <figure className="md:col-span-5">
+          <Phone {...(r ? smsText(r, true, farm.isDemo) : { msgs: [] })} empty="…" />
+          <figcaption className="mx-auto mt-4 max-w-[22rem] text-center text-sm text-muted-foreground">
+            The texts Draki writes from the February 2022 flood's recorded rain and river flow. The grower's reply is an example.
+          </figcaption>
+        </figure>
       </section>
 
       <section className="bg-ink text-white">
@@ -195,8 +197,11 @@ function Home({ farm }: { farm: Farm }) {
       </section>
 
       <section className="grid md:grid-cols-2">
-        <img src="/photos/flooded-field.jpg" alt="Farm fields partly under floodwater" className="h-full min-h-80 w-full object-cover" loading="lazy" />
-        <div className="px-6 py-20 md:px-14 md:py-28">
+        {/* The text sets the height; the photo just fills its half. */}
+        <div className="relative min-h-72">
+          <img src="/photos/flooded-field.jpg" alt="Farm fields partly under floodwater" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+        </div>
+        <div className="px-6 py-16 md:px-14 md:py-24">
           <h2 className="font-display text-[clamp(2rem,3.6vw,3.75rem)] leading-[0.95]">Climate Awareness & Education</h2>
           <dl className="mt-10 max-w-xl space-y-6">
             {[
@@ -216,6 +221,89 @@ function Home({ farm }: { farm: Farm }) {
   )
 }
 
+
+/** The landing page's proof that nothing is mocked: live forecasts with their numbers right now, and the records behind the model. */
+function RealData({ farm }: { farm: Farm }) {
+  const r = farm.liveRun
+  const m = farm.meta
+  const where = farm.isDemo ? "the demo block" : "your farm"
+  const centre: [number, number] = [farm.poly.reduce((a, p) => a + p[0], 0) / farm.poly.length, farm.poly.reduce((a, p) => a + p[1], 0) / farm.poly.length]
+  const rainWeek = r ? r.w.daily.rain.reduce((a, v) => a + (v || 0), 0) : undefined
+  const rows: { live: boolean; value: string; what: string; source: string; href?: string }[] = [
+    {
+      live: true,
+      value: rainWeek !== undefined ? `${rainWeek.toFixed(0)} mm` : "…",
+      what: `of rain forecast at ${where} over the next 7 days`,
+      source: "Open-Meteo weather forecast, updated hourly",
+      href: weatherUrl(centre, false),
+    },
+    {
+      live: true,
+      value: r?.river ? (r.river.q < 1 ? "Under 1 m³/s" : `${Math.round(r.river.q).toLocaleString("en-AU")} m³/s`) : "…",
+      what: r?.river
+        ? `Richmond River flow at its forecast peak this week, across ${r.river.flow.members?.length ?? 1} forecasts. It bursts its banks above ${r.river.cal.q2.toLocaleString("en-AU")} m³/s · fetched ${ago(r.river.flow.fetchedAt)}`
+        : "Richmond River flow at its forecast peak this week",
+      source: "Copernicus GloFAS river forecast (EU)",
+      href: r?.river?.flow.url,
+    },
+    {
+      live: false,
+      value: m?.sentinel1 ? `${Math.round(m.sentinel1.observedHa / 100)} km²` : "…",
+      what: "under water on 2 March 2022, mapped by satellite radar. We check Draki's flood map against it",
+      source: "Copernicus Sentinel-1 (EU)",
+      href: "#/proof",
+    },
+    {
+      live: false,
+      value: m ? `${m.record.length} floods` : "…",
+      what: "on record since 2009, each matched to the river's flow that day",
+      source: "Councils, ABC, AIDR and FloodList records",
+      href: "#/proof",
+    },
+    {
+      live: false,
+      value: "30 m",
+      what: "squares of ground height across the whole floodplain, plus a 10 m land-cover map",
+      source: "Copernicus DEM GLO-30, ESA WorldCover",
+      href: "https://planetarycomputer.microsoft.com/dataset/cop-dem-glo-30",
+    },
+  ]
+  return (
+    <section className="border-b border-rule bg-paper-2">
+      <div className={cn(WRAP, "py-16 md:py-20")}>
+        <div className="grid gap-6 md:grid-cols-12 md:items-end">
+          <h2 className="font-display text-[clamp(2rem,4.4vw,4.5rem)] leading-[0.95] md:col-span-7">Every number here is real.</h2>
+          <p className="text-lg leading-relaxed text-muted-foreground md:col-span-5">
+            Forecasts are fetched live when you open the page. Past floods come from satellite images and official records. Every row links to the raw data.
+          </p>
+        </div>
+        <ul className="mt-10">
+          {rows.map((row) => (
+            <li key={row.source} className="grid grid-cols-[auto_1fr] items-baseline gap-x-5 gap-y-1 border-t border-rule py-5 md:grid-cols-[7.5rem_14rem_1fr_auto]">
+              <span className={cn("inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-medium", row.live ? "bg-leaf text-white" : "border border-silt/40 text-silt")}>
+                {row.live && <i className="size-1.5 animate-pulse rounded-full bg-white" aria-hidden />}
+                {row.live ? "Live now" : "Recorded"}
+              </span>
+              <span className="text-3xl font-semibold tabular-nums">{row.value}</span>
+              <span className="col-span-2 md:col-span-1">{row.what}</span>
+              {row.href ? (
+                <a
+                  href={row.href}
+                  {...(row.href.startsWith("#") ? {} : { target: "_blank", rel: "noreferrer" })}
+                  className="col-span-2 text-sm text-leaf hover:underline md:col-span-1 md:text-right"
+                >
+                  {row.source} <ArrowUpRight className="inline size-3.5" aria-hidden />
+                </a>
+              ) : (
+                <span className="col-span-2 text-sm text-muted-foreground md:col-span-1">{row.source}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )
+}
 
 const LEVEL = { act: ["Act today", "bg-flood text-white"], watch: ["Watch", "bg-cane text-ink"], missed: ["Missed", "border border-rule text-muted-foreground"] } as const
 

@@ -6,7 +6,6 @@ import { loadRegion, type Region } from "@/lib/region"
 // The Home hero: the real lower Richmond floodplain, NSW (Copernicus GLO-30, 30 m) drawn as shaded terrain, with the
 // Richmond River rising as the visitor scrolls, from normal flow to the February 2022 peak. Every pixel is our model's own data.
 
-const TOWN = [-29.0717, 153.3408] as const // Woodburn
 const NORMAL_Q = 30 // m³/s, a typical dry-season flow
 const IN_BANKS = 0.12 // share of the scroll spent showing the river still inside its banks
 
@@ -130,21 +129,11 @@ function paint(ctx: CanvasRenderingContext2D, img: ImageData, p: Prepared, stage
   ctx.putImageData(img, 0, 0)
 }
 
-/** Where a lat/lng lands on screen when the canvas is drawn with object-fit: cover, centred. */
-function coverPoint(canvas: HTMLCanvasElement, region: Region, [lat, lng]: readonly [number, number]) {
-  const { width: cw, height: ch, bbox, res } = region.meta
-  const W = canvas.clientWidth
-  const H = canvas.clientHeight
-  const s = Math.max(W / cw, H / ch)
-  return { x: (W - cw * s) / 2 + ((lng - bbox[0]) / res) * s, y: (H - ch * s) / 2 + ((bbox[3] - lat) / res) * s }
-}
-
 export function FloodValley({ children }: { children: ReactNode }) {
   const section = useRef<HTMLElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const [prep, setPrep] = useState<Prepared>()
   const [progress, setProgress] = useState(0)
-  const [town, setTown] = useState<{ x: number; y: number }>()
 
   useEffect(() => {
     let live = true
@@ -193,15 +182,6 @@ export function FloodValley({ children }: { children: ReactNode }) {
     paint(ctx, img, prep, stage)
   }, [prep, stage])
 
-  useEffect(() => {
-    const c = canvas.current
-    if (!prep || !c) return
-    const place = () => setTown(coverPoint(c, prep.region, TOWN))
-    place()
-    addEventListener("resize", place)
-    return () => removeEventListener("resize", place)
-  }, [prep])
-
   const phase = !cal ? "" : q < cal.q2 ? "In its banks" : q < cal.q5 ? "Over its banks: Watch" : progress < 0.995 ? "Act today" : "28 February 2022"
 
   return (
@@ -218,13 +198,6 @@ export function FloodValley({ children }: { children: ReactNode }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-ink/0" />
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-ink/70 to-transparent" />
-
-        {town && prep && (
-          <div className="pointer-events-none absolute" style={{ left: town.x, top: town.y }}>
-            <span className="absolute -translate-x-1/2 -translate-y-1/2 size-3 rounded-full border-2 border-white bg-cane" />
-            <span className="absolute top-3 left-3 text-sm font-medium whitespace-nowrap text-white drop-shadow">Woodburn</span>
-          </div>
-        )}
 
         {prep && cal && (
           <div className="absolute top-5 right-6 w-52 rounded-2xl bg-ink/70 p-4 text-white backdrop-blur sm:w-64 sm:p-5 md:top-8 md:right-10 md:w-72" aria-live="polite">
@@ -255,7 +228,7 @@ export function FloodValley({ children }: { children: ReactNode }) {
 
         {prep && cal && (
           <div
-            className="absolute inset-x-0 bottom-0 px-6 pb-12 text-white transition-opacity duration-500 md:px-10 md:pb-16"
+            className="absolute inset-x-0 bottom-0 px-6 pb-20 text-white transition-opacity duration-500 md:px-10 md:pb-32"
             style={{ opacity: progress > 0.9 ? 1 : 0 }}
             aria-hidden={progress <= 0.9}
           >

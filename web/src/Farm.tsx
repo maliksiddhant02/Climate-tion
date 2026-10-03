@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight, Beef, Check, Droplets, FlaskConical, Fuel, House, MapPin, Pencil, Tractor, Trash2, Truck, Undo2, Warehouse } from "lucide-react"
 import { FieldMap, iconSvg, type Pin } from "@/components/FieldMap"
 import { wx } from "@/components/weather"
+import { Phone } from "@/components/Phone"
 import { aud, DEMO, type Farm } from "@/Live"
 import { areaHa, CROPS, fuelYear, itemDepth, ITEMS, loadProfile, paddockRisk, readyDate, safeGround, saveProfile as save, uid, valuePerHa, type CropId, type ItemId, type Paddock, type Profile } from "@/lib/farm"
 import { gridInPolygon, KNOBS, riverDepths, riverStage, type Cell, type LatLng } from "@/lib/flood"
@@ -639,16 +640,10 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
           <Timeline paddocks={profile.paddocks} onEdit={() => onEdit(1)} />
         </div>
 
-        <div className="rounded-3xl bg-ink p-6 text-white lg:col-span-5">
+        <div className={cn(card, "lg:col-span-5")}>
           <h2 className="text-2xl">Your texts</h2>
-          <p className="mt-1 text-sm text-white/60">{profile.phone ? `To ${profile.phone}` : "Any phone, no app"} · {SCENARIO[scenario].toLowerCase()}</p>
-          <ol className="mt-4 space-y-3">
-            {texts.map((t) => (
-              <li key={t} className="max-w-[90%] rounded-2xl rounded-tl-sm bg-white/10 px-4 py-3 text-sm leading-relaxed">
-                {t}
-              </li>
-            ))}
-          </ol>
+          <p className="mt-1 text-sm text-muted-foreground">{profile.phone ? `To ${profile.phone}` : "Any phone, no app"}</p>
+          <Phone className="mt-4" msgs={texts.map((text) => ({ text }))} stamp={SCENARIO[scenario].toLowerCase()} />
         </div>
 
         <div className={cn(card, "lg:col-span-12")}>

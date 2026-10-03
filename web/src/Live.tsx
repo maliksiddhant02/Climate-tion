@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { AlertTriangle, ArrowRight, ArrowUpRight, Check, Eye, Pause, PenLine, Play, RotateCcw } from "lucide-react"
 import { FieldMap } from "@/components/FieldMap"
 import { RainBars, RiverChart, wx } from "@/components/weather"
+import { Phone, type Msg } from "@/components/Phone"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getEventReplay, getElevations, getFlowForecast, getWeather, REPLAY, weatherUrl, type Flow, type Weather } from "@/lib/api"
 import { assess, floodDepths, gridInPolygon, KNOBS, levelFor, maxRolling, PLAYBOOK, riverDepths, riverStage, type Assessment, type Cell, type LatLng, type Level, type River } from "@/lib/flood"
@@ -159,13 +160,14 @@ export function smsText({ a, peak, w, river }: Run, replay: boolean, demo: boole
     a.level === "clear"
       ? `Up to ${peak.total.toFixed(0)} mm of rain in 3 days. Your field should drain fine.`
       : `${riverLine}${peak.total.toFixed(0)} mm of rain in 3 days. Your low ground could sit under ${depthLabel(a.maxDepth)} of water. About ${a.floodedHa.toFixed(0)} hectares of cane, ${aud(a.valueAtRisk)}.`
-  return [
-    `Draki · ${demo ? "demo block" : "your field"}${replay ? " (replay)" : ""}`,
-    head,
-    body,
-    PLAYBOOK[a.level].map((t, i) => `${i + 1}. ${t}`).join("\n"),
-    `Why: very heavy rain days (50 mm or more) have nearly tripled here since the 1990s. A warmer climate puts more water in the air.`,
-  ].join("\n\n")
+  const msgs: Msg[] = [
+    { text: `${head}\n${body}` },
+    { text: `What to do:\n${PLAYBOOK[a.level].map((t, i) => `${i + 1}. ${t}`).join("\n")}` },
+    { text: "Why: very heavy rain days (50 mm or more) have nearly tripled here since the 1990s. A warmer climate puts more water in the air." },
+  ]
+  // An example reply, so it reads as a conversation the grower can answer (Draki doesn't read replies yet).
+  if (a.level !== "clear") msgs.push({ me: true, text: "Thanks. Moving the gear up to the shed now." })
+  return { msgs, stamp: `${demo ? "Demo block" : "Your field"} · ${dateLabel(from)}${replay ? " (replay)" : ""}` }
 }
 
 const card = "rounded-3xl border border-rule bg-card p-6"
@@ -411,13 +413,13 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
             })}
           </div>
 
-          <div className="rounded-3xl bg-ink p-6 text-white lg:col-span-5">
-            <p className="text-sm text-white/60">The text the grower gets</p>
-            <div className="mx-auto mt-5 max-w-sm rounded-[2rem] border border-white/15 bg-[#0d1712] p-3">
-              <p className="rounded-[1.5rem] bg-white/10 p-4 text-sm leading-relaxed whitespace-pre-line text-white/90">
-                {frame && frame.a.level === "clear" ? "No alert yet. Draki is watching the river." : r ? smsText(r, mode === "replay", isDemo) : "…"}
-              </p>
-            </div>
+          <div className={cn(card, "lg:col-span-5")}>
+            <p className="text-sm text-muted-foreground">The text the grower gets</p>
+            <Phone
+              className="mt-5"
+              {...(r && !(frame && frame.a.level === "clear") ? smsText(r, mode === "replay", isDemo) : { msgs: [] })}
+              empty={frame ? "No alert yet. Draki is watching the river." : "…"}
+            />
           </div>
 
           <div className={cn(card, "flex flex-col lg:col-span-7")}>
@@ -504,7 +506,7 @@ function RiskCard({ r, live, now, onReplay }: { r?: Run; live: boolean; now?: bo
   )
 }
 
-const ago = (t?: number) => {
+export const ago = (t?: number) => {
   if (!t) return "just now"
   const min = Math.round((Date.now() - t) / 60_000)
   return min < 1 ? "just now" : min < 60 ? `${min} min ago` : `${Math.round(min / 60)} h ago`
