@@ -320,24 +320,29 @@ function Proof({ farm }: { farm: Farm }) {
   // Area of one 1 arc-second square at this latitude, in hectares.
   const cellHa = m ? ((m.res * 111_320) ** 2 * Math.cos((((m.bbox[1] + m.bbox[3]) / 2) * Math.PI) / 180)) / 10_000 : 0
   const day = (iso: string) => new Date(iso).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })
+  // Section rhythm: a rule and generous space between the four parts, tight space inside each.
+  const part = "mt-16 border-t border-rule pt-10 md:mt-20 md:pt-12"
   return (
     <section className={cn(WRAP, "py-16")}>
-      <h1 className="font-display text-5xl uppercase md:text-7xl">Does it work?</h1>
-      <p className="mt-6 max-w-4xl text-2xl leading-snug">
-        {s1 && m ? (
-          <>
-            Two days after the February 2022 peak, a satellite mapped <strong className="font-semibold">{Math.round(s1.observedHa / 100)} km²</strong> under
-            water on the lower Richmond. Draki's map of the same flood overlaps it by <strong className="font-semibold">{Math.round(s1.csi * 100)}%</strong>, square by
-            square. And all {caught} recorded floods since 2009 would have triggered <strong className="font-semibold">Act today</strong>.
-          </>
-        ) : (
-          "Loading the evidence…"
-        )}
-      </p>
+      <div className="grid gap-6 lg:grid-cols-12 lg:items-end">
+        <h1 className="font-display text-5xl uppercase md:text-7xl lg:col-span-5">Does it work?</h1>
+        <p className="text-2xl leading-snug lg:col-span-7">
+          {s1 && m ? (
+            <>
+              Two days after the February 2022 peak, a satellite mapped <strong className="font-semibold">{Math.round(s1.observedHa / 100)} km²</strong> under
+              water on the lower Richmond. Draki's map of the same flood overlaps it by <strong className="font-semibold">{Math.round(s1.csi * 100)}%</strong>, square
+              by square. And all {caught} recorded floods since 2009 would have triggered <strong className="font-semibold">Act today</strong>.
+            </>
+          ) : (
+            "Loading the evidence…"
+          )}
+        </p>
+      </div>
 
+      {/* 1. The satellite check: the map leads, its numbers and method sit beside it. */}
       {s1 && (
-        <div className="mt-12 grid gap-8 lg:grid-cols-12">
-          <figure className="lg:col-span-8">
+        <div className="mt-10 grid gap-8 lg:grid-cols-12">
+          <figure className="lg:col-span-7">
             <img src={`${BASE}/agreement.png`} alt="Map of the lower Richmond floodplain: green where Draki and the satellite agree it flooded, blue where only the satellite saw water, amber where only Draki predicted it" className="w-full rounded-3xl" />
             <figcaption className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
               {[
@@ -352,7 +357,19 @@ function Proof({ farm }: { farm: Farm }) {
               ))}
             </figcaption>
           </figure>
-          <div className="space-y-6 lg:col-span-4">
+          <div className="flex flex-col gap-8 lg:col-span-5">
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
+              {[
+                [`${Math.round(s1.csi * 100)}%`, "overlap, square by square"],
+                [`${Math.round(s1.observedHa / 100)} km²`, "seen under water by satellite"],
+                [`${caught} of ${m?.record.length ?? caught}`, "recorded floods caught as Act today"],
+              ].map(([v, k]) => (
+                <div key={k} className="flex flex-col-reverse justify-end gap-2 border-t border-ink pt-3">
+                  <dt className="text-sm text-muted-foreground">{k}</dt>
+                  <dd className="font-display text-[clamp(1.75rem,1.9vw,2.25rem)] leading-none whitespace-nowrap tabular-nums">{v}</dd>
+                </div>
+              ))}
+            </dl>
             <div>
               <h2 className="text-2xl">How we checked</h2>
               <p className="mt-3 text-muted-foreground">
@@ -370,103 +387,110 @@ function Proof({ farm }: { farm: Farm }) {
                 .
               </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              One honest caveat: we used this same image to set the model up, so the overlap is a best fit rather than a blind test. The flood record below
-              is the independent check.
+            <p className="mt-auto rounded-2xl bg-paper-2 p-4 text-sm text-muted-foreground">
+              One honest caveat: we used this same image to set the model up, so the overlap is a best fit rather than a blind test. The flood record below is the
+              independent check.
             </p>
           </div>
         </div>
       )}
 
-      <figure className="mt-16 rounded-3xl border border-rule bg-card p-6">
-        <p className="text-sm text-muted-foreground">How much water the Richmond River carried near Woodburn, week by week, from the European flood-forecast system (GloFAS). Red dots are floods on record.</p>
-        <div className="mt-4">{history && m ? <FlowHistory time={history.time} q={history.q} floods={m.record} q2={m.river.q2} q5={m.river.q5} /> : <div className="h-64" />}</div>
-        <figcaption className="mt-3 text-sm text-muted-foreground">
-          The tallest spikes in the river record are the floods people remember. That is the signal Draki forecasts.{" "}
-          {m && (
-            <a href={`https://flood-api.open-meteo.com/v1/flood?latitude=${m.glofas[0]}&longitude=${m.glofas[1]}&daily=river_discharge&start_date=1997-01-01&end_date=2026-09-30`} target="_blank" rel="noreferrer" className="text-leaf hover:underline">
-              Raw data <ArrowUpRight className="inline size-3.5" aria-hidden />
-            </a>
-          )}
-        </figcaption>
-      </figure>
-
-      <h2 className="mt-20 text-2xl">Every recorded flood since 2009</h2>
-      <div className="mt-6 overflow-x-auto">
-        <table className="w-full min-w-[36rem] text-left text-sm">
-          <thead className="text-muted-foreground">
-            <tr className="border-b border-rule">
-              <th className="py-3 pr-4 font-normal">When</th>
-              <th className="py-3 pr-4 font-normal">What happened</th>
-              <th className="py-3 pr-4 text-right font-normal">River flow at its peak</th>
-              <th className="py-3 font-normal">Draki river alert</th>
-            </tr>
-          </thead>
-          <tbody>
-            {m?.record.map((e) => (
-              <tr key={e.start} className="border-b border-rule">
-                <td className="py-3 pr-4 whitespace-nowrap">{monthYear(e.start)}</td>
-                <td className="py-3 pr-4">
-                  {e.name}
-                  <span className="block text-xs text-muted-foreground">{e.source}</span>
-                </td>
-                <td className="py-3 pr-4 text-right whitespace-nowrap tabular-nums">{e.peak.toLocaleString("en-AU")} m³/s</td>
-                <td className="py-3">
-                  <span className={cn("inline-block rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap", LEVEL[e.level][1])}>{LEVEL[e.level][0]}</span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {m && (
-        <p className="mt-4 max-w-3xl text-sm text-muted-foreground">
-          {m.unmatchedAlarms.length === 0
-            ? "River flow is in cubic metres of water a second (m³/s); one cubic metre is 1,000 litres. Every time the river reached the Act today level since 2009, a flood was recorded. No false alarms."
-            : `The river also reached the Act today level ${m.unmatchedAlarms.length} times with no flood we could find a record of (${m.unmatchedAlarms.map(monthYear).join(", ")}).`}
-        </p>
-      )}
-
-      <h2 className="mt-20 max-w-5xl text-2xl">Why now: very heavy rain days have nearly tripled on the lower Richmond</h2>
-      <p className="mt-4 max-w-3xl text-muted-foreground">
-        Days a year with 50 mm or more of rain at Woodburn: about {Math.round(DECADES.then)} in the 1990s, about {Math.round(DECADES.now)} in 2016–25. These are small numbers, so treat it as a sign, not proof. Every alert ends with a line like this.
-      </p>
-      <figure className="mt-6 max-w-5xl rounded-3xl border border-rule bg-card p-6">
-        <HeavyRainChart />
-        <figcaption className="mt-3 text-sm text-muted-foreground">Source: ERA5, the European long-term weather record, via Open-Meteo.</figcaption>
-      </figure>
-
-      <h2 className="mt-20 text-2xl">How the model works</h2>
-      <p className="mt-4 max-w-3xl text-muted-foreground">
-        The lower Richmond floods when the river overtops its banks. For every 30 m square of a field we know how high it sits above the river. When the
-        forecast river flow pushes the water higher than that, the square floods. Heavy local rain can also pool in the low spots.
-      </p>
-      <details className="mt-8">
-        <summary className="text-leaf hover:underline">Technical details</summary>
-      <dl className="mt-6 grid gap-x-10 gap-y-4 sm:grid-cols-3">
-        {[
-          ["River bursts its banks above", m ? `${m.river.q2.toLocaleString("en-AU")} m³/s (a flood that comes about every 2 years)` : "–"],
-          ["Act today from", m ? `${m.river.q5.toLocaleString("en-AU")} m³/s (about every 5 years)` : "–"],
-          ["River level above normal", m ? `${m.river.h0} m + ${m.river.k} × (√flow − √${m.river.q2})` : "–"],
-          ["Tuned on", "Sentinel-1 flood map, 2 March 2022"],
-          ["Counts as flooded", `${KNOBS.floodedDepth} m deep`],
-          ["Cane value", `${aud(KNOBS.caneValuePerHa)} per hectare (125 t × A$55, two-year crop)`],
-          ["Elevation", "Copernicus GLO-30, 30 m"],
-          ["Land cover", "ESA WorldCover, 10 m"],
-          ["River flow", "GloFAS v4"],
-        ].map(([k, v]) => (
-          <div key={k} className="border-t border-rule pt-3">
-            <dt className="text-sm text-muted-foreground">{k}</dt>
-            <dd>{v}</dd>
+      {/* 2. The independent check: 30 years of river flow, and every recorded flood against it. */}
+      <div className={part}>
+        <h2 className="text-3xl">The independent check: every recorded flood since 2009</h2>
+        <div className="mt-6 grid gap-8 lg:grid-cols-12">
+          <figure className="rounded-3xl border border-rule bg-card p-6 lg:col-span-7">
+            <p className="text-sm text-muted-foreground">How much water the Richmond River carried near Woodburn, week by week, from the European flood-forecast system (GloFAS). Red dots are floods on record.</p>
+            <div className="mt-4">{history && m ? <FlowHistory time={history.time} q={history.q} floods={m.record} q2={m.river.q2} q5={m.river.q5} /> : <div className="h-64" />}</div>
+            <figcaption className="mt-3 text-sm text-muted-foreground">
+              The tallest spikes in the river record are the floods people remember. That is the signal Draki forecasts.{" "}
+              {m && (
+                <a href={`https://flood-api.open-meteo.com/v1/flood?latitude=${m.glofas[0]}&longitude=${m.glofas[1]}&daily=river_discharge&start_date=1997-01-01&end_date=2026-09-30`} target="_blank" rel="noreferrer" className="text-leaf hover:underline">
+                  Raw data <ArrowUpRight className="inline size-3.5" aria-hidden />
+                </a>
+              )}
+            </figcaption>
+          </figure>
+          <div className="lg:col-span-5">
+            <table className="w-full text-left text-sm">
+              <thead className="text-muted-foreground">
+                <tr className="border-b border-rule">
+                  <th className="py-2 pr-3 font-normal">Flood</th>
+                  <th className="py-2 pr-3 text-right font-normal">Peak flow</th>
+                  <th className="py-2 font-normal">Draki</th>
+                </tr>
+              </thead>
+              <tbody>
+                {m?.record.map((e) => (
+                  <tr key={e.start} className="border-b border-rule align-top">
+                    <td className="py-3 pr-3">
+                      <span className="font-medium">{monthYear(e.start)}</span> · {e.name}
+                      <span className="block text-xs text-muted-foreground">{e.source}</span>
+                    </td>
+                    <td className="py-3 pr-3 text-right whitespace-nowrap tabular-nums">{e.peak.toLocaleString("en-AU")} m³/s</td>
+                    <td className="py-3">
+                      <span className={cn("inline-block rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap", LEVEL[e.level][1])}>{LEVEL[e.level][0]}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {m && (
+              <p className="mt-4 text-sm text-muted-foreground">
+                {m.unmatchedAlarms.length === 0
+                  ? "River flow is in cubic metres of water a second (m³/s); one cubic metre is 1,000 litres. Every time the river reached the Act today level since 2009, a flood was recorded. No false alarms."
+                  : `The river also reached the Act today level ${m.unmatchedAlarms.length} times with no flood we could find a record of (${m.unmatchedAlarms.map(monthYear).join(", ")}).`}
+              </p>
+            )}
           </div>
-        ))}
-      </dl>
-      </details>
-      <p className="mt-8 max-w-3xl text-sm text-muted-foreground">
-        What would make it better: our height map includes the tops of crops and roofs, not just the ground, and our river figures come from a global
-        model, not the local river gauges. NSW publishes a far sharper height map (1-metre laser survey) and the Bureau of Meteorology runs river
-        gauges here. Plugging both in is the next step.
-      </p>
+        </div>
+      </div>
+
+      {/* 3 + 4. Why it matters now, and how the model works, side by side. */}
+      <div className={cn(part, "grid gap-12 lg:grid-cols-2 lg:gap-16")}>
+        <div>
+          <h2 className="text-3xl">Why now: very heavy rain days have nearly tripled on the lower Richmond</h2>
+          <p className="mt-4 text-muted-foreground">
+            Days a year with 50 mm or more of rain at Woodburn: about {Math.round(DECADES.then)} in the 1990s, about {Math.round(DECADES.now)} in 2016–25. These are
+            small numbers, so treat it as a sign, not proof. Every alert ends with a line like this.
+          </p>
+          <figure className="mt-6 rounded-3xl border border-rule bg-card p-6">
+            <HeavyRainChart />
+            <figcaption className="mt-3 text-sm text-muted-foreground">Source: ERA5, the European long-term weather record, via Open-Meteo.</figcaption>
+          </figure>
+        </div>
+
+        <div>
+          <h2 className="text-3xl">How the model works</h2>
+          <p className="mt-4 text-muted-foreground">
+            The lower Richmond floods when the river overtops its banks. For every 30 m square of a field we know how high it sits above the river. When the
+            forecast river flow pushes the water higher than that, the square floods. Heavy local rain can also pool in the low spots.
+          </p>
+          <dl className="mt-6 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+            {[
+              ["River bursts its banks above", m ? `${m.river.q2.toLocaleString("en-AU")} m³/s (a flood that comes about every 2 years)` : "–"],
+              ["Act today from", m ? `${m.river.q5.toLocaleString("en-AU")} m³/s (about every 5 years)` : "–"],
+              ["River level above normal", m ? `${m.river.h0} m + ${m.river.k} × (√flow − √${m.river.q2})` : "–"],
+              ["Tuned on", "Sentinel-1 flood map, 2 March 2022"],
+              ["Counts as flooded", `${KNOBS.floodedDepth} m deep`],
+              ["Cane value", `${aud(KNOBS.caneValuePerHa)} per hectare (125 t × A$55, two-year crop)`],
+              ["Elevation", "Copernicus GLO-30, 30 m"],
+              ["Land cover", "ESA WorldCover, 10 m"],
+              ["River flow", "GloFAS v4"],
+            ].map(([k, v]) => (
+              <div key={k} className="border-t border-rule pt-3">
+                <dt className="text-sm text-muted-foreground">{k}</dt>
+                <dd>{v}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-6 rounded-2xl bg-paper-2 p-4 text-sm text-muted-foreground">
+            What would make it better: our height map includes the tops of crops and roofs, not just the ground, and our river figures come from a global model,
+            not the local river gauges. NSW publishes a far sharper height map (1-metre laser survey) and the Bureau of Meteorology runs river gauges here. Plugging
+            both in is the next step.
+          </p>
+        </div>
+      </div>
     </section>
   )
 }
