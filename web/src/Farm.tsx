@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight, Check, Droplets, FlaskConical, Fuel, House, MapPin, Pencil, Tractor, Trash2, Undo2, Warehouse } from "lucide-react"
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Droplets, FlaskConical, Fuel, House, MapPin, Pencil, Tractor, Trash2, Undo2, Warehouse } from "lucide-react"
 import { FieldMap, iconSvg, type Pin } from "@/components/FieldMap"
 import { DECADES, HeavyRainChart, wx } from "@/components/weather"
 import { Phone } from "@/components/Phone"

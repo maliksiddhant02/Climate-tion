@@ -82,6 +82,7 @@ scripts/.venv/Scripts/python scripts/build_season_data.py          # El Nino / L
 | MapLibre GL JS | Tilted 3D map (loaded only when 3D is pressed) | BSD-3-Clause |
 | devices.css (picturepan2) | Phone frame around the example text messages | MIT |
 | React, Vite, TypeScript, Tailwind CSS | App | MIT |
+| Vercel | Hosting the site | Vercel terms |
 | shadcn/ui (Base UI), lucide-react, `cn` | UI components, icons | MIT / ISC |
 | Leaflet, react-leaflet | Map | BSD-2 / Hippocratic-2.1 |
 | Playwright (playwright-core, driving local Chrome) | Clicking through the site to test it; not shipped | Apache-2.0 |
