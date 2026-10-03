@@ -4,7 +4,7 @@ import { FieldMap, iconSvg, type Pin } from "@/components/FieldMap"
 import { DECADES, HeavyRainChart, wx } from "@/components/weather"
 import { Phone } from "@/components/Phone"
 import { aud, DEMO, type Farm } from "@/Live"
-import { areaHa, CROPS, fuelYear, itemDepth, ITEMS, loadProfile, paddockRisk, readyDate, safeGround, saveProfile as save, uid, valuePerHa, type CropId, type ItemId, type Paddock, type Profile } from "@/lib/farm"
+import { areaHa, cropLabel, CROPS, fuelYear, itemDepth, ITEMS, loadProfile, paddockRisk, readyDate, safeGround, saveProfile as save, uid, valuePerHa, type CropId, type ItemId, type Paddock, type Profile } from "@/lib/farm"
 import { gridInPolygon, KNOBS, riverDepths, riverStage, type Cell, type LatLng } from "@/lib/flood"
 import { BASE } from "@/lib/region"
 import { cn } from "@/lib/utils"
@@ -113,6 +113,8 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
   const [draft, setDraft] = useState<LatLng[]>([])
   const [crop, setCrop] = useState<CropId>()
   const [kind, setKind] = useState<ItemId>()
+  // "Something else": the farmer types what it is before drawing it.
+  const [otherName, setOtherName] = useState("")
   const [error, setError] = useState<string>()
   const [flyTo, setFlyTo] = useState<LatLng>()
   const update = (patch: Partial<Profile>) => setProfile({ ...profile, ...patch })
@@ -142,13 +144,20 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
   }
   const finishPaddock = (poly = draft) => {
     if (!crop || poly.length < 3) return
-    update({ paddocks: [...profile.paddocks, { id: uid(), crop, poly, planted: CROPS[crop].months ? new Date().toISOString().slice(0, 7) : undefined }] })
+    if (crop === "other" && !otherName.trim()) return setError("Type what it is first.")
+    update({
+      paddocks: [
+        ...profile.paddocks,
+        { id: uid(), crop, poly, planted: CROPS[crop].months ? new Date().toISOString().slice(0, 7) : undefined, name: crop === "other" ? otherName.trim() : undefined },
+      ],
+    })
+    setOtherName("")
     setDraft([])
     setCrop(undefined)
   }
 
   const drawing = step === 0 || (step === 1 && !!crop)
-  const shapes = profile.paddocks.map((p) => ({ id: p.id, poly: p.poly, color: CROPS[p.crop].color, label: `${CROPS[p.crop].label} · ${areaHa(p.poly).toFixed(1)} ha` }))
+  const shapes = profile.paddocks.map((p) => ({ id: p.id, poly: p.poly, color: CROPS[p.crop].color, label: `${cropLabel(p)} · ${areaHa(p.poly).toFixed(1)} ha` }))
   const pins: Pin[] = profile.items.map((it) => ({ id: it.id, at: it.at, svg: SVG[it.kind], label: ITEMS[it.kind].label }))
   const hint =
     step === 0
@@ -157,12 +166,18 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
         : `${areaHa(draft).toFixed(1)} hectares. Tap more corners, or press Done.`
       : step === 1
         ? crop
-          ? `Tap the corners of your ${CROPS[crop].label.toLowerCase()} paddock.`
-          : "Pick a crop, then tap its paddock on the map."
+          ? crop === "other" && !otherName.trim()
+            ? "Type what it is, then tap its corners."
+            : `Tap the corners of your ${(crop === "other" ? otherName.trim() : CROPS[crop].label).toLowerCase()} paddock.`
+          : profile.paddocks.length
+            ? "Pick a crop, then tap its paddock. Tap a paddock to remove it."
+            : "Pick a crop, then tap its paddock on the map."
         : step === 2
           ? kind
             ? `Tap where your ${ITEMS[kind].label.toLowerCase()} is.`
-            : "Pick something, then tap where it is."
+            : profile.items.length
+              ? "Pick something, then tap where it is. Tap a pin to remove it."
+              : "Pick something, then tap where it is."
           : ""
 
   return (
@@ -197,6 +212,14 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
                 shapes={step > 0 ? shapes : undefined}
                 pins={step === 2 ? pins : undefined}
                 onMapClick={drawing || kind ? onMapClick : undefined}
+                // With nothing picked, tapping a pin or paddock offers to remove it.
+                onRemove={
+                  step === 1 && !crop
+                    ? (id) => update({ paddocks: profile.paddocks.filter((x) => x.id !== id) })
+                    : step === 2 && !kind
+                      ? (id) => update({ items: profile.items.filter((x) => x.id !== id) })
+                      : undefined
+                }
                 flyTo={flyTo}
                 drag
               />
@@ -233,10 +256,23 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
               </div>
               {crop && (
                 <div className="mt-4 rounded-2xl bg-paper-2 p-4">
+                  {crop === "other" && (
+                    <label className="grid gap-2">
+                      <span className="text-sm text-muted-foreground">What is it?</span>
+                      <input
+                        value={otherName}
+                        onChange={(e) => (setOtherName(e.target.value), setError(undefined))}
+                        placeholder="e.g. Sweet potato, tea tree, dam"
+                        autoFocus
+                        className="rounded-xl border border-rule bg-card px-3 py-2"
+                      />
+                    </label>
+                  )}
                   <DrawButtons draft={draft} setDraft={setDraft} onDone={() => finishPaddock()} />
+                  {error && <p role="alert" className="mt-3 rounded-xl bg-flood px-4 py-2 text-sm text-white">{error}</p>}
                   {profile.paddocks.length === 0 && (
                     <button onClick={() => finishPaddock(profile.boundary)} className="mt-3 text-sm text-leaf hover:underline">
-                      My whole farm is {CROPS[crop].label.toLowerCase()}
+                      My whole farm is {(crop === "other" ? otherName.trim() || "something else" : CROPS[crop].label).toLowerCase()}
                     </button>
                   )}
                 </div>
@@ -438,9 +474,22 @@ function PaddockList({ profile, update }: { profile: Profile; update: (p: Partia
         <li key={p.id} className="grid gap-3 py-4">
           <div className="flex items-center gap-3">
             <i className="inline-block size-3 rounded-full" style={{ background: CROPS[p.crop].color }} />
-            <span className="flex-1">
-              {CROPS[p.crop].label} · {areaHa(p.poly).toFixed(1)} ha
-            </span>
+            {p.crop === "other" ? (
+              <span className="flex flex-1 items-center gap-2">
+                <input
+                  value={p.name ?? ""}
+                  onChange={(e) => set(p.id, { name: e.target.value })}
+                  placeholder="What is it?"
+                  aria-label="What this paddock is"
+                  className="w-40 rounded-lg border border-rule bg-paper px-2 py-1"
+                />
+                · {areaHa(p.poly).toFixed(1)} ha
+              </span>
+            ) : (
+              <span className="flex-1">
+                {cropLabel(p)} · {areaHa(p.poly).toFixed(1)} ha
+              </span>
+            )}
             <button onClick={() => update({ paddocks: profile.paddocks.filter((x) => x.id !== p.id) })} aria-label="Remove paddock" className="press p-1 text-muted-foreground hover:text-flood">
               <Trash2 className="size-4" />
             </button>
@@ -501,7 +550,7 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
   const wet = items.filter((x) => isWet(x.depth))
   const paddocks = profile.paddocks.map((p) => ({ p, ...paddockRisk(p, cells ?? [], stepM) }))
   const wetPaddocks = paddocks.filter((x) => x.floodedHa > 0)
-  const paddockName = (p: Paddock) => `${CROPS[p.crop].label.split(" /")[0].toLowerCase()} paddock`
+  const paddockName = (p: Paddock) => `${cropLabel(p).split(" /")[0].toLowerCase()} paddock`
   const atRisk = paddocks.reduce((s, x) => s + x.atRisk, 0)
   const shed = items.find((x) => (x.it.kind === "shed" || x.it.kind === "house") && x.depth !== undefined && !isWet(x.depth))
   // The highest dry ground on the farm, pinned as Safe ground (only if there's enough of it to use).
@@ -520,7 +569,7 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
     wet: isWet(depth),
   })),
   ]
-  const shapes = profile.paddocks.map((p) => ({ id: p.id, poly: p.poly, color: CROPS[p.crop].color, label: CROPS[p.crop].label }))
+  const shapes = profile.paddocks.map((p) => ({ id: p.id, poly: p.poly, color: CROPS[p.crop].color, label: cropLabel(p) }))
   const fuel = profile.items.map((it) => ({ it, f: fuelYear(it) })).filter((x) => x.f && x.f.litres > 0)
   const cane = paddocks.filter((x) => x.p.crop === "cane")
   const record = farm.replayRun?.cells
@@ -536,7 +585,7 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
     cane.length && cane[0].floodedHa > 0
       ? `Draki: ${cane[0].floodedHa.toFixed(1)} of your ${cane[0].ha.toFixed(1)} ha of cane could go under. Hold off fertilising the low rows.`
       : undefined,
-    ready[0] ? `Draki: your ${CROPS[ready[0].p.crop].label.toLowerCase()} (${areaHa(ready[0].p.poly).toFixed(0)} ha) is ready from ${monthYear(ready[0].d!)}.` : undefined,
+    ready[0] ? `Draki: your ${cropLabel(ready[0].p).toLowerCase()} (${areaHa(ready[0].p.poly).toFixed(0)} ha) is ready from ${monthYear(ready[0].d!)}.` : undefined,
     `Draki: why this matters more now. Very heavy rain days at Woodburn have gone from about ${DECADES.then.toFixed(1)} a year in the 1990s to ${DECADES.now.toFixed(1)}. Warmer air holds more water.`,
   ].filter(Boolean) as string[]
 
@@ -671,7 +720,7 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
                 <li key={p.id} onClick={() => setFocus(centre(p.poly))} title="Show on the map" className="grid cursor-pointer grid-cols-[auto_1fr_auto] items-baseline gap-x-3 rounded-xl py-3 hover:bg-paper-2">
                   <i className="inline-block size-3 rounded-full" style={{ background: CROPS[p.crop].color }} />
                   <span>
-                    {CROPS[p.crop].label} · {ha.toFixed(1)} ha
+                    {cropLabel(p)} · {ha.toFixed(1)} ha
                     {d && <span className="block text-sm text-muted-foreground">Ready {monthYear(d)}</span>}
                   </span>
                   <span className={cn("text-right text-sm", floodedHa ? "text-flood" : "text-muted-foreground")}>
@@ -722,7 +771,7 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
                   firstUnder && firstUnder.floodedHa > 0
                     ? [
                         "What it means for your farm.",
-                        `In a 2022-size flood your ${CROPS[firstUnder.p.crop].label.toLowerCase()} paddock goes under first: ${firstUnder.floodedHa >= firstUnder.ha - 0.05 ? `all ${firstUnder.ha.toFixed(1)} ha` : `${firstUnder.floodedHa.toFixed(1)} of its ${firstUnder.ha.toFixed(1)} ha`}. With heavy rain getting more common, plan where machinery and stock go now, not on the day.`,
+                        `In a 2022-size flood your ${cropLabel(firstUnder.p).toLowerCase()} paddock goes under first: ${firstUnder.floodedHa >= firstUnder.ha - 0.05 ? `all ${firstUnder.ha.toFixed(1)} ha` : `${firstUnder.floodedHa.toFixed(1)} of its ${firstUnder.ha.toFixed(1)} ha`}. With heavy rain getting more common, plan where machinery and stock go now, not on the day.`,
                       ]
                     : ["What it means for your farm.", "In a 2022-size flood your paddocks stay dry. Draki still watches the river for you all season."],
                 ].map(([t, d], i) => (
@@ -852,7 +901,7 @@ function Timeline({ paddocks, onEdit }: { paddocks: Paddock[]; onEdit: () => voi
             <span key={`${p.id}l`} className="flex items-start gap-2 text-sm">
               <i className="mt-1 inline-block size-3 shrink-0 rounded-full" style={{ background: CROPS[p.crop].color }} />
               <span>
-                {CROPS[p.crop].label}
+                {cropLabel(p)}
                 <span className="block text-muted-foreground">Ready {ready!.toLocaleDateString("en-AU", { month: "short", year: "numeric" })}</span>
               </span>
             </span>,

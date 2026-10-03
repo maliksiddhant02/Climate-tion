@@ -6,7 +6,7 @@ import { inPolygon, KNOBS, type Cell, type LatLng } from "./flood.ts"
 export type CropId = "cane" | "soy" | "pasture" | "macadamia" | "veg" | "other"
 export type ItemId = "pump" | "fuel" | "chem" | "shed" | "house"
 
-export type Paddock = { id: string; crop: CropId; poly: LatLng[]; planted?: string; valuePerHa?: number }
+export type Paddock = { id: string; crop: CropId; poly: LatLng[]; planted?: string; valuePerHa?: number; name?: string }
 export type Item = { id: string; kind: ItemId; at: LatLng; hours?: number }
 export type Profile = { boundary: LatLng[]; paddocks: Paddock[]; items: Item[]; name: string; phone: string; done: boolean }
 
@@ -43,6 +43,9 @@ export function areaHa(poly: LatLng[]): number {
     s += poly[j][1] * cos * M_PER_DEG * poly[i][0] * M_PER_DEG - poly[i][1] * cos * M_PER_DEG * poly[j][0] * M_PER_DEG
   return Math.abs(s) / 2 / 10_000
 }
+
+/** What the farmer calls it: their own words for "Something else", otherwise the crop. */
+export const cropLabel = (p: Paddock) => p.name?.trim() || CROPS[p.crop].label
 
 export const valuePerHa = (p: Paddock) => p.valuePerHa ?? CROPS[p.crop].valuePerHa ?? 0
 

@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState, type ComponentType, type ReactNode
 import { flushSync } from "react-dom"
 import { createRoot } from "react-dom/client"
 import L from "leaflet"
-import { CircleMarker, ImageOverlay, MapContainer, Marker, ZoomControl, Polygon, Polyline, Rectangle, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet"
+import { CircleMarker, ImageOverlay, MapContainer, Marker, Popup, ZoomControl, Polygon, Polyline, Rectangle, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet"
 import { KNOBS, type Cell, type LatLng } from "@/lib/flood"
 import { drawRelief, EXAGGERATION, RELIEF_GRADIENT } from "@/lib/relief"
 import { cn } from "@/lib/utils"
@@ -89,6 +89,27 @@ export function iconSvg(Icon: ComponentType<{ className?: string }>) {
 const pinIcon = ({ svg, wet }: Pin) =>
   L.divIcon({ className: "", iconSize: [34, 34], iconAnchor: [17, 17], html: `<div class="farm-pin${wet ? " farm-pin-wet" : ""}">${svg}</div>` })
 
+function RemovePopup({ label, onRemove, offset = [0, 7] }: { label: string; onRemove: () => void; offset?: [number, number] }) {
+  const map = useMap()
+  return (
+    <Popup offset={offset} closeButton={false}>
+      <span className="flex items-center gap-3">
+        <span className="font-medium">{label}</span>
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            map.closePopup()
+            onRemove()
+          }}
+          className="rounded-full bg-flood px-3 py-1 text-xs font-medium text-white"
+        >
+          Remove
+        </button>
+      </span>
+    </Popup>
+  )
+}
+
 export function FieldMap(props: {
   poly: LatLng[]
   cells: Cell[]
@@ -114,10 +135,12 @@ export function FieldMap(props: {
   flyZoom?: number
   /** Let one finger pan on phones too (setup needs it to reach your farm). */
   drag?: boolean
+  /** Tapping a pin or paddock offers to remove it (setup). */
+  onRemove?: (id: string) => void
   /** Swatches for what's drawn on the map; shown in the bar under it. */
   legend?: ReactNode
 }) {
-  const { poly, cells, stepM, high, draft, onMapClick, runKey = "", overlay, shapes, pins, wetOnly, noOutline, fitMaxZoom = 15, flyTo, flyZoom = 15, drag, legend } = props
+  const { poly, cells, stepM, high, draft, onMapClick, runKey = "", overlay, shapes, pins, wetOnly, noOutline, fitMaxZoom = 15, flyTo, flyZoom = 15, drag, legend, onRemove } = props
   const half = stepM / 2 / M_PER_DEG
   const maxDepth = Math.max(0, ...cells.map((c) => c.depth))
   const cos = Math.cos((poly[0][0] * Math.PI) / 180)
@@ -157,6 +180,7 @@ export function FieldMap(props: {
           <Tooltip permanent direction="center" className="farm-label" pane="shadowPane">
             {s.label}
           </Tooltip>
+          {onRemove && <RemovePopup label={s.label} onRemove={() => onRemove(s.id)} />}
         </Polygon>
       ))}
       {!draft &&
@@ -173,6 +197,7 @@ export function FieldMap(props: {
       {pins?.map((p) => (
         <Marker key={p.id} position={p.at} icon={pinIcon(p)}>
           <Tooltip direction="top" offset={[0, -16]}>{p.label}</Tooltip>
+          {onRemove && <RemovePopup label={p.label} onRemove={() => onRemove(p.id)} offset={[0, -12]} />}
         </Marker>
       ))}
       {!draft && high && (
