@@ -228,7 +228,8 @@ export function FloodValley({ children }: { children: ReactNode }) {
 
         {prep && cal && (
           <div
-            className="absolute inset-x-0 bottom-0 px-6 pb-20 text-white transition-opacity duration-500 md:px-10 md:pb-32"
+            // Invisible until the end of the scroll, and click-through until then so it never covers the hero buttons.
+            className={`absolute inset-x-0 bottom-0 px-6 pb-20 text-white transition-opacity duration-500 md:px-10 md:pb-32 ${progress > 0.9 ? "" : "pointer-events-none"}`}
             style={{ opacity: progress > 0.9 ? 1 : 0 }}
             aria-hidden={progress <= 0.9}
           >
