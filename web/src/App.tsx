@@ -136,12 +136,13 @@ function Home({ farm }: { farm: Farm }) {
       <FloodValley>
         <div className={cn(WRAP, "stagger absolute inset-x-0 bottom-0 pb-16 text-white md:pb-32")}>
           <h1 className="font-display text-[clamp(2.1rem,7vw,8rem)] leading-[0.92] uppercase">
-            Know which part of your farm will <em className="text-cane">flood.</em>
+            Your whole farm, ready for the next <em className="text-cane">flood.</em>
           </h1>
           <div className="mt-5 grid gap-4 border-t border-white/25 pt-4 md:mt-8 md:grid-cols-12 md:items-end md:gap-6 md:pt-5">
             <p className="text-white/80 md:col-span-6 md:text-lg">
-              <strong className="font-semibold text-white">Real data, not a mock-up.</strong> This is the lower Richmond floodplain in NSW, mapped in 30-metre
-              squares from satellite height data. Scroll, and the river rises to its February 2022 peak, replayed from the recorded rain and river flow.
+              Mark your paddocks, machines and sheds once. Draki keeps you across the week's weather, harvest timing and fuel all season, and texts you
+              exactly what to move when the river rises. <strong className="font-semibold text-white">Real data, not a mock-up:</strong> scroll, and the lower
+              Richmond rises to its February 2022 peak.
             </p>
             <div className="flex flex-wrap gap-3 md:col-span-6 md:justify-end">
               <a href="#/farm" className={cn(btn, "bg-white text-ink hover:bg-paper")}>
