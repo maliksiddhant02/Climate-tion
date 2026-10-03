@@ -38,8 +38,8 @@ export function RainBars({ time, rain, start }: { time: string[]; rain: number[]
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={`Rain in 3-hour steps, peak ${buckets[peak]?.mm.toFixed(0)} mm`}>
       {[0, max / 2, max].map((v) => (
         <g key={v}>
-          <line x1={padL} x2={W} y1={y(v)} y2={y(v)} stroke="white" strokeOpacity={0.08} />
-          <text x={padL - 6} y={y(v) + 3} textAnchor="end" className="fill-white/60 text-[10px] tabular-nums">{v}</text>
+          <line x1={padL} x2={W} y1={y(v)} y2={y(v)} stroke="#d9d0bd" />
+          <text x={padL - 6} y={y(v) + 3} textAnchor="end" className="fill-[#525e56] text-[10px] tabular-nums">{v}</text>
         </g>
       ))}
       {buckets.map((b, i) => {
@@ -49,15 +49,15 @@ export function RainBars({ time, rain, start }: { time: string[]; rain: number[]
             <rect x={padL + i * slot} y={0} width={slot} height={H - padB} fill="transparent">
               <title>{`${day(b.t)} ${b.t.slice(11, 16)} · ${b.mm.toFixed(1)} mm`}</title>
             </rect>
-            {b.mm > 0 && <path d={bar(x, y(b.mm), bw, H - padB - y(b.mm))} fill="#5a8fd8" pointerEvents="none" />}
+            {b.mm > 0 && <path d={bar(x, y(b.mm), bw, H - padB - y(b.mm))} fill="#3c6fae" pointerEvents="none" />}
             {b.t.endsWith("T00:00") && (
-              <text x={x + bw / 2} y={H - 6} textAnchor="middle" className="fill-white/60 text-[10px]">{day(b.t)}</text>
+              <text x={x + bw / 2} y={H - 6} textAnchor="middle" className="fill-[#525e56] text-[10px]">{day(b.t)}</text>
             )}
           </g>
         )
       })}
       {buckets[peak]?.mm > 0 && (
-        <text x={padL + peak * slot + slot / 2} y={y(buckets[peak].mm) - 6} textAnchor="middle" className="fill-white text-[10px]">
+        <text x={padL + peak * slot + slot / 2} y={y(buckets[peak].mm) - 6} textAnchor="middle" className="fill-ink text-[10px]">
           {buckets[peak].mm.toFixed(0)} mm
         </text>
       )}
@@ -152,24 +152,24 @@ export function RiverChart({ time, q, members, q2, q5, cursor }: { time: string[
         [q5, "Act today above this line"],
       ].map(([v, label]) => (
         <g key={label}>
-          <line x1={padL} x2={W - 8} y1={y(v as number)} y2={y(v as number)} stroke={v === q5 ? "#d4472a" : "white"} strokeOpacity={v === q5 ? 0.8 : 0.3} strokeDasharray="4 4" />
-          <text x={W - 8} y={y(v as number) - 5} textAnchor="end" className="fill-white/60 text-[10px]">{label as string}</text>
+          <line x1={padL} x2={W - 8} y1={y(v as number)} y2={y(v as number)} stroke={v === q5 ? "#d4472a" : "#6f5539"} strokeOpacity={v === q5 ? 0.8 : 0.5} strokeDasharray="4 4" />
+          <text x={W - 8} y={y(v as number) - 5} textAnchor="end" className="fill-[#525e56] text-[10px]">{label as string}</text>
         </g>
       ))}
       {members?.map((m, k) => (
-        <path key={k} d={linePath(xs, m.map((v) => y(v ?? 0)))} fill="none" stroke="#9db8da" strokeOpacity={0.18} strokeWidth={1} />
+        <path key={k} d={linePath(xs, m.map((v) => y(v ?? 0)))} fill="none" stroke="#3c6fae" strokeOpacity={0.15} strokeWidth={1} />
       ))}
-      <path d={linePath(xs, q.map((v) => y(v ?? 0)))} fill="none" stroke="#5a8fd8" strokeWidth={2.5} strokeLinejoin="round" />
+      <path d={linePath(xs, q.map((v) => y(v ?? 0)))} fill="none" stroke="#3c6fae" strokeWidth={2.5} strokeLinejoin="round" />
       {cursor !== undefined && (
         // Daily values are plotted at the start of each day; the playhead runs in the same day units.
         <line x1={x(Math.min(time.length - 1, cursor))} x2={x(Math.min(time.length - 1, cursor))} y1={padT} y2={H - padB} stroke="#d4a72c" strokeWidth={2} />
       )}
       {time.map((t, i) => (
-        <text key={t} x={xs[i]} y={H - 6} textAnchor="middle" className="fill-white/60 text-[10px]">{day(t)}</text>
+        <text key={t} x={xs[i]} y={H - 6} textAnchor="middle" className="fill-[#525e56] text-[10px]">{day(t)}</text>
       ))}
-      <text x={padL - 6} y={y(0) + 3} textAnchor="end" className="fill-white/60 text-[10px] tabular-nums">0</text>
+      <text x={padL - 6} y={y(0) + 3} textAnchor="end" className="fill-[#525e56] text-[10px] tabular-nums">0</text>
       {peak > 0 && (
-        <text x={xs[pi]} y={Math.max(padT + 10, y(peak) - 8)} textAnchor="middle" className="fill-white text-[11px] font-semibold">{"Peak"}</text>
+        <text x={xs[pi]} y={Math.max(padT + 10, y(peak) - 8)} textAnchor="middle" className="fill-ink text-[11px] font-semibold">{"Peak"}</text>
       )}
     </svg>
   )

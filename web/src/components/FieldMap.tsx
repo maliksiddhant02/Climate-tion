@@ -134,7 +134,7 @@ export function FieldMap(props: {
         </Suspense>
       ) : (
     // One-finger drag on a phone should scroll the page, not get stuck panning the map. Pinch still zooms.
-    <MapContainer center={poly[0]} zoom={15} scrollWheelZoom={false} dragging={drag || !L.Browser.mobile} zoomControl={false} className="h-full w-full">
+    <MapContainer center={poly[0]} zoom={15} scrollWheelZoom dragging={drag || !L.Browser.mobile} zoomControl={false} className="h-full w-full">
       <ZoomControl position="topright" />
       {ground ? (
         <>

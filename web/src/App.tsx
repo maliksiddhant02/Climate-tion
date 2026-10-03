@@ -15,7 +15,6 @@ const WRAP = "mx-auto w-full max-w-[1600px] px-6 md:px-10"
 const NAV = [
   ["farm", "My farm"],
   ["live", "2022 flood"],
-  ["why", "Why now"],
   ["proof", "Evidence"],
 ] as const
 
@@ -88,7 +87,7 @@ export default function App() {
               <a
                 key={id}
                 href={`#/${id}`}
-                className={cn("rounded-full px-4 py-2 text-sm transition-colors", page === id ? "bg-ink text-paper" : "text-muted-foreground hover:text-ink")}
+                className={cn("rounded-full px-4 py-2 text-sm transition-colors", (page === id || (id === "proof" && page === "why")) ? "bg-ink text-paper" : "text-muted-foreground hover:text-ink")}
               >
                 {label}
               </a>
@@ -100,7 +99,7 @@ export default function App() {
         </div>
         <div className="flex gap-1 overflow-x-auto px-4 pb-3 md:hidden">
           {NAV.map(([id, label]) => (
-            <a key={id} href={`#/${id}`} className={cn("shrink-0 rounded-full px-3 py-1.5 text-sm", page === id ? "bg-ink text-paper" : "text-muted-foreground")}>
+            <a key={id} href={`#/${id}`} className={cn("shrink-0 rounded-full px-3 py-1.5 text-sm", (page === id || (id === "proof" && page === "why")) ? "bg-ink text-paper" : "text-muted-foreground")}>
               {label}
             </a>
           ))}
@@ -110,9 +109,7 @@ export default function App() {
       <main key={page} className="page-enter flex-1">
         {page === "live" ? (
           <LivePage farm={farm} mode={mode} setMode={chooseMode} />
-        ) : page === "why" ? (
-          <Why />
-        ) : page === "proof" ? (
+        ) : page === "proof" || page === "why" ? (
           <Proof farm={farm} />
         ) : page === "farm" ? (
           <FarmPage farm={farm} />
@@ -219,21 +216,6 @@ function Home({ farm }: { farm: Farm }) {
   )
 }
 
-
-function Why() {
-  return (
-    <section className={cn(WRAP, "py-16")}>
-      <h1 className="max-w-5xl font-display text-5xl leading-[0.95] md:text-7xl">Very heavy rain days have nearly tripled on the lower Richmond.</h1>
-      <p className="mt-4 text-muted-foreground">
-        Days a year with 50 mm or more of rain at Woodburn: about {Math.round(DECADES.then)} in the 1990s, about {Math.round(DECADES.now)} in 2016–25. These are small numbers, so treat it as a sign, not proof. Every alert ends with a line like this.
-      </p>
-      <div className="mt-12 max-w-5xl rounded-3xl border border-rule bg-card p-6">
-        <HeavyRainChart />
-      </div>
-      <p className="mt-4 text-sm text-muted-foreground">Source: ERA5, the European long-term weather record, via Open-Meteo.</p>
-    </section>
-  )
-}
 
 const LEVEL = { act: ["Act today", "bg-flood text-white"], watch: ["Watch", "bg-cane text-ink"], missed: ["Missed", "border border-rule text-muted-foreground"] } as const
 
@@ -356,6 +338,15 @@ function Proof({ farm }: { farm: Farm }) {
             : `The river also reached the Act today level ${m.unmatchedAlarms.length} times with no flood we could find a record of (${m.unmatchedAlarms.map(monthYear).join(", ")}).`}
         </p>
       )}
+
+      <h2 className="mt-20 max-w-5xl text-2xl">Why now: very heavy rain days have nearly tripled on the lower Richmond</h2>
+      <p className="mt-4 max-w-3xl text-muted-foreground">
+        Days a year with 50 mm or more of rain at Woodburn: about {Math.round(DECADES.then)} in the 1990s, about {Math.round(DECADES.now)} in 2016–25. These are small numbers, so treat it as a sign, not proof. Every alert ends with a line like this.
+      </p>
+      <figure className="mt-6 max-w-5xl rounded-3xl border border-rule bg-card p-6">
+        <HeavyRainChart />
+        <figcaption className="mt-3 text-sm text-muted-foreground">Source: ERA5, the European long-term weather record, via Open-Meteo.</figcaption>
+      </figure>
 
       <h2 className="mt-20 text-2xl">How the model works</h2>
       <p className="mt-4 max-w-3xl text-muted-foreground">

@@ -168,7 +168,7 @@ export function smsText({ a, peak, w, river }: Run, replay: boolean, demo: boole
   ].join("\n\n")
 }
 
-const card = "rounded-3xl border border-white/10 bg-white/[0.04] p-6"
+const card = "rounded-3xl border border-rule bg-card p-6"
 
 export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "replay"; setMode: (m: "live" | "replay") => void }) {
   const { poly, setPoly, elev, error, liveRun, replayRun, retry, isDemo } = farm
@@ -232,22 +232,22 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
     setPoly(draft)
     setDraft(undefined)
   }
-  const pill = "press rounded-full bg-ink/80 px-4 py-2 text-sm backdrop-blur hover:bg-ink"
+  const pill = "press rounded-full bg-ink/80 text-white px-4 py-2 text-sm backdrop-blur hover:bg-ink"
 
   return (
-    <section className="bg-ink text-white">
+    <section>
       <div className="mx-auto w-full max-w-[1600px] px-6 py-16 md:px-10">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <h1 className="font-display text-5xl uppercase md:text-6xl">Live field</h1>
-            <p className="mt-3 text-white/60">{isDemo ? "A 40-hectare cane block near Broadwater, lower Richmond River, NSW. (1 hectare = 100 m × 100 m.)" : r ? `Your ${r.a.areaHa.toFixed(1)}-hectare field. (1 hectare = 100 m × 100 m.)` : "Your field."}</p>
+            <p className="mt-3 text-muted-foreground">{isDemo ? "A 40-hectare cane block near Broadwater, lower Richmond River, NSW. (1 hectare = 100 m × 100 m.)" : r ? `Your ${r.a.areaHa.toFixed(1)}-hectare field. (1 hectare = 100 m × 100 m.)` : "Your field."}</p>
           </div>
           <Tabs value={mode} onValueChange={(v) => setMode(v as "live" | "replay")}>
-            <TabsList className="h-11 rounded-full bg-white/[0.07] p-1">
-              <TabsTrigger value="live" className="press rounded-full px-4 text-white/60 data-active:bg-white data-active:text-ink">
+            <TabsList className="h-11 rounded-full bg-paper-2 p-1">
+              <TabsTrigger value="live" className="press rounded-full px-4 text-muted-foreground data-active:bg-ink data-active:text-paper">
                 This week
               </TabsTrigger>
-              <TabsTrigger value="replay" className="press rounded-full px-4 text-white/60 data-active:bg-white data-active:text-ink">
+              <TabsTrigger value="replay" className="press rounded-full px-4 text-muted-foreground data-active:bg-ink data-active:text-paper">
                 {REPLAY.name}
               </TabsTrigger>
             </TabsList>
@@ -255,14 +255,14 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
         </div>
 
         {error && (
-          <div role="alert" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-flood/40 bg-flood/10 px-4 py-3 text-sm">
+          <div role="alert" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-flood/40 bg-flood/10 text-ink px-4 py-3 text-sm">
             <p>{error}</p>
             <div className="flex gap-2">
-              <button onClick={retry} className="press rounded-full bg-white px-4 py-2 text-sm font-medium text-ink hover:bg-paper">
+              <button onClick={retry} className="press rounded-full bg-ink px-4 py-2 text-sm font-medium text-paper hover:bg-ink-2">
                 Try again
               </button>
               {!isDemo && (
-                <button onClick={() => setPoly(DEMO)} className="press rounded-full border border-white/25 px-4 py-2 text-sm hover:bg-white/10">
+                <button onClick={() => setPoly(DEMO)} className="press rounded-full border border-rule px-4 py-2 text-sm hover:bg-paper-2">
                   Back to demo
                 </button>
               )}
@@ -271,7 +271,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
         )}
 
         {film && moments && (
-          <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-4 md:p-5">
+          <div className="mt-8 rounded-3xl border border-rule bg-card p-4 md:p-5">
             <div className="flex flex-wrap items-center gap-4">
               <button onClick={togglePlay} className="press inline-flex items-center gap-2 rounded-full bg-cane px-5 py-3 text-sm font-medium text-ink hover:bg-[#e2b84a]">
                 {playing ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}
@@ -298,15 +298,15 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
                   />
                 )}
               </div>
-              <p className="w-full text-sm tabular-nums text-white/80 sm:w-auto sm:min-w-[15rem] sm:text-right">
+              <p className="w-full text-sm tabular-nums text-ink sm:w-auto sm:min-w-[15rem] sm:text-right">
                 {hour !== undefined && r?.river
                   ? `${hourLabel(film.w.hourly.time[hour])} · river ${r.river.stage > 0 ? `${r.river.stage.toFixed(1)} m above normal` : "in its banks"}`
                   : "Showing the peak of the flood"}
               </p>
             </div>
             {moments.alert !== undefined && (
-              <p className="mt-3 text-sm text-white/70">
-                <span className="font-medium text-white">Draki's alert: {hourLabel(film.w.hourly.time[moments.alert])}</span>
+              <p className="mt-3 text-sm text-muted-foreground">
+                <span className="font-medium text-ink">Draki's alert: {hourLabel(film.w.hourly.time[moments.alert])}</span>
                 {moments.peakHour > moments.alert && `, about ${moments.peakHour - moments.alert} hours before the river peaked`}. Replayed with the recorded rain and
                 river flow, not the forecast made at the time.
               </p>
@@ -315,7 +315,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
         )}
 
         <div className={cn("mt-10 grid gap-4 transition-opacity lg:grid-cols-12", !r && "opacity-60")}>
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 lg:col-span-7 lg:row-span-2">
+          <div className="relative overflow-hidden rounded-3xl border border-rule lg:col-span-7 lg:row-span-2">
             <div className="h-[460px] lg:h-full lg:min-h-[540px]">
               <FieldMap
                 poly={poly}
@@ -390,20 +390,20 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
 
           <div className={cn(card, "lg:col-span-5")}>
             <div className="flex items-baseline justify-between">
-              <p className="text-sm text-white/60">Wettest 3 days</p>
+              <p className="text-sm text-muted-foreground">Wettest 3 days</p>
               <p className="text-2xl font-semibold">{r ? `${r.peak.total.toFixed(0)} mm` : "–"}</p>
             </div>
             <div className="mt-4">{r && <RainBars time={r.w.hourly.time} rain={r.w.hourly.rain} start={r.peak.start} />}</div>
           </div>
 
-          <div className="-mx-6 flex snap-x gap-3 overflow-x-auto px-6 pb-1 sm:mx-0 sm:grid sm:grid-cols-7 sm:overflow-visible sm:px-0 lg:col-span-12">
+          <div className="-mx-6 flex snap-x gap-3 overflow-x-auto px-6 pb-1 sm:mx-0 sm:grid sm:auto-cols-fr sm:grid-flow-col sm:overflow-visible sm:px-0 lg:col-span-12">
             {r?.w.daily.time.map((t, i) => {
               const { Icon, label } = wx(r.w.daily.code[i])
               // Only call out a day that's actually wet, not the least-dry day of a dry week.
               const wettest = r.w.daily.rain[i] >= 10 && r.w.daily.rain[i] === Math.max(...r.w.daily.rain)
               return (
-                <div key={t} className={cn("min-w-[6.5rem] shrink-0 snap-start rounded-3xl p-4 sm:min-w-0", wettest ? "bg-rain-soft text-ink" : "border border-white/10 bg-white/[0.04]")}>
-                  <p className={cn("text-sm", !wettest && "text-white/60")}>{weekday(t)}{wettest && " · wettest"}</p>
+                <div key={t} className={cn("min-w-[6.5rem] shrink-0 snap-start rounded-3xl p-4 sm:min-w-0", wettest ? "bg-rain-soft text-ink" : "border border-rule bg-card")}>
+                  <p className={cn("text-sm", !wettest && "text-muted-foreground")}>{weekday(t)}{wettest && " · wettest"}</p>
                   <Icon className="my-4 size-7" aria-label={label} />
                   <p className="text-2xl font-semibold">{r.w.daily.rain[i].toFixed(0)}<span className="text-sm font-normal"> mm</span></p>
                 </div>
@@ -411,7 +411,7 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
             })}
           </div>
 
-          <div className={cn(card, "lg:col-span-5")}>
+          <div className="rounded-3xl bg-ink p-6 text-white lg:col-span-5">
             <p className="text-sm text-white/60">The text the grower gets</p>
             <div className="mx-auto mt-5 max-w-sm rounded-[2rem] border border-white/15 bg-[#0d1712] p-3">
               <p className="rounded-[1.5rem] bg-white/10 p-4 text-sm leading-relaxed whitespace-pre-line text-white/90">
@@ -421,16 +421,16 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
           </div>
 
           <div className={cn(card, "flex flex-col lg:col-span-7")}>
-            <p className="text-sm text-white/60">What to do</p>
+            <p className="text-sm text-muted-foreground">What to do</p>
             <ol className="mt-4 space-y-3">
               {(r ? PLAYBOOK[r.a.level] : []).map((t, i) => (
-                <li key={t} className="flex items-baseline gap-4 border-t border-white/10 pt-3">
-                  <span className="font-display text-2xl text-cane">{i + 1}</span>
+                <li key={t} className="flex items-baseline gap-4 border-t border-rule pt-3">
+                  <span className="font-display text-2xl text-leaf">{i + 1}</span>
                   {t}
                 </li>
               ))}
             </ol>
-            <a href="#/proof" className="mt-auto inline-flex items-center gap-2 pt-6 text-sm text-white/60 hover:text-white">
+            <a href="#/proof" className="mt-auto inline-flex items-center gap-2 pt-6 text-sm text-muted-foreground hover:text-ink">
               How we check this <ArrowRight className="size-4" aria-hidden />
             </a>
           </div>
@@ -438,11 +438,11 @@ export function LivePage({ farm, mode, setMode }: { farm: Farm; mode: "live" | "
           {r?.river && (
             <div className={cn(card, "lg:col-span-7")}>
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="text-sm text-white/60">
+                <p className="text-sm text-muted-foreground">
                   Richmond River flow, {mode === "live" ? "next 7 days" : "24 February – 4 March 2022"}
                   {mode === "live" && r.river.flow.members?.length ? ` · ${r.river.flow.members.length} forecasts` : ""}
                 </p>
-                <p className="text-sm text-white/60">European flood forecasts (GloFAS)</p>
+                <p className="text-sm text-muted-foreground">European flood forecasts (GloFAS)</p>
               </div>
               <div className="mt-4">
                 <RiverChart
@@ -468,7 +468,7 @@ function RiskCard({ r, live, now, onReplay }: { r?: Run; live: boolean; now?: bo
   const a: Assessment | undefined = r?.a
   const river = r?.river
   return (
-    <div className="swap flex flex-col justify-between rounded-3xl bg-paper p-6 text-ink lg:col-span-5">
+    <div className="swap flex flex-col justify-between rounded-3xl border border-rule bg-card p-6 text-ink lg:col-span-5">
       <div className="flex items-start justify-between">
         <p className="text-sm text-muted-foreground">Likely under water</p>
         {a && <StatusPill level={a.level} />}
@@ -527,19 +527,19 @@ function Sources({ r, mode, poly, hasRegion }: { r?: Run; mode: "live" | "replay
       hasRegion ? "https://planetarycomputer.microsoft.com/dataset/cop-dem-glo-30" : undefined,
     ],
     ["Land cover", hasRegion ? "Satellite land-cover map (ESA WorldCover)" : "Not used outside the lower Richmond area", hasRegion ? "https://planetarycomputer.microsoft.com/dataset/esa-worldcover" : undefined],
-    ["How it's built", "Every step, in one Python script", "https://github.com/maliksiddhant02/Climate-tion/blob/main/scripts/build_ba_data.py"],
+    ["How it's built", "Every step, in one Python script", "https://github.com/maliksiddhant02/Climate-tion/blob/main/scripts/build_region.py"],
   ]
   return (
     <div className={cn(card, "lg:col-span-5")}>
-      <p className="text-sm text-white/60">Where these numbers come from</p>
+      <p className="text-sm text-muted-foreground">Where these numbers come from</p>
       <dl className="mt-4 space-y-3 text-sm">
         {rows.map(([k, v, href]) => (
-          <div key={k} className="grid grid-cols-[6.5rem_1fr] gap-3 border-t border-white/10 pt-3">
-            <dt className="text-white/60">{k}</dt>
+          <div key={k} className="grid grid-cols-[6.5rem_1fr] gap-3 border-t border-rule pt-3">
+            <dt className="text-muted-foreground">{k}</dt>
             <dd>
               {v}
               {href && (
-                <a href={href} target="_blank" rel="noreferrer" className="ml-2 whitespace-nowrap text-cane hover:underline">
+                <a href={href} target="_blank" rel="noreferrer" className="ml-2 whitespace-nowrap text-leaf hover:underline">
                   {k === "How it's built" ? "View code" : "Raw data"} <ArrowUpRight className="inline size-3.5" aria-hidden />
                 </a>
               )}

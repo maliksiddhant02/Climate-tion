@@ -118,7 +118,7 @@ components:
 
 Draki should read like a farmer's almanac that learned to read the weather forecast. Serif headlines and warm paper surfaces give it the weight of a printed reference. Everything else, numbers included, is set in one plain sans, so every figure looks measured, not marketed. The tone is calm, honest and local: it reassures before it alarms, it shows its working, and it speaks in Woodburn, Broadwater, A$ and cane, never in generic "smart farming" language.
 
-The page alternates between two grounds. **Paper** sections (paper and paper-2) carry the story and the explanation. **Ink** sections (the hero, the live field, the footer) carry live data and the map, like a night-time weather desk. A single **leaf** band carries the COP31 commitment. Colour is drawn from the place: cane gold, leaf green, rain blue, silt brown. Flood red is held back for the one thing that is actually dangerous.
+The page alternates between two grounds. **Paper** sections (paper and paper-2) carry the story and the explanation. **Ink** sections (the hero, the footer) and the single ink card for the grower's text message carry the night-time weather-desk feel; the live field and its map sit on paper like the rest of the site. A single **leaf** band carries the COP31 commitment. Colour is drawn from the place: cane gold, leaf green, rain blue, silt brown. Flood red is held back for the one thing that is actually dangerous.
 
 Density is generous on paper (112px section rhythm, long measures, big expanded statements) and tighter on ink, where the live dashboard packs map, risk, rain and SMS into one 12-column grid.
 
