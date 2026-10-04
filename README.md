@@ -15,7 +15,7 @@ Field-level flood warnings and a year-round season companion for farmers, for ev
 ## Demo
 
 - **Live site:** https://climate-tion.vercel.app (`#/live?replay` is the 2022 flood replay; `#/farm?example` is an example farm)
-- **Demo video:** *(YouTube link goes here after upload)*. It's 1:46, 1920×1080, with English captions.
+- **Demo video:** https://drive.google.com/file/d/1PiPDgZrsKXDqs-dYWqz0llZzLaRqvEuu/view?usp=sharing. It's 1:46 at 1920×1080. Captions are in `Draki Demo 1080p.srt` and embedded in the file.
 - **What the video shows:**
   - the problem: the 2022 Lismore flood, 14.4 m, two metres above the old record;
   - how Draki works;
