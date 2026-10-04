@@ -73,7 +73,8 @@ export function FarmPage({ farm }: { farm: Farm }) {
       farm={farm}
       profile={profile}
       onEdit={(i) => (setProfile({ ...profile, done: false }), setStep(i))}
-      onReset={() => setProfile(undefined)}
+      // On the example, "Start again" goes to setup without wiping a farm the visitor saved earlier.
+      onReset={() => (profile === EXAMPLE ? (location.hash = "#/farm") : setProfile(undefined))}
       example={profile === EXAMPLE}
     />
   )

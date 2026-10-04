@@ -155,9 +155,9 @@ Done:
 
 ## Team (Australia)
 
-- **Siddhant Malik:** the idea and research.
-- **Peter Ma:** the website and flood model.
-- **Adin Sreekesh:** combined both into the final entry.
+- Peter Ma
+- Siddhant Malik
+- Adin Sreekesh
 
 ## Tools used
 

@@ -388,7 +388,7 @@ function RealData({ farm }: { farm: Farm }) {
       live: true,
       value: r?.river ? (r.river.q < 1 ? "Under 1 m³/s" : `${Math.round(r.river.q).toLocaleString("en-AU")} m³/s`) : "…",
       what: r?.river
-        ? `Richmond River flow at its forecast peak this week, across ${r.river.flow.members?.length ?? 1} forecasts. It bursts its banks above ${r.river.cal.q2.toLocaleString("en-AU")} m³/s · fetched ${ago(r.river.flow.fetchedAt)}`
+        ? `Richmond River flow at its forecast peak this week, across ${r.river.flow.members?.length ?? 1} forecasts${r.river.q < 50 ? " (the river is low this week)" : ""}. It bursts its banks above ${r.river.cal.q2.toLocaleString("en-AU")} m³/s · fetched ${ago(r.river.flow.fetchedAt)}`
         : "Richmond River flow at its forecast peak this week",
       source: "Copernicus GloFAS river forecast (EU)",
       href: r?.river?.flow.url,
