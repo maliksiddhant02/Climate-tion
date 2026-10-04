@@ -1,10 +1,7 @@
 **Draki: flood warnings for every paddock.** Draki tells a farmer which part of their farm goes under in a flood, what to move before it does, and why heavy rain is getting more common.
 
 **Track:** Climate Awareness & Education. **2035 target:** climate education for all, and climate-resilient farming.
-**Team (Australia):**
-- Siddhant Malik: idea and research
-- Peter Ma: website and flood model
-- Adin Sreekesh: final entry
+**Team (Australia):** Peter Ma, Siddhant Malik, Adin Sreekesh
 
 ### The problem
 In February 2022, the river at Lismore hit 14.4 m, two metres above any flood on record. Flood warnings cover whole districts, so farmers couldn't tell which paddocks would go under. Very heavy rain days here have nearly tripled since the 1990s.
