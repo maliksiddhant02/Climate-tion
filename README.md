@@ -1,5 +1,9 @@
 # Draki
 
+[![Draki home page: "Your whole farm, ready for the next flood"](docs/images/home.jpg)](https://climate-tion.vercel.app)
+
+**Live:** https://climate-tion.vercel.app · **Demo video:** [watch (1:46)](https://drive.google.com/file/d/1PiPDgZrsKXDqs-dYWqz0llZzLaRqvEuu/view?usp=sharing) · **Slides:** [docs/Draki-presentation.pdf](docs/Draki-presentation.pdf)
+
 Field-level flood warnings and a year-round season companion for farmers, for every paddock on any farm. We built and tested it first on the lower Richmond River floodplain in NSW (Coraki, Woodburn, Broadwater), the cane country hit by the 2022 floods. It only uses free global data, so the same method can run anywhere. Outside the lower Richmond data area, the live site already falls back to rain and 90 m elevation. Draki works out which part of a farm goes under when the river rises. It texts the farmer what to move before it does, plus one line on *why* heavy rain is getting more common. All season, it also covers the week's weather, harvest timing, El Niño and fuel.
 
 **Climate Hack-tion 2026 · Track:** Climate Awareness & Education. 2035 target: **climate education for all and climate-resilient farming.** Draki teaches climate where a farmer will actually read it: every text ends with why heavy rain is getting more common here, and My farm shows each farmer their own climate (the heavy-rain trend at Woodburn, this season's El Niño, and which of their paddocks floods first).
@@ -23,6 +27,19 @@ Field-level flood warnings and a year-round season companion for farmers, for ev
   - the evidence: 72% match with Sentinel-1 radar, 6 of 6 recorded floods, 45 hours' lead;
   - the COP31 track and its 2035 target.
 - **How it was made:** it's built on the team's "Draki Reveal" animation, with footage of the live site captured with Playwright. The voiceover is AI-generated (Microsoft neural text-to-speech). The background music was synthesised in code for this video (numpy), so there are no samples or licensed tracks. The script and timings are in [docs/voiceover.md](docs/voiceover.md).
+
+## Screenshots
+
+| | |
+|---|---|
+| [![The 2022 flood replay at the peak: 41.3 ha under water, Act today](docs/images/replay.jpg)](https://climate-tion.vercel.app/#/live?replay) | [![My farm in a 2022-size flood: 3 paddocks under water, A$139,300 of crops, what to move and tie down](docs/images/farm.jpg)](https://climate-tion.vercel.app/#/farm?example) |
+| **2022 flood replay:** hour by hour, the field fills and *Act today* comes 45 hours before the peak. | **My farm:** what a 2022-size flood does to each paddock (ha and A$), and what to move and tie down. |
+| [![Your climate: very heavy rain days at Woodburn nearly tripled, and El Niño this season](docs/images/climate.jpg)](https://climate-tion.vercel.app/#/farm?example) | [![Printable flood record: 40.3 ha under water, A$139,300 of crops, per paddock](docs/images/record.jpg)](https://climate-tion.vercel.app/#/farm?example) |
+| **Your climate:** very heavy rain days have nearly tripled; why, and this season's El Niño. | **Flood record:** a printable, per-paddock record of the 2022 flood for disaster grants and insurance. |
+
+[![Evidence page: Draki's 2022 flood map against the Sentinel-1 radar map, 72% overlap, 6 of 6 recorded floods](docs/images/proof.jpg)](https://climate-tion.vercel.app/#/proof)
+
+**Evidence:** Draki's 2022 flood map against the Sentinel-1 radar map (72% overlap), and all 6 recorded floods since 2009 caught.
 
 ## Run it
 
