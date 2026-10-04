@@ -1,5 +1,7 @@
 # Draki
 
+[![Draki home page: "Your whole farm, ready for the next flood"](docs/images/home.jpg)](https://climate-tion.vercel.app)
+
 **Flood warnings for every paddock, not just every district.** Draki tells a farmer which part of their farm goes under when the river rises, texts them what to move before it does, and adds one line on *why* heavy rain keeps getting more common.
 
 **[Live site](https://climate-tion.vercel.app)** · **[Demo video (1:46)](https://drive.google.com/file/d/1PiPDgZrsKXDqs-dYWqz0llZzLaRqvEuu/view?usp=sharing)** · **[Presentation](docs/Draki-presentation.pdf)** · **[Submission text](docs/submission.md)**
@@ -21,6 +23,19 @@
 2. **[The 2022 flood, replayed](https://climate-tion.vercel.app/#/live?replay)**: press *Play the flood* and watch the river rise hour by hour. Draki's first *Act today* alert comes about 45 hours before the peak.
 3. **[Evidence](https://climate-tion.vercel.app/#/proof)**: the model against Sentinel-1 radar and the flood record.
 4. **[Set up your own farm](https://climate-tion.vercel.app/#/farm)**: search your road, tap the corners of your farm, mark paddocks and sheds. Everything stays on your device.
+
+## Screenshots
+
+| | |
+|---|---|
+| [![The 2022 flood replay at the peak: 41.3 ha under water, Act today](docs/images/replay.jpg)](https://climate-tion.vercel.app/#/live?replay) | [![My farm in a 2022-size flood: 3 paddocks under water, A$139,300 of crops, what to move and tie down](docs/images/farm.jpg)](https://climate-tion.vercel.app/#/farm?example) |
+| **2022 flood replay:** hour by hour, the field fills and *Act today* comes 45 hours before the peak. | **My farm:** what a 2022-size flood does to each paddock (ha and A$), and what to move and tie down. |
+| [![Your climate: very heavy rain days at Woodburn nearly tripled, and El Niño this season](docs/images/climate.jpg)](https://climate-tion.vercel.app/#/farm?example) | [![Printable flood record: 40.3 ha under water, A$139,300 of crops, per paddock](docs/images/record.jpg)](https://climate-tion.vercel.app/#/farm?example) |
+| **Your climate:** very heavy rain days have nearly tripled; why, and this season's El Niño. | **Flood record:** a printable, per-paddock record of the 2022 flood for disaster grants and insurance. |
+
+[![Evidence page: Draki's 2022 flood map against the Sentinel-1 radar map, 72% overlap, 6 of 6 recorded floods](docs/images/proof.jpg)](https://climate-tion.vercel.app/#/proof)
+
+**Evidence:** Draki's 2022 flood map against the Sentinel-1 radar map (72% overlap), and all 6 recorded floods since 2009 caught.
 
 ## The problem
 
