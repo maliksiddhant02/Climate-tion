@@ -115,7 +115,7 @@ export default function App() {
         ) : page === "proof" || page === "why" ? (
           <Proof farm={farm} />
         ) : page === "farm" ? (
-          <FarmPage farm={farm} />
+          <FarmPage key={route.includes("example") ? "example" : "own"} farm={farm} />
         ) : (
           <Home farm={farm} />
         )}

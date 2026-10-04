@@ -65,15 +65,16 @@ export function FarmPage({ farm }: { farm: Farm }) {
     if (profile && profile.boundary.length >= 3 && JSON.stringify(profile.boundary) !== JSON.stringify(farm.poly)) farm.setPoly(profile.boundary)
   }, [profile?.boundary]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!profile) return <Intro onStart={() => (setProfile(EMPTY), setStep(0))} onExample={() => setProfile(EXAMPLE)} />
+  if (!profile) return <Intro onStart={() => (setProfile(EMPTY), setStep(0))} onExample={() => (location.hash = "#/farm?example")} />
   if (!profile.done)
-    return <Setup profile={profile} setProfile={setProfile} step={step} setStep={setStep} onExample={() => setProfile(EXAMPLE)} />
+    return <Setup profile={profile} setProfile={setProfile} step={step} setStep={setStep} onExample={() => (location.hash = "#/farm?example")} />
   return (
     <Dashboard
       farm={farm}
       profile={profile}
       onEdit={(i) => (setProfile({ ...profile, done: false }), setStep(i))}
       onReset={() => setProfile(undefined)}
+      example={profile === EXAMPLE}
     />
   )
 }
@@ -568,8 +569,9 @@ function PaddockList({ profile, update }: { profile: Profile; update: (p: Partia
 type Scenario = "week" | "common" | "record"
 const SCENARIO: Record<Scenario, string> = { week: "This week", common: "A common flood", record: "A flood like 2022" }
 
-function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Profile; onEdit: (step: number) => void; onReset: () => void }) {
-  const [scenario, setScenario] = useState<Scenario>("week")
+function Dashboard({ farm, profile, onEdit, onReset, example }: { farm: Farm; profile: Profile; onEdit: (step: number) => void; onReset: () => void; example?: boolean }) {
+  // The example opens on the 2022 flood, so a first-time visitor sees what Draki does straight away.
+  const [scenario, setScenario] = useState<Scenario>(example ? "record" : "week")
   const [focus, setFocus] = useState<LatLng>()
   const [season, setSeason] = useState<{ latest: { phase: string }; allMeanRain: number; phases: Record<string, { meanRain: number }> }>()
   useEffect(() => {
@@ -633,6 +635,16 @@ function Dashboard({ farm, profile, onEdit, onReset }: { farm: Farm; profile: Pr
 
   return (
     <section className={cn(WRAP, "py-10")}>
+      {example && (
+        <div className="mb-8 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-rule bg-paper-2 px-5 py-4">
+          <p className="flex-1 basis-80">
+            <b>This is an example farm:</b> 40 ha near Broadwater, NSW, shown in a flood like February 2022. Switch to <b>This week</b> for the live forecast, or scroll down for the texts, your climate and the flood record.
+          </p>
+          <a href="#/farm" className={cn(btn, "bg-ink text-paper hover:bg-ink-2")}>
+            Set up your own farm <ArrowRight className="size-4" aria-hidden />
+          </a>
+        </div>
+      )}
       <div className="flex flex-wrap items-end justify-between gap-6">
         <div>
           <h1 className="font-display text-5xl uppercase md:text-6xl">{name ? `${name}'s farm` : "My farm"}</h1>
