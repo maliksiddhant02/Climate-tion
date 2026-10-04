@@ -109,3 +109,21 @@ export function safeGround(cells: Cell[], stepM: number): Cell | undefined {
   if (dry.length * ((stepM * stepM) / 10_000) < 0.5) return undefined
   return dry.reduce((a, c) => ((c.hand ?? c.elev) > (a.hand ?? a.elev) ? c : a))
 }
+
+/**
+ * Add a corner where the farmer tapped. Under 3 corners it goes on the end; after that it goes into whichever edge
+ * it lengthens least, so tapping beside an edge bends that edge instead of crossing the shape.
+ */
+export function insertCorner(poly: LatLng[], p: LatLng): LatLng[] {
+  if (poly.length < 3) return [...poly, p]
+  const d = (a: LatLng, b: LatLng) => Math.hypot(a[0] - b[0], (a[1] - b[1]) * Math.cos((a[0] * Math.PI) / 180))
+  let best = 0
+  let cost = Infinity
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i]
+    const b = poly[(i + 1) % poly.length]
+    const c = d(a, p) + d(p, b) - d(a, b)
+    if (c < cost) [best, cost] = [i, c]
+  }
+  return [...poly.slice(0, best + 1), p, ...poly.slice(best + 1)]
+}

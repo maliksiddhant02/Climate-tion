@@ -1,6 +1,6 @@
 // Run: node src/lib/farm.check.ts
 import assert from "node:assert/strict"
-import { areaHa, itemDepth, paddockRisk, readyDate, safeGround, type Paddock } from "./farm.ts"
+import { areaHa, insertCorner, itemDepth, paddockRisk, readyDate, safeGround, type Paddock } from "./farm.ts"
 import type { Cell, LatLng } from "./flood.ts"
 
 // 100 m × 100 m square at the equator is 1 ha.
@@ -34,5 +34,10 @@ assert.ok(paddockRisk(cane, [...Array(8)].map(() => ({ lat: d / 2, lng: d / 2, e
 const wet = (n: number, depth: number): Cell[] => [...Array(n)].map((_, i) => ({ lat: i, lng: 0, elev: i, depth }))
 assert.equal(safeGround([...wet(20, 1), ...wet(1, 0)], 30), undefined)
 assert.ok(safeGround([...wet(20, 1), ...wet(7, 0)], 30))
+
+// A tap just outside the top edge (corners 3 and 4) goes between them, not on the end.
+const tapped = insertCorner(sq, [d * 1.1, d * 0.5])
+assert.deepEqual(tapped[3], [d * 1.1, d * 0.5])
+assert.equal(insertCorner([[0, 0]], [1, 1]).length, 2)
 
 console.log("farm model: ok")

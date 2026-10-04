@@ -5,7 +5,7 @@ import { DECADES, HeavyRainChart, wx } from "@/components/weather"
 import { Phone } from "@/components/Phone"
 import { FloodRecord } from "@/components/FloodRecord"
 import { aud, DEMO, type Farm } from "@/Live"
-import { areaHa, cropLabel, CROPS, fuelYear, itemDepth, ITEMS, loadProfile, paddockRisk, readyDate, safeGround, saveProfile as save, uid, valuePerHa, type CropId, type ItemId, type Paddock, type Profile } from "@/lib/farm"
+import { insertCorner, areaHa, cropLabel, CROPS, fuelYear, itemDepth, ITEMS, loadProfile, paddockRisk, readyDate, safeGround, saveProfile as save, uid, valuePerHa, type CropId, type ItemId, type Paddock, type Profile } from "@/lib/farm"
 import { gridInPolygon, KNOBS, riverDepths, riverStage, type Cell, type LatLng } from "@/lib/flood"
 import { BASE } from "@/lib/region"
 import { cn } from "@/lib/utils"
@@ -111,7 +111,20 @@ function Intro({ onStart, onExample }: { onStart: () => void; onExample: () => v
 
 function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step: number; setStep: (n: number) => void; onExample: () => void }) {
   const { profile, setProfile, step, setStep, onExample } = props
-  const [draft, setDraft] = useState<LatLng[]>([])
+  // Editing an existing farm starts from its saved corners, not from nothing.
+  const [draft, setDraftRaw] = useState<LatLng[]>(() => (step === 0 ? profile.boundary : []))
+  // Every change (tap, drag, remove, add) is one step back for Undo.
+  const [past, setPast] = useState<LatLng[][]>([])
+  const setDraft = (d: LatLng[]) => {
+    setPast([...past, draft])
+    setDraftRaw(d)
+  }
+  const undo = () => {
+    setDraftRaw(past[past.length - 1] ?? [])
+    setPast(past.slice(0, -1))
+  }
+  // A paddock being reshaped ("Change shape"), so Done replaces it instead of adding a new one.
+  const [editing, setEditing] = useState<string>()
   const [crop, setCrop] = useState<CropId>()
   const [kind, setKind] = useState<ItemId>()
   // "Something else": the farmer types what it is before drawing it.
@@ -120,7 +133,9 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
   const [flyTo, setFlyTo] = useState<LatLng>()
   const update = (patch: Partial<Profile>) => setProfile({ ...profile, ...patch })
   const go = (n: number) => {
-    setDraft([])
+    setDraftRaw(n === 0 ? profile.boundary : [])
+    setPast([])
+    setEditing(undefined)
     setCrop(undefined)
     setKind(undefined)
     setError(undefined)
@@ -129,9 +144,11 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
   // Keep the map still while the farmer taps: frame the farm once it exists, otherwise the lower Richmond demo area.
   const view = profile.boundary.length >= 3 ? profile.boundary : DEMO
 
-  const onMapClick = (p: LatLng) => {
+  const onMapClick = (p: LatLng, zoom: number) => {
     setError(undefined)
-    if (step === 0 || (step === 1 && crop)) setDraft([...draft, p])
+    // Zoomed out over the whole valley, one tap spans hundreds of metres: ask for a closer look first.
+    if (zoom < 14) return setError("Zoom in closer to your farm first (use + or the search), then tap.")
+    if (step === 0 || (step === 1 && crop)) setDraft(insertCorner(draft, p))
     if (step === 2 && kind) {
       const spec = ITEMS[kind]
       update({ items: [...profile.items, { id: uid(), kind, at: p, hours: spec.hours }] })
@@ -140,38 +157,54 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
 
   const finishBoundary = () => {
     if (gridInPolygon(draft).points.length < 4) return setError("That's too small to read. Mark an area at least 100 m across.")
-    update({ boundary: draft, paddocks: [] })
+    // Keep the paddocks and things already marked: changing the boundary shouldn't wipe them.
+    update({ boundary: draft })
     go(1)
   }
   const finishPaddock = (poly = draft) => {
     if (!crop || poly.length < 3) return
     if (crop === "other" && !otherName.trim()) return setError("Type what it is first.")
+    const name = crop === "other" ? otherName.trim() : undefined
     update({
-      paddocks: [
-        ...profile.paddocks,
-        { id: uid(), crop, poly, planted: CROPS[crop].months ? new Date().toISOString().slice(0, 7) : undefined, name: crop === "other" ? otherName.trim() : undefined },
-      ],
+      paddocks: editing
+        ? profile.paddocks.map((x) => (x.id === editing ? { ...x, crop, poly, name } : x))
+        : [...profile.paddocks, { id: uid(), crop, poly, planted: CROPS[crop].months ? new Date().toISOString().slice(0, 7) : undefined, name }],
     })
     setOtherName("")
-    setDraft([])
+    setDraftRaw([])
+    setPast([])
+    setEditing(undefined)
     setCrop(undefined)
   }
 
   const drawing = step === 0 || (step === 1 && !!crop)
-  const shapes = profile.paddocks.map((p) => ({ id: p.id, poly: p.poly, color: CROPS[p.crop].color, label: `${cropLabel(p)} · ${areaHa(p.poly).toFixed(1)} ha` }))
+  const reshape = (id: string) => {
+    const p = profile.paddocks.find((x) => x.id === id)
+    if (!p) return
+    setCrop(p.crop)
+    setOtherName(p.name ?? "")
+    setEditing(id)
+    setDraftRaw(p.poly)
+    setPast([])
+  }
+  const shapes = profile.paddocks.filter((p) => p.id !== editing).map((p) => ({ id: p.id, poly: p.poly, color: CROPS[p.crop].color, label: `${cropLabel(p)} · ${areaHa(p.poly).toFixed(1)} ha` }))
   const pins: Pin[] = profile.items.map((it) => ({ id: it.id, at: it.at, svg: SVG[it.kind], label: ITEMS[it.kind].label }))
   const hint =
     step === 0
-      ? draft.length < 3
-        ? `Tap each corner of your farm. ${draft.length} of at least 3.`
-        : `${areaHa(draft).toFixed(1)} hectares. Tap more corners, or press Done.`
+      ? draft.length === 0
+        ? "Zoom in to your farm, then tap its first corner."
+        : draft.length < 3
+          ? `Corner ${draft.length} placed. Tap the next corner (at least 3).`
+          : `${areaHa(draft).toFixed(1)} hectares. Drag a corner to move it, or press Done.`
       : step === 1
         ? crop
           ? crop === "other" && !otherName.trim()
             ? "Type what it is, then tap its corners."
-            : `Tap the corners of your ${(crop === "other" ? otherName.trim() : CROPS[crop].label).toLowerCase()} paddock.`
+            : draft.length >= 3
+              ? `${areaHa(draft).toFixed(1)} hectares. Drag a corner to move it, or press Done.`
+              : `Tap the corners of your ${(crop === "other" ? otherName.trim() : CROPS[crop].label).toLowerCase()} paddock.`
           : profile.paddocks.length
-            ? "Pick a crop, then tap its paddock. Tap a paddock to remove it."
+            ? "Pick a crop, then tap its paddock. Tap a paddock to change or remove it."
             : "Pick a crop, then tap its paddock on the map."
         : step === 2
           ? kind
@@ -207,6 +240,8 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
                 cells={[]}
                 stepM={30}
                 draft={drawing ? draft : undefined}
+                onDraftChange={drawing ? setDraft : undefined}
+                onEditShape={step === 1 && !crop ? reshape : undefined}
                 noOutline={step === 0}
                 // No farm yet: open on the whole lower Richmond so the farmer can find theirs.
                 fitMaxZoom={profile.boundary.length >= 3 ? 15 : 12}
@@ -233,9 +268,13 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
           {step === 0 && (
             <>
               <h1 className="font-display text-5xl uppercase">Mark your farm</h1>
-              <p className="mt-3 text-muted-foreground">Find your farm, then tap each corner of its boundary.</p>
+              <ol className="mt-4 space-y-2 text-muted-foreground">
+                <li>1. Search for your road or town, or zoom in on the map.</li>
+                <li>2. Tap each corner of your farm's boundary. The area fills in as you go.</li>
+                <li>3. Drag a numbered dot to move it. Tap a dot to remove it. Tap a small + to add a corner between two.</li>
+              </ol>
               <Find onFound={setFlyTo} />
-              <DrawButtons draft={draft} setDraft={setDraft} onDone={finishBoundary} />
+              <DrawButtons draft={draft} canUndo={past.length > 0} onUndo={undo} onClear={() => setDraft([])} onDone={finishBoundary} doneLabel={profile.boundary.length >= 3 ? "Save boundary" : "Done"} />
               {error && <p role="alert" className="mt-4 rounded-xl bg-flood px-4 py-2 text-sm text-white">{error}</p>}
               <button onClick={onExample} className="mt-auto pt-8 text-left text-sm text-leaf hover:underline">
                 Or skip this and see an example farm
@@ -249,7 +288,7 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
               <p className="mt-3 text-muted-foreground">Pick a crop, then tap out its paddock. Add as many as you have.</p>
               <div className="mt-5 flex flex-wrap gap-2">
                 {(Object.keys(CROPS) as CropId[]).map((c) => (
-                  <button key={c} onClick={() => (setCrop(c), setDraft([]))} className={cn(chip, crop === c ? "border-ink bg-ink text-paper" : "border-rule hover:bg-paper-2")}>
+                  <button key={c} onClick={() => (setCrop(c), setDraftRaw([]), setPast([]), setEditing(undefined))} className={cn(chip, crop === c ? "border-ink bg-ink text-paper" : "border-rule hover:bg-paper-2")}>
                     <i className="inline-block size-3 rounded-full" style={{ background: CROPS[c].color }} />
                     {CROPS[c].label}
                   </button>
@@ -269,7 +308,8 @@ function Setup(props: { profile: Profile; setProfile: (p: Profile) => void; step
                       />
                     </label>
                   )}
-                  <DrawButtons draft={draft} setDraft={setDraft} onDone={() => finishPaddock()} />
+                  {editing && <p className="mb-2 text-sm text-muted-foreground">Changing this paddock's shape. Drag its corners, then press Save.</p>}
+                  <DrawButtons draft={draft} canUndo={past.length > 0} onUndo={undo} onClear={() => setDraft([])} onDone={() => finishPaddock()} doneLabel={editing ? "Save" : "Done"} />
                   {error && <p role="alert" className="mt-3 rounded-xl bg-flood px-4 py-2 text-sm text-white">{error}</p>}
                   {profile.paddocks.length === 0 && (
                     <button onClick={() => finishPaddock(profile.boundary)} className="mt-3 text-sm text-leaf hover:underline">
@@ -430,17 +470,18 @@ function Find({ onFound }: { onFound: (p: LatLng) => void }) {
   )
 }
 
-function DrawButtons({ draft, setDraft, onDone }: { draft: LatLng[]; setDraft: (d: LatLng[]) => void; onDone: () => void }) {
+function DrawButtons(props: { draft: LatLng[]; canUndo: boolean; onUndo: () => void; onClear: () => void; onDone: () => void; doneLabel: string }) {
+  const { draft, canUndo, onUndo, onClear, onDone, doneLabel } = props
   return (
     <div className="mt-5 flex flex-wrap gap-2">
-      <button onClick={() => setDraft(draft.slice(0, -1))} disabled={!draft.length} className={cn(btn, "border border-rule hover:bg-card")}>
+      <button onClick={onUndo} disabled={!canUndo} className={cn(btn, "border border-rule hover:bg-card")}>
         <Undo2 className="size-4" aria-hidden /> Undo
       </button>
-      <button onClick={() => setDraft([])} disabled={!draft.length} className={cn(btn, "border border-rule hover:bg-card")}>
+      <button onClick={onClear} disabled={!draft.length} className={cn(btn, "border border-rule hover:bg-card")}>
         Start over
       </button>
       <button onClick={onDone} disabled={draft.length < 3} className={cn(btn, "bg-cane text-ink hover:bg-[#e2b84a]")}>
-        <Check className="size-4" aria-hidden /> Done
+        <Check className="size-4" aria-hidden /> {doneLabel}
       </button>
     </div>
   )

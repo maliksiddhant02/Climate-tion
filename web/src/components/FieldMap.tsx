@@ -54,8 +54,8 @@ function Fly({ to, zoom }: { to?: LatLng; zoom: number }) {
   return null
 }
 
-function Clicks({ onClick }: { onClick?: (p: LatLng) => void }) {
-  useMapEvents({ click: (e) => onClick?.([e.latlng.lat, e.latlng.lng]) })
+function Clicks({ onClick }: { onClick?: (p: LatLng, zoom: number) => void }) {
+  const map = useMapEvents({ click: (e) => onClick?.([e.latlng.lat, e.latlng.lng], map.getZoom()) })
   return null
 }
 
@@ -89,12 +89,24 @@ export function iconSvg(Icon: ComponentType<{ className?: string }>) {
 const pinIcon = ({ svg, wet }: Pin) =>
   L.divIcon({ className: "", iconSize: [34, 34], iconAnchor: [17, 17], html: `<div class="farm-pin${wet ? " farm-pin-wet" : ""}">${svg}</div>` })
 
-function RemovePopup({ label, onRemove, offset = [0, 7] }: { label: string; onRemove: () => void; offset?: [number, number] }) {
+function RemovePopup({ label, onRemove, onEdit, offset = [0, 7] }: { label: string; onRemove: () => void; onEdit?: () => void; offset?: [number, number] }) {
   const map = useMap()
   return (
     <Popup offset={offset} closeButton={false}>
       <span className="flex items-center gap-3">
         <span className="font-medium">{label}</span>
+        {onEdit && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              map.closePopup()
+              onEdit()
+            }}
+            className="rounded-full bg-ink px-3 py-1 text-xs font-medium text-white"
+          >
+            Change shape
+          </button>
+        )}
         <button
           onClick={(e) => {
             e.stopPropagation()
@@ -110,13 +122,96 @@ function RemovePopup({ label, onRemove, offset = [0, 7] }: { label: string; onRe
   )
 }
 
+// One icon object per number, reused: a fresh icon on re-render makes Leaflet swap the element and drop a drag mid-way.
+const corners = new Map<number, L.DivIcon>()
+const corner = (n: number) => {
+  if (!corners.has(n)) corners.set(n, L.divIcon({ className: "", iconSize: [26, 26], iconAnchor: [13, 13], html: `<div class="corner-handle">${n}</div>` }))
+  return corners.get(n)!
+}
+const midIcon = L.divIcon({ className: "", iconSize: [18, 18], iconAnchor: [9, 9], html: `<div class="corner-mid">+</div>` })
+
+/**
+ * The shape being drawn, filled once it has 3 corners. Corners drag to move and tap to remove;
+ * the small + between two corners adds one there.
+ */
+function Draft({ draft: saved, onChange }: { draft: LatLng[]; onChange?: (d: LatLng[]) => void }) {
+  const map = useMap()
+  // While a corner is being dragged the shape follows it here; the change is saved once, on release (one Undo step).
+  const [live, setLive] = useState<LatLng[]>()
+  // Any saved change (a tap, +, remove, undo) replaces whatever a drag left behind.
+  useEffect(() => setLive(undefined), [saved])
+  const draft = live ?? saved
+  const closed = draft.length >= 3
+  const edges = onChange && draft.length >= 2 ? draft.map((a, i) => [a, draft[(i + 1) % draft.length]] as const).slice(0, closed ? draft.length : 1) : []
+  return (
+    <>
+      {closed ? (
+        <Polygon positions={draft} pathOptions={{ color: "#d4a72c", weight: 3, fillColor: "#d4a72c", fillOpacity: 0.2 }} interactive={false} />
+      ) : (
+        <Polyline positions={draft} pathOptions={{ color: "#d4a72c", weight: 3, dashArray: "6 6" }} interactive={false} />
+      )}
+      {edges.map(([a, b], i) => (
+        <Marker
+          key={`m${i}:${draft.length}`}
+          position={[(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]}
+          icon={midIcon}
+          title="Add a corner here"
+          eventHandlers={{ click: () => onChange!([...draft.slice(0, i + 1), [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], ...draft.slice(i + 1)]) }}
+        />
+      ))}
+      {saved.map((p, i) => (
+        <Marker
+          key={`c${i}`}
+          // The dot being dragged moves itself; only the outline follows `live`.
+          position={p}
+          icon={corner(i + 1)}
+          draggable={!!onChange}
+          title="Drag to move. Tap to remove."
+          eventHandlers={{
+            drag: (e) => {
+              const ll = (e.target as L.Marker).getLatLng()
+              setLive(saved.map((q, j) => (j === i ? [ll.lat, ll.lng] : q)))
+            },
+            // Read where the dot ended up from the marker itself, so a missed drag event can't lose the move.
+            dragend: (e) => {
+              const ll = (e.target as L.Marker).getLatLng()
+              setLive(undefined)
+              onChange?.(saved.map((q, j) => (j === i ? [ll.lat, ll.lng] : q)))
+            },
+          }}
+        >
+          {onChange && (
+            <Popup offset={[0, -8]} closeButton={false}>
+              <span className="flex items-center gap-3">
+                <span className="font-medium">Corner {i + 1}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    map.closePopup()
+                    onChange(saved.filter((_, j) => j !== i))
+                  }}
+                  className="rounded-full bg-flood px-3 py-1 text-xs font-medium text-white"
+                >
+                  Remove corner
+                </button>
+              </span>
+            </Popup>
+          )}
+        </Marker>
+      ))}
+    </>
+  )
+}
+
 export function FieldMap(props: {
   poly: LatLng[]
   cells: Cell[]
   stepM: number
   high?: Cell
+  /** The shape being drawn. With onDraftChange its corners can be dragged, removed and added. */
   draft?: LatLng[]
-  onMapClick?: (p: LatLng) => void
+  onDraftChange?: (d: LatLng[]) => void
+  onMapClick?: (p: LatLng, zoom: number) => void
   /** Changing this replays the water-rising animation (e.g. switching This week / the 2022 flood). */
   runKey?: string
   /** What the satellite saw under water, drawn under the model's squares. */
@@ -137,10 +232,12 @@ export function FieldMap(props: {
   drag?: boolean
   /** Tapping a pin or paddock offers to remove it (setup). */
   onRemove?: (id: string) => void
+  /** Offer "Change shape" on a paddock. */
+  onEditShape?: (id: string) => void
   /** Swatches for what's drawn on the map; shown in the bar under it. */
   legend?: ReactNode
 }) {
-  const { poly, cells, stepM, high, draft, onMapClick, runKey = "", overlay, shapes, pins, wetOnly, noOutline, fitMaxZoom = 15, flyTo, flyZoom = 15, drag, legend, onRemove } = props
+  const { poly, cells, stepM, high, draft, onMapClick, runKey = "", overlay, shapes, pins, wetOnly, noOutline, fitMaxZoom = 15, flyTo, flyZoom = 15, drag, legend, onRemove, onEditShape, onDraftChange } = props
   const half = stepM / 2 / M_PER_DEG
   const maxDepth = Math.max(0, ...cells.map((c) => c.depth))
   const cos = Math.cos((poly[0][0] * Math.PI) / 180)
@@ -180,7 +277,7 @@ export function FieldMap(props: {
           <Tooltip permanent direction="center" className="farm-label" pane="shadowPane">
             {s.label}
           </Tooltip>
-          {onRemove && <RemovePopup label={s.label} onRemove={() => onRemove(s.id)} />}
+          {onRemove && <RemovePopup label={s.label} onRemove={() => onRemove(s.id)} onEdit={onEditShape && (() => onEditShape(s.id))} />}
         </Polygon>
       ))}
       {!draft &&
@@ -205,10 +302,7 @@ export function FieldMap(props: {
           <Tooltip permanent direction="top" offset={[0, -8]}>High ground · park machinery here</Tooltip>
         </CircleMarker>
       )}
-      {draft && <Polyline positions={draft} pathOptions={{ color: "#d4a72c", weight: 2 }} />}
-      {draft?.map((p, i) => (
-        <CircleMarker key={i} center={p} radius={5} pathOptions={{ color: "#13211a", weight: 2, fillColor: "#d4a72c", fillOpacity: 1 }} />
-      ))}
+      {draft && <Draft draft={draft} onChange={onDraftChange} />}
     </MapContainer>
       )}
 
