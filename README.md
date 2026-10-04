@@ -1,6 +1,6 @@
 # Draki
 
-Field-level flood warnings and a year-round season companion for sugarcane growers on the lower Richmond River floodplain in NSW (Coraki, Woodburn, Broadwater). Draki works out which part of a farm goes under when the river rises. It texts the farmer what to move before it does, plus one line on *why* heavy rain is getting more common. All season, it also covers the week's weather, harvest timing, El Niño and fuel.
+Field-level flood warnings and a year-round season companion for farmers, for every paddock on any farm. We built and tested it first on the lower Richmond River floodplain in NSW (Coraki, Woodburn, Broadwater), the cane country hit by the 2022 floods. It only uses free global data, so the same method can run anywhere. Outside the lower Richmond data area, the live site already falls back to rain and 90 m elevation. Draki works out which part of a farm goes under when the river rises. It texts the farmer what to move before it does, plus one line on *why* heavy rain is getting more common. All season, it also covers the week's weather, harvest timing, El Niño and fuel.
 
 **Climate Hack-tion 2026 · Track:** Climate Awareness & Education. 2035 target: **climate education for all and climate-resilient farming.** Draki teaches climate where a farmer will actually read it: every text ends with why heavy rain is getting more common here, and My farm shows each farmer their own climate (the heavy-rain trend at Woodburn, this season's El Niño, and which of their paddocks floods first).
 
@@ -11,6 +11,18 @@ Field-level flood warnings and a year-round season companion for sugarcane growe
 - **Siddhant Malik:** built the idea.
 - **Peter Ma:** created the website.
 - **Adin Sreekesh:** combined both into the final entry.
+
+## Demo
+
+- **Live site:** https://climate-tion.vercel.app (`#/live?replay` is the 2022 flood replay; `#/farm?example` is an example farm)
+- **Demo video:** *(YouTube link goes here after upload)*. It's 1:46, 1920×1080, with English captions.
+- **What the video shows:**
+  - the problem: the 2022 Lismore flood, 14.4 m, two metres above the old record;
+  - how Draki works;
+  - the live site: the 2022 replay and My farm;
+  - the evidence: 72% match with Sentinel-1 radar, 6 of 6 recorded floods, 45 hours' lead;
+  - the COP31 track and its 2035 target.
+- **How it was made:** it's built on the team's "Draki Reveal" animation, with footage of the live site captured with Playwright. The voiceover is AI-generated (Microsoft neural text-to-speech). The background music was synthesised in code for this video (numpy), so there are no samples or licensed tracks. The script and timings are in [docs/voiceover.md](docs/voiceover.md).
 
 ## Run it
 
@@ -85,7 +97,11 @@ scripts/.venv/Scripts/python scripts/build_season_data.py          # El Nino / L
 | Vercel | Hosting the site | Vercel terms |
 | shadcn/ui (Base UI), lucide-react, `cn` | UI components, icons | MIT / ISC |
 | Leaflet, react-leaflet | Map | BSD-2 / Hippocratic-2.1 |
-| Playwright (playwright-core, driving local Chrome) | Clicking through the site to test it; not shipped | Apache-2.0 |
+| Playwright (playwright-core, driving local Chrome) | Clicking through the site to test it, and screenshots for the demo video; not shipped | Apache-2.0 |
+| Microsoft Edge neural text-to-speech (voice en-AU-WilliamMultilingualNeural, via the `edge-tts` Python package) | AI-generated voiceover for the demo video | edge-tts GPL-3.0; Microsoft voice service terms |
+| FFmpeg (via `imageio-ffmpeg`), Pillow | Editing the demo video: inserts, smooth zooms, crossfades, voiceover and music mix, captions | LGPL/GPL, MIT-CMU |
+| numpy | Synthesising the demo video's background music (original, made for this video) | BSD-3-Clause |
+| Lismore City Council flood history | "14.4 m, two metres above the 1954 record of 12.27 m" in the demo video | Cited |
 | Fontsource: Archivo | Typography | SIL OFL |
 | Unsplash photos: Troy Olson (storm over field), insung yoon (flooded farmland), Christine Walker (cane harvest) | Imagery, credited on page | Unsplash License |
 | Claude Code (Anthropic, Claude Opus) | AI coding assistant: scaffolding, model code, page build | Disclosed per hackathon rules |
