@@ -266,7 +266,8 @@ function CaneLoss() {
             <div key={yr as string} className="grid grid-cols-[3.5rem_1fr] items-center gap-4">
               <span className="text-sm text-white/70 tabular-nums">{yr}</span>
               <div className="relative h-11 overflow-hidden rounded-full bg-white/[0.06]">
-                <div className="absolute inset-y-0 left-0 flex items-center justify-end rounded-full bg-cane pr-4 text-sm font-semibold text-ink tabular-nums" style={{ width: `${((v as number) / was) * 100}%` }}>
+                {/* No rounding on the fill: the track rounds the ends, so 2022's fill meets the −17% segment square. */}
+                <div className="absolute inset-y-0 left-0 flex items-center justify-end bg-cane pr-4 text-sm font-semibold text-ink tabular-nums" style={{ width: `${((v as number) / was) * 100}%` }}>
                   {label}
                 </div>
                 {yr === "2022" && (

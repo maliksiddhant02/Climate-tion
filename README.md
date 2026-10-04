@@ -28,14 +28,20 @@
 
 | | |
 |---|---|
+| [![How Draki works: mark the farm once, Draki watches the river and rain, the farmer gets a text](docs/images/how.jpg)](https://climate-tion.vercel.app) | [![What 2022 cost: the river at Lismore hit 14.4 m, and the Northern Rivers cane crush fell 17%](docs/images/cost.jpg)](https://climate-tion.vercel.app) |
+| **How Draki works:** mark the farm once; Draki watches the river and rain; the farmer gets a text in time. | **What 2022 cost:** the river at Lismore hit 14.4 m, the Broadwater mill flooded, and the cane crush fell 17%. |
 | [![The 2022 flood replay at the peak: 41.3 ha under water, Act today](docs/images/replay.jpg)](https://climate-tion.vercel.app/#/live?replay) | [![My farm in a 2022-size flood: 3 paddocks under water, A$139,300 of crops, what to move and tie down](docs/images/farm.jpg)](https://climate-tion.vercel.app/#/farm?example) |
-| **2022 flood replay:** hour by hour, the field fills and *Act today* comes 45 hours before the peak. | **My farm:** what a 2022-size flood does to each paddock (ha and A$), and what to move and tie down. |
+| **2022 flood replay:** hour by hour, the field fills and *Act today* comes 45 hours before the peak. | **My farm (example):** opens on a 2022-size flood. Shows what it does to each paddock (ha and A$), and what to move and tie down. |
 | [![Your climate: very heavy rain days at Woodburn nearly tripled, and El Niño this season](docs/images/climate.jpg)](https://climate-tion.vercel.app/#/farm?example) | [![Printable flood record: 40.3 ha under water, A$139,300 of crops, per paddock](docs/images/record.jpg)](https://climate-tion.vercel.app/#/farm?example) |
 | **Your climate:** very heavy rain days have nearly tripled; why, and this season's El Niño. | **Flood record:** a printable, per-paddock record of the 2022 flood for disaster grants and insurance. |
 
 [![Evidence page: Draki's 2022 flood map against the Sentinel-1 radar map, 72% overlap, 6 of 6 recorded floods](docs/images/proof.jpg)](https://climate-tion.vercel.app/#/proof)
 
 **Evidence:** Draki's 2022 flood map against the Sentinel-1 radar map (72% overlap), and all 6 recorded floods since 2009 caught.
+
+[![Home page: the COP31 track and 2035 target, and "See it on a farm" with links to the example farm and setup](docs/images/bottom.jpg)](https://climate-tion.vercel.app)
+
+**COP31 and next step:** the home page ends with the track and its 2035 target, then links to the example farm and to setting up your own.
 
 ## The problem
 
