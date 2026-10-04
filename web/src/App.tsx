@@ -224,6 +224,27 @@ function Home({ farm }: { farm: Farm }) {
           </dl>
         </div>
       </section>
+
+      <section className="bg-ink text-white">
+        <div className={cn(WRAP, "grid gap-8 py-16 md:grid-cols-12 md:items-end md:py-24")}>
+          <div className="md:col-span-7">
+            <h2 className="font-display text-[clamp(2rem,4.4vw,4.5rem)] leading-[0.95] uppercase">
+              See it on a <em className="text-cane">farm.</em>
+            </h2>
+            <p className="mt-5 max-w-xl text-white/75 md:text-lg">
+              Open the example farm near Broadwater, or mark your own paddocks, sheds and tanks in about ten minutes. Everything you enter stays on this device.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3 md:col-span-5 md:justify-end">
+            <a href="#/farm?example" className={cn(btn, "bg-white text-ink hover:bg-paper")}>
+              See an example farm <ArrowRight className="size-4" aria-hidden />
+            </a>
+            <a href="#/farm" className={cn(btn, "border border-white/30 text-white hover:bg-white/10")}>
+              Set up your own farm
+            </a>
+          </div>
+        </div>
+      </section>
     </>
   )
 }
@@ -322,9 +343,14 @@ function HowItWorks({ farm }: { farm: Farm }) {
     <section className={cn(WRAP, "py-16 md:py-24")}>
       <div className="flex flex-wrap items-end justify-between gap-6">
         <h2 className="font-display text-[clamp(2rem,4.4vw,4.5rem)] leading-[0.95]">How Draki works</h2>
-        <a href="#/farm?example" className={cn(btn, "bg-ink text-paper hover:bg-ink-2")}>
-          See an example farm <ArrowRight className="size-4" aria-hidden />
-        </a>
+        <div className="flex flex-wrap gap-3">
+          <a href="#/farm?example" className={cn(btn, "bg-ink text-paper hover:bg-ink-2")}>
+            See an example farm <ArrowRight className="size-4" aria-hidden />
+          </a>
+          <a href="#/farm" className={cn(btn, "border border-rule hover:bg-paper-2")}>
+            Set up your own farm
+          </a>
+        </div>
       </div>
       <ol className="mt-10 grid gap-4 md:grid-cols-3">
         {steps.map((s, i) => (
@@ -338,9 +364,6 @@ function HowItWorks({ farm }: { farm: Farm }) {
                 <p className="mt-1 text-sm text-muted-foreground">{s.note}</p>
               </div>
             </div>
-            {i < 2 && (
-              <ArrowRight className="absolute top-1/2 -right-[1.1rem] z-10 hidden size-7 -translate-y-1/2 rounded-full border border-rule bg-paper p-1.5 text-leaf md:block" aria-hidden />
-            )}
           </li>
         ))}
       </ol>
