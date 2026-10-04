@@ -119,6 +119,10 @@ scripts/.venv/Scripts/python scripts/build_season_data.py          # El Nino / L
 - [ ] NSW 1 m LiDAR (ELVIS) and BoM gauge levels instead of 30 m DEM and GloFAS
 - [ ] Playbook review by a cane adviser
 
+## Licence
+
+The code is under the [MIT License](LICENSE), © 2026 Peter Ma, Siddhant Malik and Adin Sreekesh. Third-party data, photos, fonts and libraries keep their own licences (see Tools used).
+
 ## No prior work
 
 All code, design and assets were created after 9:00am AEST, Fri 2 Oct 2026. Ideas and research (`docs/`) were done before.
